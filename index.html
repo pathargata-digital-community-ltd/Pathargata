@@ -5745,6 +5745,76 @@ window.loadContestFeed = () => {
         }).join('');
     });
 };
+   // --- CONTEST VOTING LOGIC (SUPER FAST WITH CONFIRMATION) ---
+        window.voteForContestant = async (participantUid) => {
+            if (!window.currentUser) {
+                showToast("ভোট দেওয়ার জন্য লগইন করুন", "error");
+                return;
+            }
+
+            // ১. কনফার্মেশন ডায়লগ (ভোট দেওয়ার আগে নিশ্চিত করা)
+            if (!confirm("আপনি কি নিশ্চিত যে এই ছবিটিতে ভোট দিতে চান?\n(একবার ভোট দিলে তা আর পরিবর্তন করা যাবে না)")) {
+                return;
+            }
+
+            const btn = document.getElementById(`vote-btn-${participantUid}`);
+            const countSpan = document.getElementById(`vote-count-${participantUid}`);
+
+            // ২. ইনস্ট্যান্ট UI আপডেট (সার্ভারের জন্য অপেক্ষা না করে সাথে সাথে স্ক্রিন আপডেট করে দেওয়া)
+            if (countSpan) {
+                let currentVotes = parseInt(countSpan.innerText) || 0;
+                countSpan.innerText = currentVotes + 1; // সাথে সাথে ১ যোগ করে দেখানো
+            }
+
+            if (btn) {
+                // যে বাটনে ক্লিক করেছে সেটিকে "ভোটেড" করে দেওয়া
+                btn.className = "w-full mt-2 bg-green-100 text-green-700 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-green-200";
+                btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> ভোটেড';
+                btn.disabled = true;
+            }
+
+            // পেজের বাকি সবার "ভোট দিন" বাটন ডিসেবল করে দেওয়া (কারণ একজন একটাই ভোট দিতে পারবে)
+            document.querySelectorAll('[id^="vote-btn-"]').forEach(button => {
+                if (button.id !== `vote-btn-${participantUid}`) {
+                    button.className = "w-full mt-2 bg-gray-100 text-gray-400 py-2 rounded-lg font-bold text-xs cursor-not-allowed";
+                    button.innerHTML = 'ভোট দিয়েছেন';
+                    button.disabled = true;
+                }
+            });
+
+            // ৩. ব্যাকগ্রাউন্ডে ফায়ারবেসে ডাটা আপডেট করা
+            try {
+                const myVoteRef = ref(db, `contest_votes_by_user/${window.currentUser.uid}`);
+                const myVoteSnap = await get(myVoteRef);
+
+                // সিকিউরিটি চেক: যদি ডাটাবেসে আগেই ভোট দেওয়া থাকে
+                if (myVoteSnap.exists()) {
+                    showToast("আপনি ইতিমধ্যে একজনকে ভোট দিয়েছেন!", "error");
+                    loadContestFeed(); // ভুল হলে পুরো পেজ আবার রিলোড করে ঠিক করে দিবে
+                    return;
+                }
+
+                // ডাটাবেসে ভোট সংখ্যা বাড়ানো
+                const participantRef = ref(db, `contest_participants/${participantUid}/votes`);
+                await runTransaction(participantRef, (currentVotes) => {
+                    return (currentVotes || 0) + 1;
+                });
+
+                // ইউজারের ভোট দেওয়ার রেকর্ড সেভ করা
+                await set(myVoteRef, {
+                    votedFor: participantUid,
+                    timestamp: Date.now()
+                });
+
+                showToast("আপনার ভোট সফলভাবে গ্রহণ করা হয়েছে!", "success");
+
+            } catch (error) {
+                console.error("Voting error:", error);
+                showToast("ভোট দিতে সমস্যা হয়েছে। আপনার ইন্টারনেট চেক করুন।", "error");
+                // এরর হলে পেজ রিলোড করে আগের অবস্থায় ফিরিয়ে আনা
+                loadContestFeed();
+            }
+        };
     </script>
 
     <script>
