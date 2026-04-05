@@ -11,7 +11,9 @@
     <link rel="manifest" href="manifest.json">
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js');
+    });
   }
 </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1177,17 +1179,23 @@
 
         <main id="content-pages">
 
+            <!-- হোম পেজ শুরু -->
             <div id="page-home" class="p-0 animate-fade">
                 <div id="live-notices"></div>
+                
+                <!-- 1. Tabs Section -->
                 <div class="bg-white border-b sticky top-[68px] z-30">
                     <div class="flex">
                         <div onclick="filterFeed('all')" id="tab-feed-all" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab active uppercase">উপজেলা</div>
                         <div onclick="filterFeed('union')" id="tab-feed-union" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase">ইউনিয়ন</div>
-                        <div onclick="filterFeed('village')" id="tab-feed-village" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase" style="display: none;">আমার গ্রাম</div>
+                        <div onclick="filterFeed('village')" id="tab-feed-village" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase" style="display: none;">গ্রাম</div>
+                        <div onclick="filterFeed('contest')" id="tab-feed-contest" class="flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer feed-tab uppercase">প্রতিযোগিতা</div>
                     </div>
                 </div>
-                <div class="bg-gray-100 pb-20">
-                <!-- ২৪ ঘণ্টার নোটস / স্টোরি সেকশন -->
+
+                <!-- 2. Regular Feed Section (নোটস এবং সাধারণ পোস্ট) -->
+                <div id="regular-feed-section" class="bg-gray-100 pb-20">
+                    <!-- ২৪ ঘণ্টার নোটস / স্টোরি সেকশন -->
                     <div class="bg-white pt-4 pb-4 mb-2 shadow-sm border-b">
                         <div class="px-4 flex justify-between items-center mb-3">
                             <h3 class="font-bold text-gray-800 text-sm">নোটস ও স্টোরি</h3>
@@ -1195,36 +1203,8 @@
                         <div id="notes-list-container" class="flex gap-3 px-4 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
                             <!-- নোটস এখানে জাভাস্ক্রিপ্ট দিয়ে লোড হবে -->
                         </div>
-                        <style>
-                            #notes-list-container::-webkit-scrollbar { display: none; }
-                            .note-bubble {
-                                position: relative;
-                                background: #f3f4f6;
-                                border-radius: 12px;
-                                padding: 8px;
-                                font-size: 11px;
-                                text-align: center;
-                                word-wrap: break-word;
-                                min-height: 40px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                            }
-                            .note-bubble::after {
-                                content: '';
-                                position: absolute;
-                                bottom: -6px;
-                                left: 50%;
-                                transform: translateX(-50%);
-                                border-width: 6px 6px 0;
-                                border-style: solid;
-                                border-color: #f3f4f6 transparent transparent transparent;
-                                display: block;
-                                width: 0;
-                            }
-                        </style>
                     </div>
+                    
                     <div id="news-feed" class="px-0 space-y-3 min-h-[300px] mt-2">
                         <!-- Initial Loader Skeleton -->
                         <div class="flex flex-col gap-3 p-4" id="initial-feed-skeleton">
@@ -1232,16 +1212,59 @@
                             <div class="h-40 w-full skeleton"></div>
                         </div>
                     </div>
+                    
                     <!-- Pagination / Load More Controls -->
                     <div id="feed-loader-area" class="pb-10 pt-2 text-center hidden">
                         <button id="btn-load-more" onclick="loadMorePosts()" class="btn-load-more hidden"><i class="fa-solid fa-arrow-down"></i> আরো দেখুন</button>
                         <div id="loader-spinner" class="py-4"><i class="fa-solid fa-circle-notch fa-spin text-green-600 text-2xl"></i></div>
-                        <!-- Invisible element for Intersection Observer -->
                         <div id="scroll-sentinel" style="height: 10px; width: 100%;"></div>
                     </div>
                 </div>
-            </div>
 
+                <!-- 3. Contest Container -->
+                <div id="contest-container" class="hidden-custom pb-20">
+                    <!-- Premium Banner -->
+                    <div class="bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 p-6 text-center text-white relative overflow-hidden">
+                        <i class="fa-solid fa-camera-retro absolute -right-4 -bottom-4 text-8xl opacity-20 transform -rotate-12"></i>
+                        <h2 class="text-2xl font-extrabold mb-1 shadow-sm">সেরা ছবি প্রতিযোগিতা</h2>
+                        <p class="text-xs text-purple-100 mb-2 opacity-90">আপনার তোলা সেরা ছবিটি আপলোড করুন এবং জিতে নিন আকর্ষণীয় পুরষ্কার!</p>
+                        <button onclick="toggleContestModal(true)" class="bg-white text-purple-700 px-6 py-2.5 rounded-full font-bold shadow-lg transform active:scale-95 transition hover:bg-gray-50 text-sm mt-2">
+                            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> ছবি আপলোড করুন
+                        </button>
+                    </div>
+
+                    <!-- Contest Details Bar (Sponsor, Date, Rules) -->
+                    <div class="bg-white px-4 py-3 flex justify-between items-center shadow-sm border-b z-10 relative">
+    <div class="flex flex-col gap-1">
+        <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-handshake text-purple-500 w-4 text-center"></i> স্পন্সর: <span id="dyn-contest-sponsor" class="text-gray-800">লোড হচ্ছে...</span></span>
+        <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-clock text-pink-500 w-4 text-center"></i> শেষ সময়: <span id="dyn-contest-date" class="text-red-500">লোড হচ্ছে...</span></span>
+    </div>
+    <button onclick="toggleContestRulesModal(true)" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm border border-blue-100">
+        <i class="fa-solid fa-info text-lg"></i>
+    </button>
+</div>
+<!-- Contest Prizes Section -->
+    <div id="dyn-contest-prizes-container" class="hidden-custom bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-3 border-b border-yellow-200 flex items-center gap-3 shadow-inner">
+        <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-md">
+            <i class="fa-solid fa-gift text-lg animate-bounce"></i>
+        </div>
+        <div class="flex-1">
+            <h4 class="font-bold text-gray-800 text-sm">বিজয়ী পুরস্কার</h4>
+            <p id="dyn-contest-prizes" class="text-[11px] text-gray-700 font-bold mt-0.5 leading-tight">লোড হচ্ছে...</p>
+        </div>
+    </div>
+                    
+                    <div class="p-4 flex justify-between items-center bg-gray-50 shadow-sm border-b">
+                        <h3 class="font-bold text-gray-700">অংশগ্রহণকারীদের ছবি</h3>
+                        <span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-bold shadow-sm" id="contest-total-participants">0 জন</span>
+                    </div>
+
+                    <!-- Photos Grid -->
+                    <div id="contest-photos-grid" class="p-3 grid grid-cols-2 gap-3 bg-gray-100 min-h-[300px]">
+                        <p class="col-span-2 text-center text-gray-400 py-10">লোড হচ্ছে...</p>
+                    </div>
+                </div>
+                </div>
             <div id="page-services" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
                 <div class="bg-white p-3 sticky top-20 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl">
                     <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
@@ -1904,6 +1927,49 @@
                 </button>
             </div>
         </div>
+        <!-- Contest Rules Modal -->
+<div id="contest-rules-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative transform transition-all">
+        <button onclick="toggleContestRulesModal(false)" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="font-bold text-xl text-purple-600 mb-4 border-b pb-2"><i class="fa-solid fa-scroll text-purple-500 mr-1"></i> নিয়ম ও শর্তাবলী</h3>
+        
+        <ul id="dyn-contest-rules-list" class="text-sm text-gray-600 space-y-2.5 mb-6">
+    <p class="text-center text-gray-400 text-xs py-4">লোড হচ্ছে...</p>
+</ul>
+        
+        <button onclick="toggleContestRulesModal(false)" class="w-full bg-gray-100 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-200 transition">বুঝতে পেরেছি</button>
+    </div>
+</div>
+        <!-- Contest Photo Upload Modal -->
+<div id="contest-upload-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative transform transition-all">
+        <button onclick="toggleContestModal(false)" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="font-bold text-xl text-purple-600 mb-1">প্রতিযোগিতায় অংশ নিন</h3>
+        <p class="text-xs text-gray-500 mb-4">একটি সুন্দর ক্যাপশন সহ আপনার সেরা ছবিটি দিন।</p>
+        
+        <div class="space-y-4">
+            <div class="flex flex-col items-center justify-center w-full">
+                <label for="contest-img-input" class="flex flex-col items-center justify-center w-full h-40 border-2 border-purple-300 border-dashed rounded-xl cursor-pointer bg-purple-50 hover:bg-purple-100 overflow-hidden relative">
+                    <img id="contest-img-preview" class="w-full h-full object-cover hidden absolute inset-0 z-10">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-purple-500 z-0">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
+                        <p class="text-sm font-semibold">ছবি নির্বাচন করুন</p>
+                    </div>
+                    <input id="contest-img-input" type="file" accept="image/*" class="hidden" onchange="previewContestImage(this)" />
+                </label>
+            </div>
+            <textarea id="contest-caption" rows="2" placeholder="ছবির ক্যাপশন বা বিবরণ লিখুন..." class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm focus:bg-white resize-none"></textarea>
+        </div>
+        
+        <button onclick="submitContestPhoto()" id="btn-contest-submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 mt-4 rounded-xl shadow-lg hover:opacity-90 transition flex justify-center items-center gap-2">
+            সাবমিট করুন
+        </button>
+    </div>
+</div>
 
     <script type="module">
         import {
@@ -3012,36 +3078,38 @@
 
         window.filterFeed = (type) => {
             currentFeedFilter = type;
-            ['all', 'union', 'village'].forEach(t => document.getElementById(`tab-feed-${t}`).classList.toggle('active', type === t));
-            loadFeed(type, true);
-        }
-
-        window.refreshFeed = () => {
-            const spinner = document.getElementById('loader-spinner');
-            spinner.classList.remove('hidden');
-            loadFeed(currentFeedFilter, true);
-            setTimeout(() => spinner.classList.add('hidden'), 1000);
-        };
-
-        function setupInfiniteScroll() {
-            if (feedObserver) {
-                feedObserver.disconnect();
-            }
-            const sentinel = document.getElementById('scroll-sentinel');
-            const observer = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && !isFeedLoading && hasMorePosts) {
-                    loadFeed(currentFeedFilter, false);
+            
+            // সব ট্যাবের অ্যাক্টিভ ক্লাস রিমুভ করা
+            ['all', 'union', 'village', 'contest'].forEach(t => {
+                const el = document.getElementById(`tab-feed-${t}`);
+                if(el) {
+                    if (t === 'contest') {
+                        el.classList.toggle('border-b-2', type === t);
+                        el.classList.toggle('border-purple-500', type === t);
+                    } else {
+                        el.classList.toggle('active', type === t);
+                    }
                 }
-            }, {
-                rootMargin: '200px'
             });
-            feedObserver = observer;
-            feedObserver.observe(sentinel);
-        }
 
-        window.loadMorePosts = () => {
-            if (!isFeedLoading && hasMorePosts) {
-                loadFeed(currentFeedFilter, false);
+            // কন্টেইনারগুলো খুঁজে বের করা
+            const regularFeedWrapper = document.getElementById('regular-feed-section');
+            const contestContainer = document.getElementById('contest-container');
+
+            // যদি HTML এ কোনো সমস্যা থাকে তবে যেন ক্র্যাশ না করে তার জন্য সেফগার্ড
+            if (!regularFeedWrapper || !contestContainer) {
+                console.error("HTML ট্যাগগুলো পাওয়া যাচ্ছে না! পেজ রিলোড করুন।");
+                return;
+            }
+
+            if (type === 'contest') {
+                regularFeedWrapper.classList.add('hidden-custom');
+                contestContainer.classList.remove('hidden-custom');
+                if (typeof loadContestFeed === 'function') loadContestFeed(); 
+            } else {
+                contestContainer.classList.add('hidden-custom');
+                regularFeedWrapper.classList.remove('hidden-custom');
+                loadFeed(type, true); 
             }
         }
 
@@ -3176,6 +3244,32 @@
                 btnLoadMore.innerText = "পুনরায় চেষ্টা করুন";
             });
         }
+        // --- LOAD MORE POSTS (MANUAL BUTTON) ---
+        window.loadMorePosts = () => {
+            if (!isFeedLoading && hasMorePosts) {
+                // বাটন লুকিয়ে স্পিনার দেখাবে
+                document.getElementById('btn-load-more').classList.add('hidden');
+                document.getElementById('loader-spinner').classList.remove('hidden');
+                
+                // পরবর্তী ডাটা লোড করবে
+                loadFeed(currentFeedFilter, false);
+            }
+        };
+
+        // --- INFINITE SCROLL OBSERVER (AUTO LOAD) ---
+        window.setupInfiniteScroll = () => {
+            const observer = new IntersectionObserver((entries) => {
+                // স্ক্রল করতে করতে নিচে পৌঁছালে অটোমেটিক লোড হবে
+                if (entries[0].isIntersecting && hasMorePosts && !isFeedLoading) {
+                    window.loadMorePosts();
+                }
+            }, { rootMargin: "100px" }); // নিচ থেকে ১০০ পিক্সেল আগেই লোড শুরু হবে
+
+            const sentinel = document.getElementById('scroll-sentinel');
+            if (sentinel) {
+                observer.observe(sentinel);
+            }
+        };
 
         // --- END PAGINATION ---
 
@@ -4278,18 +4372,23 @@
             });
         }
 
-        window.loadNotifications = (isInitial = false) => {
+                window.loadNotifications = (isInitial = false) => {
             const list = document.getElementById('notifications-list');
             const btn = document.getElementById('btn-load-more-notif');
+            
+            if (!window.currentUser) return; // ইউজার লগইন না থাকলে এটি রান হবে না
+
             if (isInitial) {
-                list.innerHTML = '<p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>';
+                list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
                 lastNotifKey = null;
                 hasMoreNotifs = true;
             }
+            
             if (!hasMoreNotifs) {
                 btn.classList.add('hidden');
                 return;
             }
+
             const pageSize = 10;
             let notifQuery;
             if (isInitial) notifQuery = query(ref(db, `notifications/${window.currentUser.uid}`), orderByKey(), limitToLast(pageSize));
@@ -4298,23 +4397,42 @@
             get(notifQuery).then(snap => {
                 const data = snap.val();
                 if (isInitial) list.innerHTML = '';
+                
                 if (!data) {
                     if (isInitial) list.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো নোটিফিকেশন নেই</p>';
                     hasMoreNotifs = false;
                     btn.classList.add('hidden');
                     return;
                 }
-                let items = Object.entries(data).map(([key, val]) => ({
-                    id: key,
-                    ...val
-                })).sort((a, b) => b.timestamp - a.timestamp);
+
+                let items = Object.entries(data)
+                    .filter(([key, val]) => typeof val === 'object' && val !== null) // সেফগার্ড
+                    .map(([key, val]) => ({
+                        id: key,
+                        ...val
+                    }))
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
                 if (!isInitial && items.length > 0) items = items.filter(i => i.id !== lastNotifKey);
                 if (items.length < pageSize && !isInitial) hasMoreNotifs = false;
+
+                // --- নতুন ফিক্সড অংশ (সাদা পেজ রোধ করতে) ---
+                if (items.length === 0) {
+                    if (isInitial) {
+                        list.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো নোটিফিকেশন নেই</p>';
+                    }
+                    hasMoreNotifs = false;
+                    btn.classList.add('hidden');
+                    return;
+                }
+                // ---------------------------------------------
+
                 items.forEach(n => {
                     const bgClass = n.read ? 'bg-white' : 'bg-blue-50';
                     let html = '';
+                    
                     if (n.type === 'blood_req') {
-                        html = `<div class="${bgClass} p-3 rounded-xl shadow-sm border-l-4 border-red-600 flex justify-between items-center mb-3"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold"><i class="fa-solid fa-droplet"></i></div><div><h4 class="font-bold text-red-800 text-sm">জরুরি রক্ত প্রয়োজন! (${n.group})</h4><p class="text-xs text-gray-600">যোগাযোগ: ${n.contact}</p><p class="text-[10px] text-gray-400">${timeAgo(n.timestamp)}</p></div></div><a href="tel:${n.contact}" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white"><i class="fa-solid fa-phone"></i></a></div>`;
+                        html = `<div class="${bgClass} p-3 rounded-xl shadow-sm border-l-4 border-red-600 flex justify-between items-center mb-3"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold"><i class="fa-solid fa-droplet"></i></div><div><h4 class="font-bold text-red-800 text-sm">জরুরি রক্ত প্রয়োজন! (${escapeHTML(n.group)})</h4><p class="text-xs text-gray-600">যোগাযোগ: ${escapeHTML(n.contact)}</p><p class="text-[10px] text-gray-400">${timeAgo(n.timestamp)}</p></div></div><a href="tel:${n.contact}" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white"><i class="fa-solid fa-phone"></i></a></div>`;
                     } else {
                         let icon = 'fa-rss',
                             color = 'text-blue-600',
@@ -4336,12 +4454,16 @@
                     }
                     list.insertAdjacentHTML('beforeend', html);
                 });
+
                 if (items.length > 0) {
                     lastNotifKey = items[items.length - 1].id;
                     btn.classList.remove('hidden');
                 } else {
                     btn.classList.add('hidden');
                 }
+            }).catch(err => {
+                console.error("Load Notifications Error:", err);
+                if (isInitial) list.innerHTML = '<p class="text-center text-red-500 mt-10">নোটিফিকেশন লোড হতে সমস্যা হয়েছে!</p>';
             });
         }
 
@@ -5436,6 +5558,193 @@ peoplePage.addEventListener('touchend', (e) => {
                 container.innerHTML = html;
             });
         };
+        // --- CONTEST LOGIC ---
+
+        window.toggleContestModal = (show) => {
+            const modal = document.getElementById('contest-upload-modal');
+            if (show) {
+                // চেক করুন ইউজার ইতিমধ্যে অংশগ্রহণ করেছে কিনা
+                get(ref(db, `contest_participants/${window.currentUser.uid}`)).then((snap) => {
+                    if (snap.exists()) {
+                        showToast("আপনি ইতিমধ্যে একটি ছবি আপলোড করেছেন!", "error");
+                    } else {
+                        document.getElementById('contest-caption').value = '';
+                        document.getElementById('contest-img-preview').src = '';
+                        document.getElementById('contest-img-preview').classList.add('hidden');
+                        document.getElementById('contest-img-input').value = '';
+                        modal.classList.remove('hidden-custom');
+                    }
+                });
+            } else {
+                modal.classList.add('hidden-custom');
+            }
+        };
+
+        window.previewContestImage = (input) => {
+            if (input.files && input.files[0]) {
+                const r = new FileReader();
+                r.onload = (e) => {
+                    document.getElementById('contest-img-preview').src = e.target.result;
+                    document.getElementById('contest-img-preview').classList.remove('hidden');
+                };
+                r.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.submitContestPhoto = async () => {
+            const file = document.getElementById('contest-img-input').files[0];
+            const caption = document.getElementById('contest-caption').value.trim();
+
+            if (!file) return showToast("দয়া করে একটি ছবি নির্বাচন করুন", "error");
+
+            const btn = document.getElementById('btn-contest-submit');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> আপলোড হচ্ছে...';
+            btn.disabled = true;
+
+            try {
+                // ছবি Cloudinary তে আপলোড
+                const res = await uploadMediaToCloudinary(file);
+                
+                // ডাটাবেসে সেভ করা
+                const contestData = {
+                    uid: window.currentUser.uid,
+                    authorName: userDetails.name,
+                    authorPic: userDetails.profile_pic || '',
+                    image: res.url,
+                    caption: caption,
+                    votes: 0,
+                    timestamp: Date.now()
+                };
+
+                await set(ref(db, `contest_participants/${window.currentUser.uid}`), contestData);
+                
+                showToast("প্রতিযোগিতায় আপনার ছবি যুক্ত হয়েছে!", "success");
+                toggleContestModal(false);
+                loadContestFeed(); // রিলোড ফিড
+
+            } catch (e) {
+                showToast("সমস্যা হয়েছে: " + e.message, "error");
+            } finally {
+                btn.innerHTML = 'সাবমিট করুন';
+                btn.disabled = false;
+            }
+        };
+
+        // Rules Modal Toggle
+        window.toggleContestRulesModal = (show) => {
+            const modal = document.getElementById('contest-rules-modal');
+            if (show) modal.classList.remove('hidden-custom');
+            else modal.classList.add('hidden-custom');
+        };
+
+        // Delete Own Photo Logic
+        window.deleteContestPhoto = async (participantUid) => {
+            if(!confirm("আপনি কি নিশ্চিত যে আপনার ছবিটি মুছে ফেলতে চান? আপনার প্রাপ্ত ভোটগুলোও চিরতরে মুছে যাবে।")) return;
+
+            try {
+                // ডাটাবেস থেকে ইউজারের ডাটা মুছে ফেলা
+                await remove(ref(db, `contest_participants/${participantUid}`));
+                showToast("আপনার ছবিটি সফলভাবে মুছে ফেলা হয়েছে!", "success");
+                loadContestFeed(); // ফিড রিলোড করা
+            } catch (e) {
+                showToast("মুছে ফেলতে সমস্যা হয়েছে: " + e.message, "error");
+            }
+        };
+        
+        // --- LOAD DYNAMIC CONTEST INFO ---
+window.loadContestInfo = () => {
+    onValue(ref(db, 'admin_settings/contest_info'), (snap) => {
+        const info = snap.val();
+        if (info) {
+            // Sponsor & Date
+            const sponsorEl = document.getElementById('dyn-contest-sponsor');
+            const dateEl = document.getElementById('dyn-contest-date');
+            if(sponsorEl) sponsorEl.innerText = info.sponsor || 'পাথরঘাটা ডিজিটাল';
+            if(dateEl) dateEl.innerText = info.endDate || 'অনির্দিষ্ট';
+            
+            // Prizes
+            const prizeContainer = document.getElementById('dyn-contest-prizes-container');
+            const prizeText = document.getElementById('dyn-contest-prizes');
+            if(prizeText && prizeContainer) {
+                if (info.prizes && info.prizes.trim() !== "") {
+                    prizeText.innerText = info.prizes;
+                    prizeContainer.classList.remove('hidden-custom');
+                } else {
+                    prizeContainer.classList.add('hidden-custom'); // ফায়ারবেসে পুরস্কার না লিখলে বক্সটা হাইড থাকবে
+                }
+            }
+            
+            // Rules
+            const rulesList = document.getElementById('dyn-contest-rules-list');
+            if(rulesList) {
+                if(info.rules && Array.isArray(info.rules)) {
+                    rulesList.innerHTML = info.rules.map(rule => 
+                        `<li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-green-500 mt-1"></i> <span>${escapeHTML(rule)}</span></li>`
+                    ).join('');
+                } else {
+                     rulesList.innerHTML = `<li class="flex items-start gap-2"><i class="fa-solid fa-circle-check text-green-500 mt-1"></i> <span>কোনো নিয়মাবলি সেট করা নেই।</span></li>`;
+                }
+            }
+        }
+    });
+};
+
+// --- LOAD CONTEST FEED (NO ADS) ---
+window.loadContestFeed = () => {
+    loadContestInfo();
+    const grid = document.getElementById('contest-photos-grid');
+    grid.innerHTML = '<div class="col-span-2 flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div></div>';
+
+    get(ref(db, 'contest_participants')).then(async (snap) => {
+        const data = snap.val();
+        if (!data) {
+            grid.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-10">এখনো কেউ অংশগ্রহণ করেনি</p>';
+            document.getElementById('contest-total-participants').innerText = "0 জন";
+            return;
+        }
+
+        const myVotesSnap = await get(ref(db, `contest_votes_by_user/${window.currentUser.uid}`));
+        const myVotedUid = myVotesSnap.exists() ? myVotesSnap.val().votedFor : null;
+
+        const participants = Object.values(data).sort((a, b) => b.votes - a.votes);
+        document.getElementById('contest-total-participants').innerText = `${participants.length} জন`;
+
+        grid.innerHTML = participants.map((p, index) => {
+            const isVotedByMe = (myVotedUid === p.uid);
+            const rankBadge = index === 0 && p.votes > 0 ? `<div class="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md z-10"><i class="fa-solid fa-crown text-sm"></i></div>` : '';
+            
+            let actionBtnHtml = '';
+            if (isVotedByMe) {
+                actionBtnHtml = `<button class="w-full mt-2 bg-green-100 text-green-700 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-green-200" disabled><i class="fa-solid fa-check-circle"></i> ভোটেড</button>`;
+            } else if (myVotedUid) {
+                actionBtnHtml = `<button class="w-full mt-2 bg-gray-100 text-gray-400 py-2 rounded-lg font-bold text-xs cursor-not-allowed" disabled>ভোট দিয়েছেন</button>`;
+            } else if (p.uid === window.currentUser.uid) {
+                actionBtnHtml = `<button onclick="deleteContestPhoto('${p.uid}')" class="w-full mt-2 bg-red-50 text-red-600 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-red-200 hover:bg-red-100 transition"><i class="fa-solid fa-trash"></i> ডিলিট করুন</button>`;
+            } else {
+                actionBtnHtml = `<button onclick="voteForContestant('${p.uid}')" id="vote-btn-${p.uid}" class="w-full mt-2 bg-purple-600 text-white py-2 rounded-lg font-bold text-xs shadow hover:bg-purple-700 transform active:scale-95 transition flex items-center justify-center gap-1"><i class="fa-solid fa-heart"></i> ভোট দিন</button>`;
+            }
+
+            return `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative flex flex-col" style="transform: translateZ(0);">
+                ${rankBadge}
+                <div class="h-40 w-full relative bg-gray-100" onclick="openImageViewer('${p.image}')">
+                    <img src="${p.image}" loading="lazy" decoding="async" class="w-full h-full object-cover cursor-pointer">
+                    <div class="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-md">
+                        <i class="fa-solid fa-heart text-pink-400"></i> <span id="vote-count-${p.uid}">${p.votes || 0}</span>
+                    </div>
+                </div>
+                <div class="p-2 flex-1 flex flex-col justify-between">
+                    <div class="flex items-center gap-2 mb-1">
+                        <img src="${p.authorPic || 'https://via.placeholder.com/40'}" class="w-6 h-6 rounded-full object-cover border border-gray-200">
+                        <span class="text-xs font-bold text-gray-800 truncate">${escapeHTML(p.authorName)}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 line-clamp-2 mb-1">${escapeHTML(p.caption)}</p>
+                    ${actionBtnHtml}
+                </div>
+            </div>`;
+        }).join('');
+    });
+};
     </script>
 
     <script>
@@ -5557,6 +5866,10 @@ peoplePage.addEventListener('touchend', (e) => {
             if (id === 'notifications') {
                 document.getElementById('nav-badge-notice')?.classList.remove('active');
                 document.getElementById('header-badge-notice')?.classList.remove('active');
+                // ফিক্স: নোটিফিকেশন পেজে আসলেই নতুন করে ডাটা লোড হবে
+                if(window.currentUser) {
+                    window.loadNotifications(true);
+                }
             }
 
             // Push History
@@ -5564,7 +5877,7 @@ peoplePage.addEventListener('touchend', (e) => {
                 page: id
             }, "", `#${id}`);
 
-            // Handle FAB Visibility (Only show on Home)
+            // Handle FAB Visibility
             const fabContainer = document.getElementById('fab-container');
             if (fabContainer) {
                 if (id === 'home') {
