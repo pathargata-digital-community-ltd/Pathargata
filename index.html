@@ -2423,13 +2423,13 @@
 
                     if (data) {
                         userDetails = data;
-                        if(data.status === 'pending') {
-        window.ADVANCED_FEATURES.showLockScreen();
-        return; 
-    } else if (data.status === 'tourist') {
-        window.ADVANCED_FEATURES.enableTouristMode();
-        userDetails.role = 'tourist'; 
-    }
+                        if(data.status === 'pending' || data.status === 'pending_review') {
+    window.ADVANCED_FEATURES.showLockScreen(data); // ব্র্যাকেটের ভেতর data পাস করা হয়েছে
+    return; 
+} else if (data.status === 'tourist') {
+    window.ADVANCED_FEATURES.enableTouristMode();
+    userDetails.role = 'tourist'; 
+}
                         updateUIWithUserData();
                         loadFriendsPreview(user.uid, 'me');
                         loadSettingsData();
@@ -5835,6 +5835,40 @@ window.loadContestFeed = () => {
             window.renderBeautifulCards(items, containerId);
         }
     });
+});
+// ১. অ্যাডমিনের হোয়াটসঅ্যাপ লিংক ডাটাবেস থেকে আনা
+window.addEventListener('fetchWhatsAppLink', () => {
+    get(ref(db, 'admin_settings/whatsapp_link')).then((snap) => {
+        const link = snap.val() || "https://wa.me/"; // ডাটাবেসে লিংক না থাকলে ডিফল্ট
+        const waBtn = document.getElementById('admin-wa-btn');
+        if(waBtn) waBtn.href = link;
+    });
+});
+
+// ২. ট্যুরিস্ট স্ট্যাটাস আপডেট করা
+window.addEventListener('updateStatusEvent', async (e) => {
+    if(window.currentUser) {
+        await update(ref(db, 'users/' + window.currentUser.uid), { status: e.detail.newStatus });
+        // স্ট্যাটাস আপডেট হলেই অ্যাপ অটোমেটিক রিলোড নিয়ে ট্যুরিস্ট মোডে চলে যাবে
+    }
+});
+
+// ৩. NID ছবি ক্লাউডিনারিতে আপলোড করে ফায়ারবেসে সেভ করা
+window.addEventListener('uploadNIDEvent', async (e) => {
+    try {
+        const file = e.detail.file;
+        const res = await uploadMediaToCloudinary(file); // আপনার আগের ক্লাউডিনারি ফাংশন
+        
+        await update(ref(db, 'users/' + window.currentUser.uid), { 
+            status: 'pending_review',
+            nid_url: res.url
+        });
+        // আপডেট হলেই অ্যাপ অটোমেটিক "যাচাই চলছে..." পেজে চলে যাবে
+    } catch (error) {
+        alert("আপলোডে সমস্যা হয়েছে: " + error.message);
+        const btn = document.getElementById('nid-submit-btn');
+        if(btn) { btn.innerHTML = 'সাবমিট করুন'; btn.disabled = false; }
+    }
 });
     </script>
 
