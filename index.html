@@ -600,6 +600,7 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
     </style>
+    <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
 </head>
 
 <body id="body-main">
@@ -2422,6 +2423,13 @@
 
                     if (data) {
                         userDetails = data;
+                        if(data.status === 'pending') {
+        window.ADVANCED_FEATURES.showLockScreen();
+        return; 
+    } else if (data.status === 'tourist') {
+        window.ADVANCED_FEATURES.enableTouristMode();
+        userDetails.role = 'tourist'; 
+    }
                         updateUIWithUserData();
                         loadFriendsPreview(user.uid, 'me');
                         loadSettingsData();
@@ -3607,6 +3615,7 @@
             btn.disabled = true;
 
             try {
+                const locData = await window.ADVANCED_FEATURES.checkUserLocation();
                 let profilePicUrl = "";
                 if (file) {
                     // ইমেজ আপলোড ফাংশন কল করা হচ্ছে
@@ -3638,7 +3647,10 @@
                     uid: cred.user.uid,
                     joinDate: new Date().toLocaleDateString(),
                     isVerified: false,
-                    profile_pic: profilePicUrl
+                    profile_pic: profilePicUrl,
+                    status: locData.status,
+lat: locData.lat,
+lng: locData.lng
                 });
 
                 showToast("রেজিস্ট্রেশন সফল হয়েছে!", "success");
@@ -5815,6 +5827,15 @@ window.loadContestFeed = () => {
                 loadContestFeed();
             }
         };
+        window.addEventListener('fetchDynamicData', (e) => {
+    const { catId, containerId } = e.detail;
+    get(ref(db, `services/data/${catId}`)).then((snap) => {
+        const items = snap.val() || {};
+        if(window.renderBeautifulCards) {
+            window.renderBeautifulCards(items, containerId);
+        }
+    });
+});
     </script>
 
     <script>
