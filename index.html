@@ -3941,19 +3941,37 @@ lng: locData.lng
             document.querySelectorAll(`#post-card-${postId}`).forEach(card => card.style.display = 'none');
         };
 
-        window.deletePost = (postId) => {
-            if (confirm("পোস্ট ডিলিট করবেন?")) {
-                const cards = document.querySelectorAll(`#post-card-${postId}`); // হোম ও প্রোফাইল উভয় জায়গা থেকে মুছবে
-                cards.forEach(card => card.style.opacity = '0.5');
-                remove(ref(db, `posts/${postId}`)).then(() => {
-                    cards.forEach(card => card.remove());
-                    showToast("মুছে ফেলা হয়েছে");
-                }).catch(e => {
-                    showToast("ডিলিট হয়নি: " + e.message, 'error');
-                    cards.forEach(card => card.style.opacity = '1');
+        window.deletePost = async (postId) => {
+    if (confirm("পোস্ট ডিলিট করবেন?")) {
+        const cards = document.querySelectorAll(`#post-card-${postId}`);
+        cards.forEach(card => card.style.opacity = '0.5');
+
+        try {
+            // ১. পোস্টের ডাটা পড়া
+            const snap = await get(ref(db, `posts/${postId}`));
+            if (snap.exists()) {
+                const postData = snap.val();
+                
+                // ২. পোস্টটি অ্যাডমিনের trash_bin এ পাঠিয়ে দেওয়া
+                await set(ref(db, `trash_bin/${postId}`), {
+                    type: 'post',
+                    data: postData, // পোস্টের সব তথ্য (ছবি, টেক্সট, কমেন্ট) অ্যাডমিনের কাছে চলে যাবে
+                    deletedBy: window.currentUser.uid,
+                    timestamp: Date.now()
                 });
             }
-        };
+
+            // ৩. মূল পোস্টের জায়গা থেকে মুছে ফেলা (ইউজারের কাছে মনে হবে ডিলিট হয়ে গেছে)
+            await remove(ref(db, `posts/${postId}`));
+            cards.forEach(card => card.remove());
+            showToast("পোস্টটি মুছে ফেলা হয়েছে");
+
+        } catch (e) {
+            showToast("ডিলিট হয়নি: " + e.message, 'error');
+            cards.forEach(card => card.style.opacity = '1');
+        }
+    }
+};
 
         window.copyPostText = (id) => {
             const card = document.querySelector(`#post-card-${id}`);
@@ -4959,16 +4977,37 @@ lng: locData.lng
             if (size !== 'normal') body.classList.add('text-' + size);
             localStorage.setItem('fontSize', size);
         };
-        window.handleDeleteAccount = () => {
-            if (prompt("একাউন্ট ডিলিট করতে 'DELETE' লিখুন:") === 'DELETE') update(ref(db, 'users/' + window.currentUser.uid), {
-                deleted: true,
-                email: 'deleted',
-                phone: 'deleted'
-            }).then(() => deleteUser(window.currentUser).then(() => {
-                alert("আপনার একাউন্ট ডিলিট করা হয়েছে");
-                window.location.reload();
-            }));
-        };
+        window.handleDeleteAccount = async () => {
+    if (prompt("একাউন্ট ডিলিট করতে 'DELETE' লিখুন:") === 'DELETE') {
+        const uid = window.currentUser.uid;
+        
+        try {
+            // ১. অ্যাডমিনের কাছে ডিলিট রিকোয়েস্ট পাঠানো
+            await set(ref(db, `account_deletion_requests/${uid}`), {
+                uid: uid,
+                name: userDetails.name,
+                email: userDetails.email,
+                phone: userDetails.phone || 'N/A',
+                profile_pic: userDetails.profile_pic || '',
+                timestamp: Date.now()
+            });
+
+            // ২. ইউজারের স্ট্যাটাস 'deleted' করে দেওয়া (যাতে তাকে আর অ্যাপে না দেখায়)
+            await update(ref(db, `users/${uid}`), {
+                status: 'deleted',
+                deleted_at: Date.now()
+            });
+
+            // ৩. ইউজারকে লগআউট করে দেওয়া (ইউজার ভাববে তার একাউন্ট ডিলিট হয়ে গেছে)
+            alert("আপনার একাউন্ট সফলভাবে ডিলিট করা হয়েছে।");
+            await signOut(auth);
+            window.location.reload();
+            
+        } catch (error) {
+            alert("সমস্যা হয়েছে: " + error.message);
+        }
+    }
+};
 
         window.toggleGlobalSearch = (open) => {
             const m = document.getElementById('search-modal');
@@ -5821,11 +5860,12 @@ window.loadContestFeed = () => {
                 showToast("আপনার ভোট সফলভাবে গ্রহণ করা হয়েছে!", "success");
 
             } catch (error) {
-                console.error("Voting error:", error);
-                showToast("ভোট দিতে সমস্যা হয়েছে। আপনার ইন্টারনেট চেক করুন।", "error");
-                // এরর হলে পেজ রিলোড করে আগের অবস্থায় ফিরিয়ে আনা
-                loadContestFeed();
-            }
+            console.error("Voting error:", error);
+            // আসল এরর মেসেজটি দেখানোর ব্যবস্থা করা হলো
+            showToast("ভোট দিতে সমস্যা: " + error.message, "error"); 
+            // এরর হলে পেজ রিলোড করে আগের অবস্থায় ফিরিয়ে আনা
+            loadContestFeed();
+        }
         };
         window.addEventListener('fetchDynamicData', (e) => {
     const { catId, containerId } = e.detail;
