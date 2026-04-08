@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "io.github.pathargata_digital_community_ltd.twa",
-        "sha256_cert_fingerprints": ["43:C6:24:AB:90:04:D4:B2:F0:CD:B5:FA:00:04:94:44:F0:E0:1B:2B:70:A6:A0:8F:CE:DC:F6:7E:A8:11:64:CE"]
+        "sha256_cert_fingerprints": ["EA:46:E1:C2:C3:0F:2C:BC:85:F2:00:77:88:60:44:1A:D9:42:C9:DE:7B:79:D2:6B:2B:0B:4C:53:7A:21:E0:AD"]
       }
     }]
