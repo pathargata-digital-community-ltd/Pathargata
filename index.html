@@ -12,7 +12,14 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('service-worker.js');
+      // যেহেতু আপনার সাইটটি Pathargata ফোল্ডারে আছে, তাই পাথ ঠিক করে দেওয়া হলো
+      navigator.serviceWorker.register('/Pathargata/service-worker.js')
+        .then((registration) => {
+          console.log('Service Worker সফলভাবে রেজিস্টার হয়েছে:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('Service Worker রেজিস্ট্রেশন ফেইল করেছে:', error);
+        });
     });
   }
 </script>
