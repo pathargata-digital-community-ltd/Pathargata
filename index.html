@@ -14,7 +14,9 @@
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "ff16859a-7400-4f70-b307-95d068580ea6",
-      path: "/Pathargata/",
+      // গিটহাবের সাব-ফোল্ডারের জন্য এই দুটি লাইন অত্যাবশ্যক:
+      serviceWorkerParam: { scope: "/Pathargata/" },
+      serviceWorkerPath: "/Pathargata/OneSignalSDKWorker.js"
     });
     // অ্যাপ ওপেন করলেই যেন পারমিশন চায় তার কোড
     OneSignal.Slidedown.promptPush();
