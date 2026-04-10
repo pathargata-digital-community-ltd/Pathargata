@@ -7,6 +7,18 @@
     <title>পাথরঘাটা ডিজিটাল - স্মার্ট সেবা</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- OneSignal Push Notification Code -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
+    });
+    // অ্যাপ ওপেন করলেই যেন পারমিশন চায় তার কোড
+    OneSignal.Slidedown.promptPush();
+  });
+</script>
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
 <script>
