@@ -13,7 +13,8 @@
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
-      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
+      appId: "ff16859a-7400-4f70-b307-95d068580ea6",
+      path: "/Pathargata/",
     });
     // অ্যাপ ওপেন করলেই যেন পারমিশন চায় তার কোড
     OneSignal.Slidedown.promptPush();
