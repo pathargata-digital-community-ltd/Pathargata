@@ -620,6 +620,7 @@
         }
     </style>
     <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
+    <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/gamification.js" defer></script>
 </head>
 
 <body id="body-main">
@@ -1296,92 +1297,109 @@
             </div>
 
             <!-- NEW INVITE & UPDATE PAGE -->
-            <div id="page-invite" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
-                <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
-                    <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                    <h2 class="text-xl font-bold text-gray-800">অ্যাপ শেয়ার ও আপডেট</h2>
-                </div>
+<div id="page-invite" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
+    <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
+        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <h2 class="text-xl font-bold text-gray-800">রেফার ও আর্ন</h2>
+    </div>
 
-                <div class="p-6 flex flex-col items-center justify-center mt-6 space-y-6">
-                    <div class="w-28 h-28 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-5xl shadow-md logo-animate border-4 border-white">
-                        <i class="fa-solid fa-share-nodes"></i>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="text-2xl font-bold text-gray-800">পাথরঘাটা ডিজিটাল</h3>
-                        <p class="text-gray-500 mt-2 text-sm">অ্যাপটি বন্ধুদের সাথে শেয়ার করুন অথবা নতুন ভার্সন আপডেট করতে ওয়েবসাইটে যান।</p>
-                    </div>
+    <div class="p-6 flex flex-col items-center justify-center mt-2 space-y-4">
+        <div class="w-20 h-20 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-4xl shadow-md logo-animate border-4 border-white">
+            <i class="fa-solid fa-gift"></i>
+        </div>
+        <div class="text-center">
+            <h3 class="text-xl font-bold text-gray-800">বন্ধুদের ইনভাইট করুন</h3>
+            <p class="text-gray-500 mt-1 text-sm">প্রতি রেফারে পান <span class="font-bold text-green-600">৫০ পয়েন্ট</span>!</p>
+        </div>
 
-                    <div class="w-full space-y-4 max-w-sm mt-8">
-                        <!-- Option 1: Copy/Share Link -->
-                        <button onclick="actionShareInvite()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-3 text-base active:scale-95">
-                            <i class="fa-solid fa-copy text-xl"></i> লিংক কপি ও শেয়ার করুন
-                        </button>
-
-                        <!-- Option 2: Go to Website / Update App -->
-                        <button onclick="actionUpdateApp()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition flex items-center justify-center gap-3 text-base active:scale-95">
-                            <i class="fa-solid fa-globe text-xl"></i> ওয়েবসাইটে যান / আপডেট করুন
-                        </button>
-                    </div>
-                </div>
+        <!-- Referral Section -->
+        <div class="w-full bg-white p-4 rounded-xl shadow-sm border border-pink-100 mt-4">
+            <h4 class="text-xs font-bold text-gray-500 mb-1 uppercase">আপনার রেফার কোড:</h4>
+            <div class="flex gap-2 mb-5">
+                <input type="text" id="my-referral-code" readonly class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg font-bold text-center text-pink-600 text-sm outline-none">
+                <button onclick="copyReferralCode()" class="bg-pink-100 text-pink-600 px-4 rounded-lg hover:bg-pink-200 transition"><i class="fa-solid fa-copy"></i></button>
             </div>
+
+            <h4 class="text-xs font-bold text-gray-500 mb-1 uppercase">বন্ধুর কোড ব্যবহার করুন:</h4>
+            <div class="flex gap-2">
+                <input type="text" id="input-referral-code" placeholder="কোডটি এখানে দিন" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg text-sm focus:bg-white outline-none">
+                <button onclick="submitReferralCode(this)" class="bg-pink-600 text-white px-4 rounded-lg font-bold shadow-md hover:bg-pink-700 transition text-sm">সাবমিট</button>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-2 text-center" id="referral-status-text">একবারই কোড ব্যবহার করা যাবে</p>
+        </div>
+
+        <div class="w-full space-y-3 mt-4">
+            <button onclick="actionShareInvite()" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2 text-sm active:scale-95">
+                <i class="fa-solid fa-share-nodes"></i> লিংক শেয়ার করুন
+            </button>
+            <button onclick="actionUpdateApp()" class="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-green-700 transition flex items-center justify-center gap-2 text-sm active:scale-95">
+                <i class="fa-solid fa-globe"></i> ওয়েবসাইটে যান / আপডেট করুন
+            </button>
+        </div>
+    </div>
+</div>
 
             <!-- MONETIZATION PAGE -->
-            <div id="page-monetization" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
-                <div class="bg-white p-3 sticky top-0 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl pt-safe">
-                    <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                    <h2 class="font-bold text-lg text-gray-800">মনিটাইজেশন</h2>
-                </div>
+<div id="page-monetization" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
+    <div class="bg-white p-3 sticky top-0 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl pt-safe">
+        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <h2 class="font-bold text-lg text-gray-800">মনিটাইজেশন ও রিওয়ার্ড</h2>
+    </div>
 
-                <div class="monetization-card relative z-10">
-                    <div class="relative z-10">
-                        <h1 class="text-2xl font-extrabold mb-1">কন্টেন্ট ক্রিয়েটর</h1>
-                        <p class="text-gray-300 text-sm mb-4">আপনার কন্টেন্ট থেকে আয় করুন</p>
-                        <div class="flex gap-4 mb-4">
-                            <div class="text-center">
-                                <h3 class="text-xl font-bold">0</h3>
-                                <p class="text-xs text-gray-400">টাকা আয়</p>
-                            </div>
-                            <div class="w-[1px] bg-gray-600"></div>
-                            <div class="text-center">
-                                <h3 class="text-xl font-bold">Pending</h3>
-                                <p class="text-xs text-gray-400">স্ট্যাটাস</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Approved Dashboard (Hidden by Default) -->
+    <div id="monetization-dashboard" class="hidden-custom bg-gradient-to-br from-green-600 to-teal-700 p-6 rounded-2xl shadow-lg mb-6 text-white text-center">
+        <h3 class="text-sm text-green-100 mb-1">আপনার বর্তমান ব্যালেন্স</h3>
+        <h1 class="text-4xl font-extrabold mb-1" id="m-balance-display">0 ৳</h1>
+        <p class="text-sm bg-black bg-opacity-20 inline-block px-3 py-1 rounded-full mb-4">মোট পয়েন্ট: <span id="m-points-display" class="font-bold text-yellow-300">0</span></p>
+        
+        <button onclick="requestWithdraw()" class="w-full bg-white text-green-700 font-bold py-3 rounded-xl shadow-md hover:bg-gray-50 transition active:scale-95 flex justify-center items-center gap-2">
+            <i class="fa-solid fa-money-bill-wave"></i> টাকা উত্তোলন করুন (Withdraw)
+        </button>
+        <p class="text-[10px] text-green-100 mt-3">*১০০ পয়েন্ট = ১ টাকা</p>
+    </div>
 
-                <h3 class="font-bold text-gray-700 mb-4 border-l-4 border-yellow-500 pl-3">যোগ্যতা সমূহ (Criteria)</h3>
-
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
-                    <!-- Updated Criteria: 2000 Friends -->
-                    <div class="criteria-item">
-                        <div>
-                            <h4 class="font-bold text-sm text-gray-800">২০০০ ফলোয়ার/বন্ধু</h4>
-                            <p class="text-xs text-gray-500 mt-1">আপনার প্রোফাইলে অন্তত ২০০০ বন্ধু থাকতে হবে</p>
-                        </div>
-                        <div id="crit-follower-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
-                    </div>
-
-                    <div class="criteria-item">
-                        <div>
-                            <h4 class="font-bold text-sm text-gray-800">ভেরিফাইড প্রোফাইল</h4>
-                            <p class="text-xs text-gray-500 mt-1">আপনার একাউন্টটি ভেরিফাইড হতে হবে</p>
-                        </div>
-                        <div id="crit-verified-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
-                    </div>
-
-                    <div class="criteria-item">
-                        <div>
-                            <h4 class="font-bold text-sm text-gray-800">১০টি পোস্ট</h4>
-                            <p class="text-xs text-gray-500 mt-1">আপনার প্রোফাইলে অন্তত ১০টি পোস্ট থাকতে হবে</p>
-                        </div>
-                        <div id="crit-post-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
-                    </div>
-                </div>
-
-                <button onclick="applyForMonetization()" id="btn-monetization-apply" class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:from-yellow-600 hover:to-orange-700 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">আবেদন করুন</button>
-                <p class="text-center text-xs text-gray-400 mt-4">শর্তাবলী প্রযোজ্য</p>
+    <!-- Criteria Section -->
+    <div id="monetization-criteria-section">
+        <div class="monetization-card relative z-10">
+            <div class="relative z-10">
+                <h1 class="text-2xl font-extrabold mb-1">কন্টেন্ট ক্রিয়েটর</h1>
+                <p class="text-gray-300 text-sm">আপনার কন্টেন্ট থেকে আয় করুন</p>
             </div>
+        </div>
+
+        <h3 class="font-bold text-gray-700 mb-4 border-l-4 border-yellow-500 pl-3">যোগ্যতা সমূহ (Criteria)</h3>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
+            <div class="criteria-item">
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">৫০ ফলোয়ার/বন্ধু</h4>
+                    <p class="text-xs text-gray-500 mt-1">আপনার প্রোফাইলে অন্তত ৫০ বন্ধু থাকতে হবে</p>
+                </div>
+                <div id="crit-follower-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
+            </div>
+
+            <p class="text-center text-xs font-bold text-gray-400 my-2">অথবা</p>
+
+            <div class="criteria-item">
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">৫০টি পোস্ট</h4>
+                    <p class="text-xs text-gray-500 mt-1">মানসম্মত অন্তত ৫০টি পোস্ট থাকতে হবে</p>
+                </div>
+                <div id="crit-post-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
+            </div>
+
+            <div class="criteria-item mt-2">
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">ভেরিফাইড প্রোফাইল</h4>
+                    <p class="text-xs text-gray-500 mt-1">আপনার একাউন্টটি ভেরিফাইড হতে হবে</p>
+                </div>
+                <div id="crit-verified-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
+            </div>
+        </div>
+
+        <button onclick="applyForMonetization()" id="btn-monetization-apply" class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:from-yellow-600 hover:to-orange-700 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">আবেদন করুন</button>
+    </div>
+</div>
 
             <div id="page-dynamic-content" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
                 <button onclick="switchPage('services')" class="mb-4 text-gray-500 text-sm font-bold"><i class="fa-solid fa-arrow-left"></i> সকল সেবা</button>
@@ -2140,7 +2158,11 @@
             globalMarketItems = [],
             globalDirectory = {};
         let allAds = []; // Store fetched ads
-
+        
+        // --- গিটহাব ফাইলের (gamification.js) জন্য ফায়ারবেস হেল্পার ---
+window.firebaseHelpers = {
+    db, ref, push, set, get, update, remove, query, orderByChild, equalTo, runTransaction
+};
         // --- CACHING & GLOBALS (Optimized) ---
         const userCache = {}; // Cache to store user profiles and avoid re-fetching
         let currentFeedFilter = 'all';
@@ -2494,12 +2516,15 @@
                 loadEmergencyAlerts();
 
                 // Initial Load
-                loadAds();
-                loadFeed('all', true);
+        loadAds();
+        
+        setTimeout(() => {
+            filterFeed('all'); 
+        }, 1000);
 
-                loadNotes();
-                setupInfiniteScroll();
-                setupVideoObserver();
+        loadNotes();
+        setupInfiniteScroll();
+        setupVideoObserver();
 
                 onValue(ref(db, 'app_info/name'), (snap) => {
                     const name = snap.val();
@@ -2992,6 +3017,8 @@
                 };
 
                 await push(ref(db, 'posts'), newPostData);
+                
+                if(window.addPoints) window.addPoints(window.currentUser.uid, 2, "New Post Created");
 
                 // মডাল সম্পূর্ণ রিসেট এবং বন্ধ করা
                 window.resetPostForm();
@@ -3034,6 +3061,7 @@
                 if (snap.exists()) set(likeRef, null);
                 else {
                     set(likeRef, true);
+                    if(window.addPoints) window.addPoints(window.currentUser.uid, 1, "Post Liked");
                     get(ref(db, `posts/${postId}`)).then(postSnap => {
                         const post = postSnap.val();
                         if (post && post.uid !== window.currentUser.uid) push(ref(db, `notifications/${post.uid}`), {
@@ -3546,6 +3574,19 @@
                 if (currentFeedFilter === 'village') filterFeed('all');
             }
         }
+        // ইনভাইট পেজে নিজের কোড দেখানো
+        const refCodeInput = document.getElementById('my-referral-code');
+        if (refCodeInput) {
+            refCodeInput.value = window.currentUser.uid;
+        }
+        
+        // যদি সে আগে থেকেই কারো কোড ব্যবহার করে থাকে
+        const inputRefCode = document.getElementById('input-referral-code');
+        if (inputRefCode && userDetails.referred_by) {
+            inputRefCode.disabled = true;
+            inputRefCode.value = userDetails.referred_by;
+            document.getElementById('referral-status-text').innerText = "আপনি ইতিমধ্যে একটি কোড ব্যবহার করেছেন।";
+        }
 
         // --- COVER PHOTO UPLOAD ---
         window.handleCoverPhotoUpload = async (input) => {
@@ -3715,8 +3756,24 @@ lng: locData.lng
             });
         };
         window.handleLogout = () => {
-            if (confirm("লগআউট করবেন?")) signOut(auth);
-        };
+    if (confirm("লগআউট করবেন?")) {
+        // ১. লগআউট বাটনে ক্লিক করলেই সাইডবার বন্ধ করে দেওয়া
+        toggleSidebar(false); 
+        
+        // ২. ফায়ারবেস থেকে লগআউট করা
+        signOut(auth).then(() => {
+            showToast("সফলভাবে লগআউট হয়েছে!", "success");
+            
+            // ৩. ১ সেকেন্ড পর পুরো পেজ রিলোড করে দেওয়া (যাতে ব্যাকগ্রাউন্ডের সব লিসেনার ক্লিয়ার হয়ে যায়)
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            
+        }).catch((error) => {
+            showToast("লগআউট করতে সমস্যা হয়েছে: " + error.message, "error");
+        });
+    }
+};
 
         window.selectPostColor = (color) => {
             const ta = document.getElementById('post-text');
@@ -4315,73 +4372,6 @@ lng: locData.lng
                 }).join('');
             });
         };
-
-        // --- MONETIZATION LOGIC (UPDATED: 2000 Friends) ---
-        window.checkMonetizationStatus = () => {
-            const hasVerified = !!userDetails.isVerified;
-            const friendCount = myFriends.length;
-            get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(window.currentUser.uid))).then(snap => {
-                const postCount = snap.exists() ? Object.keys(snap.val()).length : 0;
-                updateMonetizationUI(friendCount, hasVerified, postCount);
-            });
-        }
-
-        function updateMonetizationUI(friends, verified, posts) {
-            const btn = document.getElementById('btn-monetization-apply');
-
-            // Updated criteria: 2000 friends
-            const fIcon = document.getElementById('crit-follower-icon');
-            if (friends >= 2000) {
-                fIcon.classList.replace('criteria-cross', 'criteria-check');
-                fIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                fIcon.classList.replace('criteria-check', 'criteria-cross');
-                fIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            const vIcon = document.getElementById('crit-verified-icon');
-            if (verified) {
-                vIcon.classList.replace('criteria-cross', 'criteria-check');
-                vIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                vIcon.classList.replace('criteria-check', 'criteria-cross');
-                vIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            const pIcon = document.getElementById('crit-post-icon');
-            if (posts >= 10) {
-                pIcon.classList.replace('criteria-cross', 'criteria-check');
-                pIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                pIcon.classList.replace('criteria-check', 'criteria-cross');
-                pIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            if (friends >= 2000 && verified && posts >= 10) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
-        }
-
-        window.applyForMonetization = () => {
-            const btn = document.getElementById('btn-monetization-apply');
-            btn.innerHTML = 'আবেদন জমা হচ্ছে...';
-            btn.disabled = true;
-            push(ref(db, 'monetization_requests'), {
-                uid: window.currentUser.uid,
-                name: userDetails.name,
-                timestamp: Date.now(),
-                status: 'pending'
-            }).then(() => {
-                showToast("আবেদন সফলভাবে জমা হয়েছে!");
-                btn.innerHTML = 'আবেদন করা হয়েছে';
-            }).catch(e => {
-                showToast("সমস্যা হয়েছে: " + e.message, "error");
-                btn.disabled = false;
-                btn.innerHTML = 'আবেদন করুন';
-            });
-        }
 
         function checkFriendshipStatus(targetUid, targetName) {
             const actionDiv = document.getElementById('view-profile-actions');
