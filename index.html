@@ -2163,11 +2163,6 @@
 window.firebaseHelpers = {
     db, ref, push, set, get, update, remove, query, orderByChild, equalTo, runTransaction
 };
-
-// গিটহাবের ফাইল যাতে সব সময় লেটেস্ট ইউজার ডাটা পায় তার জন্য:
-Object.defineProperty(window, 'userDetails', { get: () => userDetails });
-Object.defineProperty(window, 'myFriends', { get: () => myFriends });
-
         // --- CACHING & GLOBALS (Optimized) ---
         const userCache = {}; // Cache to store user profiles and avoid re-fetching
         let currentFeedFilter = 'all';
@@ -2521,12 +2516,15 @@ Object.defineProperty(window, 'myFriends', { get: () => myFriends });
                 loadEmergencyAlerts();
 
                 // Initial Load
-                loadAds();
-                loadFeed('all', true);
+        loadAds();
+        
+        setTimeout(() => {
+            filterFeed('all'); 
+        }, 1000);
 
-                loadNotes();
-                setupInfiniteScroll();
-                setupVideoObserver();
+        loadNotes();
+        setupInfiniteScroll();
+        setupVideoObserver();
 
                 onValue(ref(db, 'app_info/name'), (snap) => {
                     const name = snap.val();
@@ -3758,8 +3756,24 @@ lng: locData.lng
             });
         };
         window.handleLogout = () => {
-            if (confirm("লগআউট করবেন?")) signOut(auth);
-        };
+    if (confirm("লগআউট করবেন?")) {
+        // ১. লগআউট বাটনে ক্লিক করলেই সাইডবার বন্ধ করে দেওয়া
+        toggleSidebar(false); 
+        
+        // ২. ফায়ারবেস থেকে লগআউট করা
+        signOut(auth).then(() => {
+            showToast("সফলভাবে লগআউট হয়েছে!", "success");
+            
+            // ৩. ১ সেকেন্ড পর পুরো পেজ রিলোড করে দেওয়া (যাতে ব্যাকগ্রাউন্ডের সব লিসেনার ক্লিয়ার হয়ে যায়)
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+            
+        }).catch((error) => {
+            showToast("লগআউট করতে সমস্যা হয়েছে: " + error.message, "error");
+        });
+    }
+};
 
         window.selectPostColor = (color) => {
             const ta = document.getElementById('post-text');
@@ -4358,73 +4372,6 @@ lng: locData.lng
                 }).join('');
             });
         };
-
-        // --- MONETIZATION LOGIC (UPDATED: 2000 Friends) ---
-        window.checkMonetizationStatus = () => {
-            const hasVerified = !!userDetails.isVerified;
-            const friendCount = myFriends.length;
-            get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(window.currentUser.uid))).then(snap => {
-                const postCount = snap.exists() ? Object.keys(snap.val()).length : 0;
-                updateMonetizationUI(friendCount, hasVerified, postCount);
-            });
-        }
-
-        function updateMonetizationUI(friends, verified, posts) {
-            const btn = document.getElementById('btn-monetization-apply');
-
-            // Updated criteria: 2000 friends
-            const fIcon = document.getElementById('crit-follower-icon');
-            if (friends >= 2000) {
-                fIcon.classList.replace('criteria-cross', 'criteria-check');
-                fIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                fIcon.classList.replace('criteria-check', 'criteria-cross');
-                fIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            const vIcon = document.getElementById('crit-verified-icon');
-            if (verified) {
-                vIcon.classList.replace('criteria-cross', 'criteria-check');
-                vIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                vIcon.classList.replace('criteria-check', 'criteria-cross');
-                vIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            const pIcon = document.getElementById('crit-post-icon');
-            if (posts >= 10) {
-                pIcon.classList.replace('criteria-cross', 'criteria-check');
-                pIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                pIcon.classList.replace('criteria-check', 'criteria-cross');
-                pIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
-
-            if (friends >= 2000 && verified && posts >= 10) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
-        }
-
-        window.applyForMonetization = () => {
-            const btn = document.getElementById('btn-monetization-apply');
-            btn.innerHTML = 'আবেদন জমা হচ্ছে...';
-            btn.disabled = true;
-            push(ref(db, 'monetization_requests'), {
-                uid: window.currentUser.uid,
-                name: userDetails.name,
-                timestamp: Date.now(),
-                status: 'pending'
-            }).then(() => {
-                showToast("আবেদন সফলভাবে জমা হয়েছে!");
-                btn.innerHTML = 'আবেদন করা হয়েছে';
-            }).catch(e => {
-                showToast("সমস্যা হয়েছে: " + e.message, "error");
-                btn.disabled = false;
-                btn.innerHTML = 'আবেদন করুন';
-            });
-        }
 
         function checkFriendshipStatus(targetUid, targetName) {
             const actionDiv = document.getElementById('view-profile-actions');
