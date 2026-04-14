@@ -13,7 +13,20 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
-
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      // যেহেতু আপনার সাইটটি Pathargata ফোল্ডারে আছে, তাই পাথ ঠিক করে দেওয়া হলো
+      navigator.serviceWorker.register('/Pathargata/service-worker.js')
+        .then((registration) => {
+          console.log('Service Worker সফলভাবে রেজিস্টার হয়েছে:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('Service Worker রেজিস্ট্রেশন ফেইল করেছে:', error);
+        });
+    });
+  }
+</script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Font: Hind Siliguri -->
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2174,44 +2187,26 @@ isSupported().then((supported) => {
     }
 });
 
-// FCM সেটআপ ফাংশন (Alert Debugging)
+// FCM সেটআপ ফাংশন
 async function setupFCM(user) {
-    alert("১. setupFCM ফাংশন কল হয়েছে!");
-    
-    if (!messaging) {
-        alert("❌ Error: messaging অবজেক্ট পাওয়া যায়নি!");
-        return; 
-    }
+    if (!messaging) return; // সাপোর্ট না করলে এখানেই থেমে যাবে, ক্র্যাশ করবে না
     
     try {
-        alert("২. পারমিশন চেক করা হচ্ছে...");
         const permission = await Notification.requestPermission();
-        alert("৩. পারমিশন স্ট্যাটাস: " + permission);
-
         if (permission === 'granted') {
-            alert("৪. Service Worker রেজিস্টার করা হচ্ছে...");
-            
-            const registration = await navigator.serviceWorker.register('/Pathargata/firebase-messaging-sw.js');
-            await navigator.serviceWorker.ready;
-            
-            alert("৫. Service Worker রেডি! টোকেন রিকোয়েস্ট করা হচ্ছে...");
-
+            const registration = await navigator.serviceWorker.ready;
             const currentToken = await getToken(messaging, { 
                 vapidKey: "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg", 
                 serviceWorkerRegistration: registration
             });
 
             if (currentToken) {
-                alert("✅ SUCCESS! টোকেন জেনারেট হয়েছে!");
+                console.log("FCM Token Generated!");
                 update(ref(db, 'users/' + user.uid), { fcmToken: currentToken });
-            } else {
-                alert("❌ Failed to generate FCM token.");
             }
-        } else {
-            alert("❌ Notification permission denied! (ইউজার ব্লক করেছে)");
         }
     } catch (error) {
-        alert("❌ FCM Error: " + error.message);
+        console.error("FCM Token Error:", error);
     }
 }
 
