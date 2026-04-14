@@ -2174,25 +2174,27 @@ isSupported().then((supported) => {
     }
 });
 
-// FCM সেটআপ ফাংশন
+// FCM সেটআপ ফাংশন (Alert Debugging)
 async function setupFCM(user) {
-    console.log("১. setupFCM ফাংশন কল হয়েছে...");
+    alert("১. setupFCM ফাংশন কল হয়েছে!");
+    
     if (!messaging) {
-        console.log("❌ Error: messaging অবজেক্ট পাওয়া যায়নি!");
+        alert("❌ Error: messaging অবজেক্ট পাওয়া যায়নি!");
         return; 
     }
     
     try {
-        console.log("২. পারমিশন চেক করা হচ্ছে...");
+        alert("২. পারমিশন চেক করা হচ্ছে...");
         const permission = await Notification.requestPermission();
-        console.log("৩. পারমিশন স্ট্যাটাস:", permission);
+        alert("৩. পারমিশন স্ট্যাটাস: " + permission);
 
         if (permission === 'granted') {
-            console.log("৪. Service Worker রেজিস্টার করা হচ্ছে...");
+            alert("৪. Service Worker রেজিস্টার করা হচ্ছে...");
             
             const registration = await navigator.serviceWorker.register('/Pathargata/firebase-messaging-sw.js');
             await navigator.serviceWorker.ready;
-            console.log("৫. SW Ready, টোকেন রিকোয়েস্ট করা হচ্ছে...");
+            
+            alert("৫. Service Worker রেডি! টোকেন রিকোয়েস্ট করা হচ্ছে...");
 
             const currentToken = await getToken(messaging, { 
                 vapidKey: "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg", 
@@ -2200,16 +2202,16 @@ async function setupFCM(user) {
             });
 
             if (currentToken) {
-                console.log("✅ FCM Token Generated Successfully: ", currentToken);
+                alert("✅ SUCCESS! টোকেন জেনারেট হয়েছে!");
                 update(ref(db, 'users/' + user.uid), { fcmToken: currentToken });
             } else {
-                console.log("❌ Failed to generate FCM token.");
+                alert("❌ Failed to generate FCM token.");
             }
         } else {
-            console.warn("❌ Notification permission denied by user.");
+            alert("❌ Notification permission denied! (ইউজার ব্লক করেছে)");
         }
     } catch (error) {
-        console.error("❌ FCM Error Details: ", error);
+        alert("❌ FCM Error: " + error.message);
     }
 }
 
