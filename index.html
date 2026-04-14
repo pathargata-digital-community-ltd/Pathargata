@@ -7,6 +7,8 @@
     <title>পাথরঘাটা ডিজিটাল - স্মার্ট সেবা</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FingerprintJS for Anti-Fraud System -->
+    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
     <!-- OneSignal Push Notification Code -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -1325,62 +1327,99 @@
                 </div>
             </div>
 
-            <!-- MONETIZATION PAGE -->
+            <!-- DYNAMIC MONETIZATION PAGE -->
             <div id="page-monetization" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
                 <div class="bg-white p-3 sticky top-0 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl pt-safe">
                     <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                    <h2 class="font-bold text-lg text-gray-800">মনিটাইজেশন</h2>
+                    <h2 class="font-bold text-lg text-gray-800">মনিটাইজেশন ও ড্যাশবোর্ড</h2>
                 </div>
 
-                <div class="monetization-card relative z-10">
-                    <div class="relative z-10">
-                        <h1 class="text-2xl font-extrabold mb-1">কন্টেন্ট ক্রিয়েটর</h1>
-                        <p class="text-gray-300 text-sm mb-4">আপনার কন্টেন্ট থেকে আয় করুন</p>
-                        <div class="flex gap-4 mb-4">
-                            <div class="text-center">
-                                <h3 class="text-xl font-bold">0</h3>
-                                <p class="text-xs text-gray-400">টাকা আয়</p>
+                <!-- STATE 1: PRE-MONETIZATION (QUALIFICATION) -->
+                <div id="monetization-qualification-view" class="hidden">
+                    <div class="bg-gradient-to-br from-blue-900 to-indigo-800 text-white p-6 rounded-2xl shadow-lg mb-6 relative overflow-hidden">
+                        <i class="fa-solid fa-coins absolute -right-4 -bottom-4 text-7xl opacity-20 transform -rotate-12"></i>
+                        <h3 class="text-2xl font-extrabold mb-1">কন্টেন্ট ক্রিয়েটর হোন</h3>
+                        <p class="text-sm text-blue-200">শর্ত পূরণ করে পোস্ট, লাইক ও কমেন্ট থেকে পয়েন্ট আয় করুন।</p>
+                        <div class="mt-4 bg-white/10 p-3 rounded-lg border border-white/20">
+                            <p class="text-xs text-white/80"><i class="fa-solid fa-circle-info text-yellow-400"></i> বর্তমানে আপনি শুধুমাত্র <b>রেফারেল</b> থেকে পয়েন্ট পাচ্ছেন।</p>
+                        </div>
+                    </div>
+
+                    <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-indigo-500 pl-3">যোগ্যতা সমূহ</h4>
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 space-y-4">
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-800"><i class="fa-solid fa-users text-blue-500 mr-1"></i> ৫০ জন বন্ধু</h4>
+                                <p class="text-xs text-gray-500" id="crit-friend-text">বর্তমান: ০/৫০</p>
                             </div>
-                            <div class="w-[1px] bg-gray-600"></div>
-                            <div class="text-center">
-                                <h3 class="text-xl font-bold">Pending</h3>
-                                <p class="text-xs text-gray-400">স্ট্যাটাস</p>
+                            <div id="crit-friend-icon" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></div>
+                        </div>
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-800"><i class="fa-solid fa-certificate text-blue-500 mr-1"></i> ভেরিফাইড প্রোফাইল</h4>
+                                <p class="text-xs text-gray-500">আপনার একাউন্টটি ভেরিফাইড হতে হবে</p>
                             </div>
+                            <div id="crit-verify-icon" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-800"><i class="fa-solid fa-pen text-blue-500 mr-1"></i> ১৫টি পোস্ট</h4>
+                                <p class="text-xs text-gray-500" id="crit-post-text">বর্তমান: ০/১৫</p>
+                            </div>
+                            <div id="crit-post-icon" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></div>
                         </div>
                     </div>
+                    <button onclick="applyForMonetization()" id="btn-monetization-apply" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">মনিটাইজেশনের আবেদন করুন</button>
                 </div>
 
-                <h3 class="font-bold text-gray-700 mb-4 border-l-4 border-yellow-500 pl-3">যোগ্যতা সমূহ (Criteria)</h3>
-
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
-                    <!-- Updated Criteria: 2000 Friends -->
-                    <div class="criteria-item">
-                        <div>
-                            <h4 class="font-bold text-sm text-gray-800">২০০০ ফলোয়ার/বন্ধু</h4>
-                            <p class="text-xs text-gray-500 mt-1">আপনার প্রোফাইলে অন্তত ২০০০ বন্ধু থাকতে হবে</p>
-                        </div>
-                        <div id="crit-follower-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
+                <!-- STATE 2: POST-MONETIZATION (DASHBOARD) -->
+                <div id="monetization-dashboard-view" class="hidden">
+                    <div class="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-6 text-white shadow-lg mb-6 flex flex-col items-center justify-center relative">
+                        <p class="text-sm text-green-100 mb-1">আপনার মোট পয়েন্ট</p>
+                        <h2 class="text-5xl font-extrabold drop-shadow-md flex items-center gap-2" id="dash-total-points">0 <i class="fa-solid fa-coins text-yellow-300 text-3xl"></i></h2>
                     </div>
 
-                    <div class="criteria-item">
-                        <div>
-                            <h4 class="font-bold text-sm text-gray-800">ভেরিফাইড প্রোফাইল</h4>
-                            <p class="text-xs text-gray-500 mt-1">আপনার একাউন্টটি ভেরিফাইড হতে হবে</p>
+                    <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-teal-500 pl-3">আজকের পয়েন্ট ট্র্যাকার</h4>
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-6 grid grid-cols-3 gap-3 text-center">
+                        <div class="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <i class="fa-solid fa-pen text-blue-500 mb-1 text-lg"></i>
+                            <p class="text-[10px] font-bold text-gray-500 mb-1">পোস্ট</p>
+                            <h4 class="text-sm font-bold text-gray-800" id="dash-today-post">0/5</h4>
                         </div>
-                        <div id="crit-verified-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
+                        <div class="p-3 bg-pink-50 rounded-lg border border-pink-100">
+                            <i class="fa-solid fa-heart text-pink-500 mb-1 text-lg"></i>
+                            <p class="text-[10px] font-bold text-gray-500 mb-1">লাইক</p>
+                            <h4 class="text-sm font-bold text-gray-800" id="dash-today-like">0/20</h4>
+                        </div>
+                        <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+                            <i class="fa-solid fa-comment text-purple-500 mb-1 text-lg"></i>
+                            <p class="text-[10px] font-bold text-gray-500 mb-1">কমেন্ট</p>
+                            <h4 class="text-sm font-bold text-gray-800" id="dash-today-comment">0/20</h4>
+                        </div>
                     </div>
 
-                    <div class="criteria-item">
-                        <div>
-                            <h4 class="font-bold text-sm text-gray-800">১০টি পোস্ট</h4>
-                            <p class="text-xs text-gray-500 mt-1">আপনার প্রোফাইলে অন্তত ১০টি পোস্ট থাকতে হবে</p>
+                    <!-- WITHDRAWAL SECTION -->
+                    <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-orange-500 pl-3">পয়েন্ট উত্তলন করুন</h4>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-500 mb-2">পেমেন্ট মেথড</label>
+                            <select id="withdraw-method" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                                <option value="bKash">বিকাশ (bKash)</option>
+                                <option value="Nagad">নগদ (Nagad)</option>
+                                <option value="Rocket">রকেট (Rocket)</option>
+                            </select>
                         </div>
-                        <div id="crit-post-icon" class="criteria-icon criteria-cross"><i class="fa-solid fa-xmark"></i></div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-500 mb-2">একাউন্ট নাম্বার</label>
+                            <input type="tel" id="withdraw-number" placeholder="আপনার নাম্বার দিন" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-xs font-bold text-gray-500 mb-2">পয়েন্ট পরিমাণ (সর্বনিম্ন <span id="min-withdraw-text">1000</span>)</label>
+                            <input type="number" id="withdraw-amount" placeholder="কত পয়েন্ট তুলতে চান?" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                        </div>
+                        <button onclick="submitWithdrawal()" id="btn-withdraw" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow hover:bg-orange-600 transition active:scale-95">উত্তলন রিকোয়েস্ট পাঠান</button>
                     </div>
                 </div>
-
-                <button onclick="applyForMonetization()" id="btn-monetization-apply" class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:from-yellow-600 hover:to-orange-700 transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">আবেদন করুন</button>
-                <p class="text-center text-xs text-gray-400 mt-4">শর্তাবলী প্রযোজ্য</p>
             </div>
 
             <div id="page-dynamic-content" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
@@ -2029,6 +2068,12 @@
             reauthenticateWithCredential,
             updatePassword
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import {
+    getMessaging,
+    getToken,
+    onMessage,
+    isSupported
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
         // --- CONFIGURATION ---
         const APP_CONFIG = {
@@ -2129,6 +2174,51 @@
         const app = initializeApp(APP_CONFIG.firebase);
         const db = getDatabase(app);
         const auth = getAuth(app);
+        let messaging = null;
+
+// আগে চেক করবে ব্রাউজার সাপোর্ট করে কি না
+isSupported().then((supported) => {
+    if (supported) {
+        messaging = getMessaging(app);
+        console.log("FCM is Supported in this browser!");
+
+        // অ্যাপ খোলা অবস্থায় নোটিফিকেশন আসলে টোস্ট দেখানো
+        onMessage(messaging, (payload) => {
+            let title = "নোটিফিকেশন";
+            let body = "";
+            if (payload && payload.notification) {
+                if (payload.notification.title) title = payload.notification.title;
+                if (payload.notification.body) body = payload.notification.body;
+            }
+            showToast(title + ": " + body, 'success');
+        });
+    } else {
+        console.warn("HopWeb-এর প্রিভিউতে নোটিফিকেশন সাপোর্ট করে না। লাইভ সার্ভারে করলে কাজ করবে।");
+    }
+});
+
+// FCM সেটআপ ফাংশন
+async function setupFCM(user) {
+    if (!messaging) return; // সাপোর্ট না করলে এখানেই থেমে যাবে, ক্র্যাশ করবে না
+    
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const registration = await navigator.serviceWorker.ready;
+            const currentToken = await getToken(messaging, { 
+                vapidKey: "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg", 
+                serviceWorkerRegistration: registration
+            });
+
+            if (currentToken) {
+                console.log("FCM Token Generated!");
+                update(ref(db, 'users/' + user.uid), { fcmToken: currentToken });
+            }
+        }
+    } catch (error) {
+        console.error("FCM Token Error:", error);
+    }
+}
 
         window.currentUser = null;
         let userDetails = {},
@@ -2140,6 +2230,25 @@
             globalMarketItems = [],
             globalDirectory = {};
         let allAds = []; // Store fetched ads
+        
+        // --- NEW GLOBALS FOR MONETIZATION & POINTS ---
+        window.dynamicPoints = {
+            refer: 50, post: 5, like: 1, comment: 2, limit_post: 5, limit_like: 20, limit_comment: 20, min_withdraw: 1000
+        };
+        
+        // Capture Referral UID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const refUid = urlParams.get('ref');
+        if (refUid && !localStorage.getItem('has_registered_before')) {
+            localStorage.setItem('inviter_uid', refUid);
+        }
+
+        // Fetch Dynamic Points from Admin Settings
+        onValue(ref(db, 'admin_settings/point_system'), (snap) => {
+            if(snap.exists()){
+                window.dynamicPoints = { ...window.dynamicPoints, ...snap.val() };
+            }
+        });
 
         // --- CACHING & GLOBALS (Optimized) ---
         const userCache = {}; // Cache to store user profiles and avoid re-fetching
@@ -2422,6 +2531,7 @@
                 window.currentUser = user;
                 authScreen.classList.add('hidden-custom');
                 mainApp.classList.remove('hidden-custom');
+                setupFCM(user);
 
                 const savedSize = localStorage.getItem('fontSize');
                 if (savedSize) changeFontSize(savedSize);
@@ -2992,6 +3102,8 @@
                 };
 
                 await push(ref(db, 'posts'), newPostData);
+                // Award Points for Post
+                await window.awardPoints('post');
 
                 // মডাল সম্পূর্ণ রিসেট এবং বন্ধ করা
                 window.resetPostForm();
@@ -3034,6 +3146,8 @@
                 if (snap.exists()) set(likeRef, null);
                 else {
                     set(likeRef, true);
+                    // Award Points for Like
+                    window.awardPoints('like');
                     get(ref(db, `posts/${postId}`)).then(postSnap => {
                         const post = postSnap.val();
                         if (post && post.uid !== window.currentUser.uid) push(ref(db, `notifications/${post.uid}`), {
@@ -3645,6 +3759,29 @@
                         console.warn("Image upload failed, continuing without image");
                     }
                 }
+                
+                // --- ANTI-FRAUD REGISTRATION LOGIC START ---
+                let visitorId = "unknown_device";
+                let userIP = "unknown_ip";
+                try {
+                    // Fingerprint (Layer 2)
+                    const fp = await window.FingerprintJS.load();
+                    const fpResult = await fp.get();
+                    visitorId = fpResult.visitorId;
+                    
+                    // Fetch IP (Layer 3)
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    userIP = ipData.ip;
+                } catch (err) {
+                    console.warn("Anti-fraud fetch failed, proceeding with fallback.", err);
+                }
+
+                // Check if device is already registered
+                const deviceRef = ref(db, `registered_devices/${visitorId}`);
+                const deviceSnap = await get(deviceRef);
+                const isNewDevice = !deviceSnap.exists() && !localStorage.getItem('has_registered_before');
+                // --- ANTI-FRAUD REGISTRATION LOGIC END ---
 
                 // ১. ফায়ারবেস অথেন্টিকেশনে ইউজার তৈরি
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
@@ -3671,7 +3808,26 @@
 lat: locData.lat,
 lng: locData.lng
                 });
+// Mark Device & LocalStorage
+                localStorage.setItem('has_registered_before', 'true');
+                await set(deviceRef, { ip: userIP, timestamp: Date.now(), uid: cred.user.uid });
 
+                // Process Referral Reward (Only if New Device)
+                const inviterUid = localStorage.getItem('inviter_uid');
+                if (inviterUid && isNewDevice) {
+                    await runTransaction(ref(db, `users/${inviterUid}/total_points`), (currentPoints) => {
+                        return (currentPoints || 0) + window.dynamicPoints.refer;
+                    });
+                    // Send Notification to Inviter
+                    await push(ref(db, `notifications/${inviterUid}`), {
+                        type: 'referral_bonus',
+                        fromName: name,
+                        text: `আপনার রেফারেন্সে একজন যুক্ত হয়েছেন! আপনি ${window.dynamicPoints.refer} পয়েন্ট পেয়েছেন।`,
+                        timestamp: Date.now(),
+                        read: false
+                    });
+                    localStorage.removeItem('inviter_uid'); // Clean up
+                }
                 showToast("রেজিস্ট্রেশন সফল হয়েছে!", "success");
                 // ফর্ম ক্লিয়ার বা লগইন পেজে পাঠানোর লজিক এখানে দিতে পারেন যদি চান
 
@@ -3915,6 +4071,8 @@ lng: locData.lng
                 text,
                 time: Date.now()
             }).then(() => {
+                // Award Points for Comment
+                window.awardPoints('comment');
                 input.value = "";
                 get(ref(db, `posts/${postId}`)).then(s => {
                     const p = s.val();
@@ -4316,72 +4474,181 @@ lng: locData.lng
             });
         };
 
-        // --- MONETIZATION LOGIC (UPDATED: 2000 Friends) ---
-        window.checkMonetizationStatus = () => {
-            const hasVerified = !!userDetails.isVerified;
-            const friendCount = myFriends.length;
-            get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(window.currentUser.uid))).then(snap => {
-                const postCount = snap.exists() ? Object.keys(snap.val()).length : 0;
-                updateMonetizationUI(friendCount, hasVerified, postCount);
-            });
-        }
+        // --- CORE POINT AWARDING SYSTEM WITH DAILY LIMITS ---
+        window.awardPoints = async (actionType) => {
+            // Check if user is approved for monetization
+            if (userDetails.monetization_status !== 'approved') return;
 
-        function updateMonetizationUI(friends, verified, posts) {
-            const btn = document.getElementById('btn-monetization-apply');
+            const uid = window.currentUser.uid;
+            const today = new Date().toLocaleDateString('en-GB'); // Format: DD/MM/YYYY
+            const trackerRef = ref(db, `users/${uid}/daily_tracker/${today}`);
+            
+            try {
+                const snap = await get(trackerRef);
+                let tracker = snap.exists() ? snap.val() : { post: 0, like: 0, comment: 0 };
+                
+                // Fetch dynamic limits & points
+                const limit = window.dynamicPoints[`limit_${actionType}`];
+                const pointsToAward = window.dynamicPoints[actionType];
 
-            // Updated criteria: 2000 friends
-            const fIcon = document.getElementById('crit-follower-icon');
-            if (friends >= 2000) {
-                fIcon.classList.replace('criteria-cross', 'criteria-check');
-                fIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                fIcon.classList.replace('criteria-check', 'criteria-cross');
-                fIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                if (tracker[actionType] < limit) {
+                    // Update Tracker
+                    tracker[actionType] += 1;
+                    await set(trackerRef, tracker);
+
+                    // Award Points using Transaction
+                    await runTransaction(ref(db, `users/${uid}/total_points`), (currentPoints) => {
+                        return (currentPoints || 0) + pointsToAward;
+                    });
+                    
+                    // Optional: show mini toast
+                    // showToast(`+${pointsToAward} Points!`, "success");
+                }
+            } catch (error) {
+                console.error("Point Award Error:", error);
             }
+        };
 
-            const vIcon = document.getElementById('crit-verified-icon');
-            if (verified) {
-                vIcon.classList.replace('criteria-cross', 'criteria-check');
-                vIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+        // --- UPDATE UI FOR DASHBOARD & QUALIFICATION ---
+        window.checkMonetizationStatus = async () => {
+            const uid = window.currentUser.uid;
+            const qualView = document.getElementById('monetization-qualification-view');
+            const dashView = document.getElementById('monetization-dashboard-view');
+            
+            // Check if Approved
+            if (userDetails.monetization_status === 'approved') {
+                qualView.classList.add('hidden');
+                dashView.classList.remove('hidden');
+
+                // Update Dashboard Values
+                document.getElementById('dash-total-points').innerHTML = `${userDetails.total_points || 0} <i class="fa-solid fa-coins text-yellow-300 text-3xl"></i>`;
+                document.getElementById('min-withdraw-text').innerText = window.dynamicPoints.min_withdraw;
+
+                // Load Today's Tracker
+                const today = new Date().toLocaleDateString('en-GB');
+                get(ref(db, `users/${uid}/daily_tracker/${today}`)).then(snap => {
+                    const t = snap.exists() ? snap.val() : { post: 0, like: 0, comment: 0 };
+                    document.getElementById('dash-today-post').innerText = `${t.post || 0}/${window.dynamicPoints.limit_post}`;
+                    document.getElementById('dash-today-like').innerText = `${t.like || 0}/${window.dynamicPoints.limit_like}`;
+                    document.getElementById('dash-today-comment').innerText = `${t.comment || 0}/${window.dynamicPoints.limit_comment}`;
+                });
             } else {
-                vIcon.classList.replace('criteria-check', 'criteria-cross');
-                vIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
+                // Qualification View
+                dashView.classList.add('hidden');
+                qualView.classList.remove('hidden');
 
-            const pIcon = document.getElementById('crit-post-icon');
-            if (posts >= 10) {
-                pIcon.classList.replace('criteria-cross', 'criteria-check');
-                pIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
-            } else {
-                pIcon.classList.replace('criteria-check', 'criteria-cross');
-                pIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-            }
+                const isVerified = !!userDetails.isVerified;
+                const friendCount = myFriends.length;
+                const postSnap = await get(query(ref(db, 'posts'), orderByChild('uid'), equalTo(uid)));
+                const postCount = postSnap.exists() ? Object.keys(postSnap.val()).length : 0;
 
-            if (friends >= 2000 && verified && posts >= 10) {
-                btn.disabled = false;
-            } else {
-                btn.disabled = true;
-            }
-        }
+                // Update UI Criteria
+                document.getElementById('crit-friend-text').innerText = `বর্তমান: ${friendCount}/50`;
+                document.getElementById('crit-post-text').innerText = `বর্তমান: ${postCount}/15`;
 
-        window.applyForMonetization = () => {
+                const toggleIcon = (id, passed) => {
+                    const el = document.getElementById(id);
+                    if (passed) {
+                        el.className = "w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600";
+                        el.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    } else {
+                        el.className = "w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400";
+                        el.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    }
+                };
+
+                toggleIcon('crit-friend-icon', friendCount >= 50);
+                toggleIcon('crit-verify-icon', isVerified);
+                toggleIcon('crit-post-icon', postCount >= 15);
+
+                const btn = document.getElementById('btn-monetization-apply');
+                if (userDetails.monetization_status === 'pending') {
+                    btn.innerText = "আবেদন রিভিউতে আছে";
+                    btn.disabled = true;
+                } else if (friendCount >= 50 && isVerified && postCount >= 15) {
+                    btn.innerText = "মনিটাইজেশনের আবেদন করুন";
+                    btn.disabled = false;
+                } else {
+                    btn.innerText = "শর্ত পূরণ হয়নি";
+                    btn.disabled = true;
+                }
+            }
+        };
+
+        window.applyForMonetization = async () => {
             const btn = document.getElementById('btn-monetization-apply');
             btn.innerHTML = 'আবেদন জমা হচ্ছে...';
             btn.disabled = true;
-            push(ref(db, 'monetization_requests'), {
-                uid: window.currentUser.uid,
-                name: userDetails.name,
-                timestamp: Date.now(),
-                status: 'pending'
-            }).then(() => {
+            try {
+                await update(ref(db, `users/${window.currentUser.uid}`), { monetization_status: 'pending' });
+                await set(ref(db, `monetization_requests/${window.currentUser.uid}`), {
+                    uid: window.currentUser.uid,
+                    name: userDetails.name,
+                    timestamp: Date.now(),
+                    status: 'pending'
+                });
+                userDetails.monetization_status = 'pending';
                 showToast("আবেদন সফলভাবে জমা হয়েছে!");
-                btn.innerHTML = 'আবেদন করা হয়েছে';
-            }).catch(e => {
+                checkMonetizationStatus();
+            } catch (e) {
                 showToast("সমস্যা হয়েছে: " + e.message, "error");
-                btn.disabled = false;
                 btn.innerHTML = 'আবেদন করুন';
-            });
-        }
+                btn.disabled = false;
+            }
+        };
+
+        // --- WITHDRAWAL LOGIC ---
+        window.submitWithdrawal = async () => {
+            const method = document.getElementById('withdraw-method').value;
+            const accNumber = document.getElementById('withdraw-number').value.trim();
+            const amount = parseInt(document.getElementById('withdraw-amount').value);
+            const uid = window.currentUser.uid;
+
+            if (!accNumber) return showToast("একাউন্ট নাম্বার দিন", "error");
+            if (!amount || amount < window.dynamicPoints.min_withdraw) return showToast(`সর্বনিম্ন ${window.dynamicPoints.min_withdraw} পয়েন্ট তুলতে পারবেন`, "error");
+
+            const btn = document.getElementById('btn-withdraw');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> প্রসেস হচ্ছে...';
+            btn.disabled = true;
+
+            try {
+                // Use Transaction to safely deduct points
+                const pointsRef = ref(db, `users/${uid}/total_points`);
+                const transactionResult = await runTransaction(pointsRef, (currentPoints) => {
+                    if (currentPoints === null) return currentPoints;
+                    if (currentPoints >= amount) {
+                        return currentPoints - amount;
+                    } else {
+                        return undefined; // Abort transaction
+                    }
+                });
+
+                if (transactionResult.committed) {
+                    // Points deducted successfully, save request to admin panel
+                    await push(ref(db, 'withdraw_requests'), {
+                        uid: uid,
+                        name: userDetails.name,
+                        method: method,
+                        account_number: accNumber,
+                        points_withdrawn: amount,
+                        timestamp: Date.now(),
+                        status: 'pending'
+                    });
+                    
+                    userDetails.total_points -= amount; // Update local state
+                    document.getElementById('withdraw-amount').value = "";
+                    showToast("উত্তলন রিকোয়েস্ট সফল হয়েছে!", "success");
+                    checkMonetizationStatus(); // Refresh Dashboard UI
+                } else {
+                    showToast("আপনার পর্যাপ্ত পয়েন্ট নেই!", "error");
+                }
+            } catch (err) {
+                showToast("ত্রুটি: " + err.message, "error");
+            } finally {
+                btn.innerHTML = 'উত্তলন রিকোয়েস্ট পাঠান';
+                btn.disabled = false;
+            }
+        };
 
         function checkFriendshipStatus(targetUid, targetName) {
             const actionDiv = document.getElementById('view-profile-actions');
