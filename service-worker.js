@@ -22,7 +22,7 @@ const firebaseConfig = {
     projectId: "pathargata-digital-comnity-ltd",
     storageBucket: "pathargata-digital-comnity-ltd.firebasestorage.app",
     messagingSenderId: "991014085926",
-    appId: "1:991014085926:android:b249e489d8424433ed4de7"
+    appId: "1:991014085926:web:bb50cbb5d3b54e25ed4de7"
 };
 
 // Initialize Firebase App
