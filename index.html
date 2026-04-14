@@ -11,16 +11,6 @@
     <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
     <!-- OneSignal Push Notification Code -->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
-    });
-    // অ্যাপ ওপেন করলেই যেন পারমিশন চায় তার কোড
-    OneSignal.Slidedown.promptPush();
-  });
-</script>
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
 <script>
@@ -2084,7 +2074,7 @@
                 projectId: "pathargata-digital-comnity-ltd",
                 storageBucket: "pathargata-digital-comnity-ltd.firebasestorage.app",
                 messagingSenderId: "991014085926",
-                appId: "1:991014085926:android:b249e489d8424433ed4de7"
+                appId: "1:991014085926:web:bb50cbb5d3b54e25ed4de7"
             },
             locations: {
                 "Patharghata Union Sadar": ["পাথরঘাটা", "গহরপুর", "নিজলাঠিমারা", "হাতেমপুর", "বড়ইতলা", "বড় টেংরা", "কোড়ালিয়া", "রুহিতা", "পদ্মা", "হাড়িটানা", "বাদুরতলা", "চরলাঠিমারা"],
