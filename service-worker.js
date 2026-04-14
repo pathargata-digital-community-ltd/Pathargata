@@ -1,83 +1,158 @@
+/** 
+ * ==========================================
+ *       SERVICE WORKER CONFIGURATION
+ * ==========================================
+ * Project: Pathargata Digital Community Ltd.
+ * Description: Handles Push Notifications & PWA Offline Caching
+ */
+
+// ==========================================
+// ১. Firebase Setup & Push Notifications
+// ==========================================
+
+// Firebase Libraries
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBfI-THOXOvhyL7LumZVKixtTVwF94CjsI",
+    authDomain: "pathargata-digital-comnity-ltd.firebasestorage.app",
+    databaseURL: "https://pathargata-digital-comnity-ltd-default-rtdb.firebaseio.com",
+    projectId: "pathargata-digital-comnity-ltd",
+    storageBucket: "pathargata-digital-comnity-ltd.firebasestorage.app",
+    messagingSenderId: "991014085926",
+    appId: "1:991014085926:android:b249e489d8424433ed4de7"
+};
+
+// Initialize Firebase App
+try {
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+
+    // Background Notification Handler
+    messaging.onBackgroundMessage((payload) => {
+        console.log('[Service Worker] Background message received:', payload);
+
+        const notificationTitle = payload.notification?.title || "নতুন নোটিফিকেশন";
+        const notificationOptions = {
+            body: payload.notification?.body || "আপনার জন্য একটি নতুন আপডেট আছে!",
+            icon: '/Pathargata/icon.png',
+            badge: '/Pathargata/icon.png',
+            data: payload.data,
+            vibrate: [200, 100, 200] // নোটিফিকেশন আসলে ফোন ভাইব্রেট করবে
+        };
+
+        self.registration.showNotification(notificationTitle, notificationOptions);
+    });
+} catch (error) {
+    console.error('[Service Worker] Firebase Initialization Error:', error);
+}
+
+// ==========================================
+// ২. PWA Caching Configuration
+// ==========================================
+
 const CACHE_NAME = 'patharghata-static-v3';
 const DYNAMIC_CACHE_NAME = 'patharghata-dynamic-v3';
+const FALLBACK_PAGE = '/Pathargata/index.html';
 
-// যে ফাইলগুলো অ্যাপ ইন্সটল হওয়ার সাথেই ফোনে সেভ (Cache) হয়ে যাবে
+// Assets to cache on install (অফলাইন ব্যবহারের জন্য)
 const STATIC_ASSETS = [
-  '/Pathargata/',
-  '/Pathargata/index.html',
-  '/Pathargata/manifest.json'
+    '/Pathargata/',
+    '/Pathargata/index.html',
+    '/Pathargata/manifest.json',
+    '/Pathargata/icon.png' // আইকনটাও ক্যাশ রাখা ভালো
 ];
 
-// ১. Install Event - স্ট্যাটিক ফাইলগুলো ক্যাশ করা
+// External APIs that should NEVER be cached (সরাসরি ইন্টারনেট থেকে আসবে)
+const NON_CACHEABLE_URLS = [
+    'firebaseio.com',
+    'googleapis.com',
+    'cloudinary.com'
+];
+
+// ==========================================
+// ৩. Service Worker Lifecycle Events
+// ==========================================
+
+// Install Event: স্ট্যাটিক ফাইলগুলো ক্যাশ করা
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Pre-caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
-  self.skipWaiting(); // নতুন আপডেট আসলে সাথে সাথে কার্যকর হবে
-});
-
-// ২. Activate Event - পুরোনো ক্যাশ ডিলেট করা (স্টোরেজ বাঁচানোর জন্য)
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME && key !== DYNAMIC_CACHE_NAME)
-          .map((key) => caches.delete(key))
-      );
-    })
-  );
-  return self.clients.claim();
-});
-
-// ৩. Fetch Event - স্মার্ট নেটওয়ার্ক ও ক্যাশ ম্যানেজমেন্ট
-self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
-
-  // ⚠️ ফায়ারবেস, ক্লাউডিনারি বা ডেটাবেস API কলের ক্ষেত্রে ক্যাশ ব্যবহার করব না (সরাসরি ইন্টারনেট থেকে আনবে)
-  if (
-    requestUrl.hostname.includes('firebaseio.com') ||
-    requestUrl.hostname.includes('googleapis.com') ||
-    requestUrl.hostname.includes('cloudinary.com') ||
-    event.request.method !== 'GET' // POST/PUT রিকোয়েস্ট ক্যাশ করা যাবে না
-  ) {
-    return; 
-  }
-
-  // Strategy A: Network First, Fallback to Cache (HTML পেজের জন্য)
-  // সবসময় ইন্টারনেট থেকে লেটেস্ট পেজ আনার চেষ্টা করবে, ইন্টারনেট না থাকলে ক্যাশ থেকে দেখাবে।
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          return caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
-        })
-        .catch(() => {
-          return caches.match('/Pathargata/index.html'); // অফলাইনে থাকলে অ্যাপ ক্র্যাশ না করে সেভ করা পেজ দেখাবে
+    console.log('[Service Worker] Installing and Pre-caching assets...');
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(STATIC_ASSETS);
         })
     );
-    return;
-  }
+    self.skipWaiting(); // নতুন আপডেট আসলে সাথে সাথে কার্যকর করবে
+});
 
-  // Strategy B: Stale-While-Revalidate (ইমেজ, সিএসএস, ফন্ট, স্ক্রিপ্ট ইত্যাদির জন্য)
-  // আগে ক্যাশ থেকে দ্রুত লোড করবে, এরপর ব্যাকগ্রাউন্ডে ইন্টারনেট থেকে নতুন আপডেট এনে সেভ করে রাখবে।
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-        });
-        return networkResponse;
-      }).catch(() => {
-        // ইন্টারনেট না থাকলে কিছুই করবে না
-      });
+// Activate Event: পুরোনো ক্যাশ ডিলিট করা (স্টোরেজ ক্লিন রাখতে)
+self.addEventListener('activate', (event) => {
+    console.log('[Service Worker] Activating and Cleaning old caches...');
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
+                        console.log('[Service Worker] Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    return self.clients.claim();
+});
 
-      return cachedResponse || fetchPromise;
-    })
-  );
+// ==========================================
+// ৪. Fetch Event (স্মার্ট নেটওয়ার্ক ও ক্যাশ ম্যানেজমেন্ট)
+// ==========================================
+
+self.addEventListener('fetch', (event) => {
+    const requestUrl = new URL(event.request.url);
+
+    // শর্ত ১: API, Database বা POST রিকোয়েস্ট ক্যাশ করা যাবে না
+    const isNonCacheable = NON_CACHEABLE_URLS.some(url => requestUrl.hostname.includes(url));
+    if (isNonCacheable || event.request.method !== 'GET') {
+        return; // ডিফল্ট ব্রাউজার ফেচ ব্যবহার করবে
+    }
+
+    // শর্ত ২: HTML পেজ লোড (Network First, Fallback to Cache)
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then((networkResponse) => {
+                    return caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                })
+                .catch(() => {
+                    console.log('[Service Worker] Offline mode: Serving fallback page');
+                    return caches.match(FALLBACK_PAGE);
+                })
+        );
+        return;
+    }
+
+    // শর্ত ৩: অন্যান্য অ্যাসেট (ইমেজ, CSS, JS) -> (Stale-While-Revalidate)
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            const fetchPromise = fetch(event.request)
+                .then((networkResponse) => {
+                    // ডাইনামিক ক্যাশ আপডেট করা
+                    caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+                        cache.put(event.request, networkResponse.clone());
+                    });
+                    return networkResponse;
+                })
+                .catch(() => {
+                    // অফলাইনে থাকলে এবং ক্যাশ না পেলে কিছুই করবে না
+                });
+
+            // ক্যাশে থাকলে সাথে সাথে দেখাবে, না থাকলে ইন্টারনেট থেকে আনবে
+            return cachedResponse || fetchPromise;
+        })
+    );
 });
