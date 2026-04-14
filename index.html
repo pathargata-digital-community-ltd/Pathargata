@@ -9,25 +9,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FingerprintJS for Anti-Fraud System -->
     <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
-    <!-- Mobile Console (Eruda) -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
+    <!-- OneSignal Push Notification Code -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      // যেহেতু আপনার সাইটটি Pathargata ফোল্ডারে আছে, তাই পাথ ঠিক করে দেওয়া হলো
-      navigator.serviceWorker.register('/Pathargata/service-worker.js')
-        .then((registration) => {
-          console.log('Service Worker সফলভাবে রেজিস্টার হয়েছে:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('Service Worker রেজিস্ট্রেশন ফেইল করেছে:', error);
-        });
-    });
-  }
-</script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Font: Hind Siliguri -->
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2190,24 +2176,40 @@ isSupported().then((supported) => {
 
 // FCM সেটআপ ফাংশন
 async function setupFCM(user) {
-    if (!messaging) return; // সাপোর্ট না করলে এখানেই থেমে যাবে, ক্র্যাশ করবে না
+    console.log("১. setupFCM ফাংশন কল হয়েছে...");
+    if (!messaging) {
+        console.log("❌ Error: messaging অবজেক্ট পাওয়া যায়নি!");
+        return; 
+    }
     
     try {
+        console.log("২. পারমিশন চেক করা হচ্ছে...");
         const permission = await Notification.requestPermission();
+        console.log("৩. পারমিশন স্ট্যাটাস:", permission);
+
         if (permission === 'granted') {
-            const registration = await navigator.serviceWorker.ready;
+            console.log("৪. Service Worker রেজিস্টার করা হচ্ছে...");
+            
+            const registration = await navigator.serviceWorker.register('/Pathargata/firebase-messaging-sw.js');
+            await navigator.serviceWorker.ready;
+            console.log("৫. SW Ready, টোকেন রিকোয়েস্ট করা হচ্ছে...");
+
             const currentToken = await getToken(messaging, { 
                 vapidKey: "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg", 
                 serviceWorkerRegistration: registration
             });
 
             if (currentToken) {
-                console.log("FCM Token Generated!");
+                console.log("✅ FCM Token Generated Successfully: ", currentToken);
                 update(ref(db, 'users/' + user.uid), { fcmToken: currentToken });
+            } else {
+                console.log("❌ Failed to generate FCM token.");
             }
+        } else {
+            console.warn("❌ Notification permission denied by user.");
         }
     } catch (error) {
-        console.error("FCM Token Error:", error);
+        console.error("❌ FCM Error Details: ", error);
     }
 }
 
