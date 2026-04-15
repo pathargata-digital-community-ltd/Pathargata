@@ -9,6 +9,34 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FingerprintJS for Anti-Fraud System -->
     <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+    <!-- ১. OneSignal SDK Loader: এটি মেইন লাইব্রেরি লোড করবে -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
+<!-- ২. OneSignal Initialization: এটি নোটিফিকেশন চালু করবে -->
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
+      safari_web_id: "web.onesignal.auto.17649533-3d0d-4581-9f93-9c8699101408", // এটি ঐচ্ছিক
+      notifyButton: {
+        enable: true, // ডানদিকের নিচে একটি বেল আইকন দেখাবে
+      },
+    });
+    // সাইটে ঢোকার সাথে সাথে পারমিশন চাওয়ার জন্য
+    OneSignal.Slidedown.promptPush();
+  });
+</script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
+    });
+    // অ্যাপ ওপেন করলেই যেন পারমিশন চায় তার কোড
+    OneSignal.Slidedown.promptPush();
+  });
+</script>
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
 <script>
@@ -2056,12 +2084,6 @@
             reauthenticateWithCredential,
             updatePassword
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import {
-    getMessaging,
-    getToken,
-    onMessage,
-    isSupported
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
         // --- CONFIGURATION ---
         const APP_CONFIG = {
@@ -2072,7 +2094,7 @@
                 projectId: "pathargata-digital-comnity-ltd",
                 storageBucket: "pathargata-digital-comnity-ltd.firebasestorage.app",
                 messagingSenderId: "991014085926",
-                appId: "1:991014085926:web:bb50cbb5d3b54e25ed4de7"
+                appId: "1:991014085926:android:b249e489d8424433ed4de7"
             },
             locations: {
                 "Patharghata Union Sadar": ["পাথরঘাটা", "গহরপুর", "নিজলাঠিমারা", "হাতেমপুর", "বড়ইতলা", "বড় টেংরা", "কোড়ালিয়া", "রুহিতা", "পদ্মা", "হাড়িটানা", "বাদুরতলা", "চরলাঠিমারা"],
@@ -2162,51 +2184,6 @@
         const app = initializeApp(APP_CONFIG.firebase);
         const db = getDatabase(app);
         const auth = getAuth(app);
-        let messaging = null;
-
-// আগে চেক করবে ব্রাউজার সাপোর্ট করে কি না
-isSupported().then((supported) => {
-    if (supported) {
-        messaging = getMessaging(app);
-        console.log("FCM is Supported in this browser!");
-
-        // অ্যাপ খোলা অবস্থায় নোটিফিকেশন আসলে টোস্ট দেখানো
-        onMessage(messaging, (payload) => {
-            let title = "নোটিফিকেশন";
-            let body = "";
-            if (payload && payload.notification) {
-                if (payload.notification.title) title = payload.notification.title;
-                if (payload.notification.body) body = payload.notification.body;
-            }
-            showToast(title + ": " + body, 'success');
-        });
-    } else {
-        console.warn("HopWeb-এর প্রিভিউতে নোটিফিকেশন সাপোর্ট করে না। লাইভ সার্ভারে করলে কাজ করবে।");
-    }
-});
-
-// FCM সেটআপ ফাংশন
-async function setupFCM(user) {
-    if (!messaging) return; // সাপোর্ট না করলে এখানেই থেমে যাবে, ক্র্যাশ করবে না
-    
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            const registration = await navigator.serviceWorker.ready;
-            const currentToken = await getToken(messaging, { 
-                vapidKey: "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg", 
-                serviceWorkerRegistration: registration
-            });
-
-            if (currentToken) {
-                console.log("FCM Token Generated!");
-                update(ref(db, 'users/' + user.uid), { fcmToken: currentToken });
-            }
-        }
-    } catch (error) {
-        console.error("FCM Token Error:", error);
-    }
-}
 
         window.currentUser = null;
         let userDetails = {},
@@ -2519,7 +2496,6 @@ async function setupFCM(user) {
                 window.currentUser = user;
                 authScreen.classList.add('hidden-custom');
                 mainApp.classList.remove('hidden-custom');
-                setupFCM(user);
 
                 const savedSize = localStorage.getItem('fontSize');
                 if (savedSize) changeFontSize(savedSize);
