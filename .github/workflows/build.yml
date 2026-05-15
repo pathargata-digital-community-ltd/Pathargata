@@ -31,17 +31,37 @@ jobs:
           mkdir www
           rsync -av --exclude='www' --exclude='.git' --exclude='.github' . www/
 
-      - name: Setup Capacitor & Android Project
+      - name: Setup Capacitor & Plugins
         run: |
           npm init -y
-          npm install @capacitor/core@5 @capacitor/android@5
+          # এখানে Capacitor এর মূল ফাইলের সাথে App এবং Keyboard প্লাগিন যুক্ত করা হয়েছে
+          npm install @capacitor/core@5 @capacitor/android@5 @capacitor/app@5 @capacitor/keyboard@5
           npm install -D @capacitor/cli@5
           npx cap init "Patharghata Digital" "com.pathargata.digital" --web-dir www
           npx cap add android
 
+      - name: Configure Capacitor
+        run: |
+          # কীবোর্ড ওপেন হলে যেন অ্যাপের ডিজাইন ভেঙে না যায় তার ফিক্স
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "com.pathargata.digital",
+            "appName": "Patharghata Digital",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "plugins": {
+              "Keyboard": {
+                "resize": "body",
+                "style": "dark",
+                "resizeOnFullScreen": true
+              }
+            }
+          }
+          EOF
+
       - name: Add Permissions
         run: |
-          sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>' android/app/src/main/AndroidManifest.xml
+          sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>' android/app/src/main/AndroidManifest.xml
 
       - name: Fix Kotlin Dependency Conflict
         run: |
@@ -62,7 +82,6 @@ jobs:
       - name: Force Update Gradle Version
         run: |
           cd android
-          # সার্ভার ডাউন সমস্যা সমাধানের জন্য Gradle আপডেট করা হলো
           ./gradlew wrapper --gradle-version 8.7 --distribution-type all
 
       - name: Build APK
