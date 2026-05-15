@@ -45,7 +45,6 @@ jobs:
 
       - name: Fix Kotlin Dependency Conflict
         run: |
-          # এই কোডটি Kotlin এর ডুপ্লিকেট ভার্সন সমস্যাটি দূর করবে
           cat <<EOF >> android/build.gradle
           
           allprojects {
@@ -59,6 +58,12 @@ jobs:
               }
           }
           EOF
+
+      - name: Force Update Gradle Version
+        run: |
+          cd android
+          # সার্ভার ডাউন সমস্যা সমাধানের জন্য Gradle আপডেট করা হলো
+          ./gradlew wrapper --gradle-version 8.7 --distribution-type all
 
       - name: Build APK
         run: |
