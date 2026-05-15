@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '21' # এখানে 17 থেকে 21 করা হয়েছে
+          java-version: '17'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,14 +34,31 @@ jobs:
       - name: Setup Capacitor & Android Project
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/android
-          npm install -D @capacitor/cli
+          npm install @capacitor/core@5 @capacitor/android@5
+          npm install -D @capacitor/cli@5
           npx cap init "Patharghata Digital" "com.pathargata.digital" --web-dir www
           npx cap add android
 
-      - name: Add Permissions to AndroidManifest.xml
+      - name: Add Permissions
         run: |
           sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>' android/app/src/main/AndroidManifest.xml
+
+      - name: Fix Kotlin Dependency Conflict
+        run: |
+          # এই কোডটি Kotlin এর ডুপ্লিকেট ভার্সন সমস্যাটি দূর করবে
+          cat <<EOF >> android/build.gradle
+          
+          allprojects {
+              configurations.all {
+                  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                      def requested = details.requested
+                      if (requested.group == 'org.jetbrains.kotlin' && requested.name.startsWith('kotlin-stdlib')) {
+                          details.useVersion '1.8.22'
+                      }
+                  }
+              }
+          }
+          EOF
 
       - name: Build APK
         run: |
