@@ -636,6 +636,49 @@
             background-color: #f0fdf4;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+        
+        /* --- আপডেটেড সুপার বাউন্সি লাইক অ্যানিমেশন --- */
+        
+        /* ডাবল ট্যাপের বড় হার্টের অ্যানিমেশন */
+        @keyframes superHeartPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(-15deg); }
+            15% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.3) rotate(10deg); }
+            30% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(5deg); }
+            70% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: translate(-50%, -80%) scale(1.5) rotate(0deg); } /* ওপরের দিকে উঠে মিলিয়ে যাবে */
+        }
+        
+        .big-heart-pop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            color: #ff2556; /* অত্যন্ত আকর্ষণীয় গোলাপি-লাল রঙ */
+            font-size: 110px; /* বেশ বড় সাইজ */
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            /* একটি সুন্দর গ্লোয়িং শ্যাডো */
+            filter: drop-shadow(0 10px 25px rgba(255, 37, 86, 0.6)); 
+        }
+        
+        .big-heart-pop.animate {
+            animation: superHeartPop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* ছোট লাইক বাটনের পপ/বাউন্স অ্যানিমেশন */
+        @keyframes smallLikeBounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.5) rotate(-15deg); }
+            50% { transform: scale(0.8) rotate(10deg); }
+            70% { transform: scale(1.2) rotate(-5deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .small-like-animate {
+            animation: smallLikeBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
     </style>
     <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
 </head>
@@ -744,7 +787,7 @@
     </div>
 
     <!-- ২. স্প্ল্যাশ স্ক্রিন -->
-    <div id="splash-screen" class="fixed inset-0 bg-green-600 z-[150] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+    <div id="splash-screen" class="fixed inset-0 bg-green-600 z-[250] flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <i class="fa-solid fa-map-location-dot text-7xl mb-6 logo-animate"></i>
         <h2 class="text-3xl font-bold">পাথরঘাটা ডিজিটাল</h2>
         <p class="text-sm opacity-90 mt-1">হাতের মুঠোয় সব সেবা</p>
@@ -1236,6 +1279,11 @@
                         <div onclick="filterFeed('village')" id="tab-feed-village" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase" style="display: none;">গ্রাম</div>
                         <div onclick="filterFeed('contest')" id="tab-feed-contest" class="flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer feed-tab uppercase">প্রতিযোগিতা</div>
                     </div>
+                </div>
+                
+                <!-- New Post Alert Button -->
+                <div id="new-post-alert" onclick="refreshFeed()" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1.5 rounded-full shadow-lg z-40 text-sm font-bold cursor-pointer transition-transform duration-300 hover:bg-blue-700 animate-bounce">
+                    <i class="fa-solid fa-arrow-up mr-1"></i> নতুন পোস্ট এসেছে
                 </div>
 
                 <!-- 2. Regular Feed Section (নোটস এবং সাধারণ পোস্ট) -->
@@ -2489,30 +2537,47 @@ if (refUid) {
         </div>`;
         }
 
-        // --- ALGORITHMIC SCORING FUNCTION ---
+       // --- ALGORITHMIC SCORING FUNCTION (LIVELY FEED) ---
         function calculatePostScore(post) {
             const now = Date.now();
-            // 1. Time Decay (Hours since posted)
+            // 1. Time Decay (Hours since posted) - নতুন পোস্টের গুরুত্ব সবচেয়ে বেশি
             const hoursAge = (now - post.timestamp) / (1000 * 60 * 60);
 
-            // 2. Engagement Points
+            // 2. Engagement Points (মানুষ যা পছন্দ করছে)
             const likeCount = post.likes ? Object.keys(post.likes).length : 0;
             const commentCount = post.comments ? Object.keys(post.comments).length : 0;
-            let points = (likeCount * 10) + (commentCount * 20);
+            let points = (likeCount * 5) + (commentCount * 15); // কমেন্টকে বেশি গুরুত্ব দেওয়া হলো
 
-            // 3. Authority Bonus
-            if (['admin', 'journalist'].includes(post.authorRole)) {
-                points += 50;
+            // 3. Affinity (বন্ধুদের পোস্ট - মাইক্রো বুস্ট)
+            if (myFriends && myFriends.includes(post.uid)) {
+                points += 30; // বন্ধুদের পোস্টে ছোট বুস্ট
             }
 
-            // 4. Database Boost
+            // 4. Proximity (লোকেশন - মাইক্রো বুস্ট)
+            if (userDetails && userDetails.village && post.village === userDetails.village) {
+                points += 20; // নিজের গ্রামের পোস্টকে হালকা বুস্ট
+            } else if (userDetails && userDetails.union && post.union === userDetails.union) {
+                points += 10; // নিজের ইউনিয়নের পোস্টে সামান্য বুস্ট
+            }
+
+            // 5. Authority (অ্যাডমিন বা সাংবাদিক)
+            if (['admin', 'journalist'].includes(post.authorRole)) {
+                points += 40;
+            }
+
+            // 6. Database Boost
             if (post.adminScore) {
                 points += parseInt(post.adminScore);
             }
 
-            // Formula: (Points + 1) / (Age + 2)^Gravity
-            // This ensures newer posts rank high, but extremely popular older posts can stay up
-            const score = (points + 1) / Math.pow((hoursAge + 2), 1.8);
+            // 7. Randomness (সারপ্রাইজ এলিমেন্ট)
+            // ০ থেকে ১৫ এর মধ্যে একটি র‍্যান্ডম পয়েন্ট যোগ হবে, যাতে ফিডটি রোবটিক মনে না হয়।
+            const randomBoost = Math.floor(Math.random() * 15);
+            points += randomBoost;
+
+            // Formula: (Points + 1) / (Age + 1.5)^Gravity
+            // Gravity 1.5 ব্যবহার করা হলো যাতে কিছুটা পুরনো কিন্তু জনপ্রিয় পোস্টও ফিডে টিকে থাকতে পারে।
+            const score = (points + 1) / Math.pow((hoursAge + 1.5), 1.5);
 
             return score;
         }
@@ -2521,10 +2586,6 @@ if (refUid) {
             const authScreen = document.getElementById('auth-screen');
             const mainApp = document.getElementById('main-app');
             const splash = document.getElementById('splash-screen');
-
-            setTimeout(() => {
-                splash.classList.add('hidden-custom');
-            }, 1500);
 
             if (user) {
                 window.currentUser = user;
@@ -2551,19 +2612,18 @@ if (refUid) {
                     if (data) {
                         userDetails = data;
                         if(data.status === 'pending' || data.status === 'pending_review') {
-    window.ADVANCED_FEATURES.showLockScreen(data); // ব্র্যাকেটের ভেতর data পাস করা হয়েছে
-    return; 
-} else if (data.status === 'tourist') {
-    window.ADVANCED_FEATURES.enableTouristMode();
-    userDetails.role = 'tourist'; 
-}
+                            window.ADVANCED_FEATURES.showLockScreen(data); 
+                            return; 
+                        } else if (data.status === 'tourist') {
+                            window.ADVANCED_FEATURES.enableTouristMode();
+                            userDetails.role = 'tourist'; 
+                        }
                         updateUIWithUserData();
                         loadFriendsPreview(user.uid, 'me');
                         loadSettingsData();
                         if (document.getElementById('setting-privacy-toggle')) document.getElementById('setting-privacy-toggle').checked = userDetails.privacy_hide_contact || false;
                         checkMonetizationStatus();
                     } else {
-                        // যদি ডাটাবেসে ডাটা না থাকে, অথেন্টিকেশন থেকে রিকভার করার চেষ্টা করবে
                         console.log("Database data missing, attempting recovery from Auth...");
                         const recoveredData = {
                             name: user.displayName || "অজ্ঞাত ইউজার",
@@ -2576,9 +2636,7 @@ if (refUid) {
                             joinDate: new Date().toLocaleDateString()
                         };
 
-                        // ডাটাবেসে আবার সেভ করা হচ্ছে
                         set(ref(db, 'users/' + user.uid), recoveredData);
-
                         userDetails = recoveredData;
                         updateUIWithUserData();
                     }
@@ -2601,9 +2659,10 @@ if (refUid) {
                 loadMyComplaints();
                 loadEmergencyAlerts();
 
-                // Initial Load
                 loadAds();
                 loadFeed('all', true);
+                
+                listenForNewPosts(); // রিয়েল-টাইম পোস্ট লিসেনার চালু হলো
 
                 loadNotes();
                 setupInfiniteScroll();
@@ -2619,6 +2678,14 @@ if (refUid) {
                 mainApp.classList.add('hidden-custom');
                 document.getElementById('login-form').classList.remove('hidden-custom');
             }
+
+            // সবকিছু লোড হওয়ার পর স্প্ল্যাশ স্ক্রিন রিমুভ করার কোড
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                setTimeout(() => {
+                    splash.classList.add('hidden-custom');
+                }, 500);
+            }, 1500);
         });
 
         // --- SCROLL HANDLER (UPDATED for Profile Infinite Scroll) ---
@@ -3135,10 +3202,28 @@ if (refUid) {
                 icons = document.querySelectorAll(`[id^="like-icon-${postId}"]`),
                 countSpans = document.querySelectorAll(`[id^="like-cnt-${postId}"]`);
             if (icons.length === 0) return;
+            
             const isLiked = icons[0].classList.contains('fa-solid');
             let newCount = parseInt(countSpans[0].innerText) + (isLiked ? -1 : 1);
-            icons.forEach(i => i.classList[isLiked ? 'remove' : 'add']('fa-solid', 'text-green-600') || i.classList[isLiked ? 'add' : 'remove']('fa-regular'));
+            
+            icons.forEach(i => {
+                // রঙ এবং আইকন পরিবর্তন
+                i.classList[isLiked ? 'remove' : 'add']('fa-solid', 'text-green-600');
+                i.classList[isLiked ? 'add' : 'remove']('fa-regular');
+                
+                // যদি নতুন করে লাইক দেয়, তবে বাউন্স অ্যানিমেশন যোগ করা
+                if (!isLiked) {
+                    i.classList.remove('small-like-animate');
+                    void i.offsetWidth; // অ্যানিমেশন রিস্টার্ট করার ট্রিক
+                    i.classList.add('small-like-animate');
+                    
+                    // মোবাইলে হালকা ভাইব্রেশন (যদি সাপোর্ট করে)
+                    if (navigator.vibrate) navigator.vibrate(40);
+                }
+            });
+            
             countSpans.forEach(s => s.innerText = Math.max(0, newCount));
+            
             const likeRef = ref(db, `posts/${postId}/likes/${window.currentUser.uid}`);
             get(likeRef).then((snap) => {
                 if (snap.exists()) set(likeRef, null);
@@ -3269,7 +3354,31 @@ if (refUid) {
             if (isInitial) {
                 lastLoadedPostKey = null;
                 hasMorePosts = true;
-                feedDiv.innerHTML = '<div class="flex flex-col gap-3 p-4"><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div></div>';
+                
+                // --- LocalStorage Caching Start ---
+                const cachedData = localStorage.getItem(`feed_cache_${type}`);
+                if (cachedData) {
+                    try {
+                        const cachedPosts = JSON.parse(cachedData);
+                        let cacheHtml = '';
+                        cachedPosts.forEach((post, index) => {
+                            cacheHtml += createPostHTML(post, post.id);
+                            // ক্যাশ করা ডেটাতেও অ্যাড দেখানোর লজিক
+                            if ((index + 1) % 5 === 0 && allAds && allAds.length > 0) {
+                                const adIndex = Math.floor((index + 1) / 5) % allAds.length;
+                                cacheHtml += createAdHTML(allAds[adIndex]);
+                            }
+                        });
+                        feedDiv.innerHTML = cacheHtml; // ক্যাশ থেকে সাথে সাথে লোড হবে
+                    } catch (e) {
+                        console.error("Cache parsing error", e);
+                        feedDiv.innerHTML = '<div class="flex flex-col gap-3 p-4"><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div></div>';
+                    }
+                } else {
+                    // ক্যাশে কিছু না থাকলে সুন্দর স্কেলিটন লোডার দেখাবে
+                    feedDiv.innerHTML = '<div class="flex flex-col gap-3 p-4"><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div></div>';
+                }
+                // --- LocalStorage Caching End ---
             }
 
             const pageSize = 15;
@@ -3343,25 +3452,74 @@ if (refUid) {
                     }
 
                     // --- ALGORITHM START ---
-                    // Calculate Score for each post
+                    // 1. Calculate Score for each post
                     postsArr.forEach(post => {
                         post.algorithmicScore = calculatePostScore(post);
                     });
 
-                    // Sort by Calculated Score (Descending)
+                    // 2. Author Diversity & Anti-Spam Filter (নতুন যুক্ত হলো)
+                    // একই ব্যক্তির একাধিক পোস্ট একসাথে আসা ঠেকাতে পয়েন্ট কমানো হবে
+                    const authorPostCount = {};
+                    // প্রথমে পোস্টগুলোকে স্কোর অনুযায়ী সাজিয়ে নিচ্ছি
+                    postsArr.sort((a, b) => b.algorithmicScore - a.algorithmicScore);
+                    
+                    postsArr.forEach(post => {
+                        if (!authorPostCount[post.uid]) {
+                            authorPostCount[post.uid] = 1; // এই ইউজারের প্রথম পোস্ট (১০০% পয়েন্ট পাবে)
+                        } else {
+                            authorPostCount[post.uid]++;
+                            // দ্বিতীয় পোস্ট হলে পয়েন্ট অর্ধেক (৫০%) হয়ে যাবে, তৃতীয় হলে ২৫% হয়ে যাবে
+                            // এতে করে অন্য ইউজারদের কম পয়েন্টের পোস্টও এদের মাঝখানে ঢুকে যাবে
+                            const penaltyFactor = Math.pow(0.5, authorPostCount[post.uid] - 1);
+                            post.algorithmicScore = post.algorithmicScore * penaltyFactor;
+                        }
+                    });
+
+                    // 3. Final Sort by Calculated Score (Descending)
                     postsArr.sort((a, b) => b.algorithmicScore - a.algorithmicScore);
                     // --- ALGORITHM END ---
+                    
+                    // --- Save Fresh Data to LocalStorage ---
+                    if (isInitial && postsArr.length > 0) {
+                        // শুধুমাত্র প্রথম ১৫টি পোস্ট ক্যাশে সেভ করব যেন স্টোরেজ ফুল না হয়
+                        localStorage.setItem(`feed_cache_${type}`, JSON.stringify(postsArr.slice(0, 15)));
+                        feedDiv.innerHTML = ''; // ফ্রেশ ডেটা বসানোর জন্য ফিড ক্লিয়ার করা
+                    }
 
-                    // Generate HTML with Ad Injection
+                    // Generate HTML with Ad Injection & Friend Suggestions
                     let finalHtml = '';
                     postsArr.forEach((post, index) => {
                         finalHtml += createPostHTML(post, post.id);
 
-                        // Inject Ad after every 5th post in this batch
-                        // Logic: (index + 1) % 5 === 0
+                        // Inject Ad after every 5th post
                         if ((index + 1) % 5 === 0 && allAds.length > 0) {
                             const adIndex = Math.floor((index + 1) / 5) % allAds.length;
                             finalHtml += createAdHTML(allAds[adIndex]);
+                        }
+
+                        // Inject Friend Suggestions after every 7th post
+                        if ((index + 1) % 7 === 0 && suggestionPool.length > 0) {
+                            // পুল থেকে ৩ জন ইউজারকে নেওয়া হলো
+                            const suggestedUsers = suggestionPool.slice(0, 3);
+                            
+                            let suggHtml = `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-3 max-w-lg mx-auto">
+                                <h4 class="font-bold text-gray-800 text-sm mb-3">আপনার পরিচিত হতে পারে</h4>
+                                <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">`;
+                            
+                            suggestedUsers.forEach(u => {
+                                let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-16 h-16 rounded-full object-cover border border-gray-200 mx-auto mb-2">` : `<div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold text-2xl mx-auto mb-2 border border-blue-100">${escapeHTML(u.name).charAt(0)}</div>`;
+                                
+                                suggHtml += `
+                                <div class="border rounded-xl p-3 min-w-[120px] text-center shrink-0">
+                                    ${av}
+                                    <h5 class="font-bold text-gray-800 text-xs truncate">${escapeHTML(u.name).split(' ')[0]}</h5>
+                                    <p class="text-[10px] text-gray-500 truncate mb-2">${escapeHTML(u.village || u.union || 'পাথরঘাটা')}</p>
+                                    <button id="btn-feed-req-${u.uid}" onclick="sendSuggestionRequest('${u.uid}'); this.innerHTML='Sent'; this.disabled=true; this.classList.replace('bg-blue-600', 'bg-gray-200'); this.classList.replace('text-white', 'text-gray-600');" class="w-full bg-blue-600 text-white text-[10px] font-bold py-1.5 rounded-lg">Add Friend</button>
+                                </div>`;
+                            });
+                            
+                            suggHtml += `</div></div>`;
+                            finalHtml += suggHtml;
                         }
                     });
 
@@ -4199,11 +4357,17 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             const realLikes = post.likes ? Object.keys(post.likes).length : 0;
             const likeCount = post.likeCount ? Math.max(post.likeCount, realLikes) : realLikes;
             const commentCount = post.comments ? Object.keys(post.comments).length : 0;
-            let badge = post.authorRole === 'journalist' ? `<i class="fa-solid fa-feather-pointed journalist-badge"></i>` : (post.authorVerified ? `<i class="fa-solid fa-circle-check verified-badge"></i>` : "");
+            let badge = post.authorRole === 'journalist' ? `<i class="fa-solid fa-feather-pointed journalist-badge" title="Journalist"></i>` : (post.authorVerified ? `<i class="fa-solid fa-circle-check verified-badge" title="Verified"></i>` : "");
+            
+            // Top Contributor ট্যাগ (যদি ইউজারের অ্যাডমিন স্কোর ১০০ এর বেশি হয় বা সে সাংবাদিক হয়)
+            let topContributorTag = '';
+            if (post.authorRole === 'journalist' || (post.adminScore && parseInt(post.adminScore) >= 100)) {
+                topContributorTag = `<span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full ml-2 shadow-sm"><i class="fa-solid fa-award mr-0.5"></i> সেরা অবদানকারী</span>`;
+            }
             let locationTag = (post.union ? `<span class="bg-gray-100 text-[10px] px-2 py-0.5 rounded-full text-gray-500 ml-2">${post.union}</span>` : '') + (post.village ? `<span class="bg-green-50 text-[10px] px-2 py-0.5 rounded-full text-green-600 ml-1 border border-green-100">${post.village}</span>` : '');
 
             // --- Header Text Construction (Tagged + Feeling) ---
-            let headerText = `<h4 onclick="openUserProfile('${post.uid}')" class="font-bold text-base text-gray-800 cursor-pointer hover:underline inline">${escapeHTML(post.author)}${badge}</h4>`;
+            let headerText = `<h4 onclick="openUserProfile('${post.uid}')" class="font-bold text-base text-gray-800 cursor-pointer hover:underline inline">${escapeHTML(post.author)}${badge}</h4> ${topContributorTag}`;
 
             if (post.feeling) {
                 headerText += ` <span class="text-gray-600 text-sm">is feeling ${post.feeling.emoji} ${escapeHTML(post.feeling.text)}</span>`;
@@ -4223,7 +4387,12 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             }
 
             if (post.content) {
-                if (post.bgColor && post.type === 'text') contentHTML = `<div class="colored-post-bg" style="background: ${post.bgColor};">${escapeHTML(post.content)}</div>`;
+                if (post.bgColor && post.type === 'text') {
+                contentHTML = `<div class="colored-post-bg relative cursor-pointer" style="background: ${post.bgColor};" ondblclick="handleDoubleTapLike('${id}')">
+                                  <i id="big-heart-${id}" class="fa-solid fa-heart big-heart-pop"></i>
+                                  ${escapeHTML(post.content)}
+                               </div>`;
+            }
                 else {
                     const ytMatch = post.content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
                     const driveMatch = post.content.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -4257,14 +4426,24 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             const images = post.images || (post.image ? [post.image] : []);
 
             if (images.length > 0) {
+                const bigHeartHtml = `<i id="big-heart-${id}" class="fa-solid fa-heart big-heart-pop"></i>`;
+                
                 if (images.length === 1 && (post.mediaType === 'video' || images[0].endsWith('.mp4'))) {
-                    mediaHtml = `<div class="mb-3 w-full bg-black rounded-lg overflow-hidden relative shadow-sm"><video src="${images[0]}" controls class="w-full h-auto max-h-[400px]" playsinline preload="metadata"></video></div>`;
+                    mediaHtml = `<div class="mb-3 w-full bg-black rounded-lg overflow-hidden relative shadow-sm cursor-pointer" ondblclick="handleDoubleTapLike('${id}')">
+                                    ${bigHeartHtml}
+                                    <video src="${images[0]}" controls class="w-full h-auto max-h-[400px]" playsinline preload="metadata"></video>
+                                 </div>`;
                 } else {
                     const gridClass = images.length === 1 ? 'post-images-grid-1' : 'post-images-grid-2';
-                    // Add onclick to images for full screen view
-                    const imgsHtml = images.map(img => `<img src="${img}" onclick="openImageViewer('${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
+                    
+                    // এখানে openImageViewer এর বদলে handleSmartImageClick ব্যবহার করা হলো
+                    const imgsHtml = images.map(img => `<img src="${img}" onclick="handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
 
-                    mediaHtml = `<div class="mb-3 w-full bg-gray-200 rounded-lg overflow-hidden border border-gray-200 relative ${images.length === 1 ? 'min-h-[200px]' : ''} ${gridClass}">${imgsHtml}</div>`;
+                    // wrapper থেকে ondblclick মুছে দেওয়া হলো যেন ডাবল-ক্লিক ফাংশন দুইবার কল না হয়
+                    mediaHtml = `<div class="mb-3 w-full bg-gray-200 rounded-lg overflow-hidden border border-gray-200 relative ${images.length === 1 ? 'min-h-[200px]' : ''} ${gridClass}">
+                                    ${bigHeartHtml}
+                                    ${imgsHtml}
+                                 </div>`;
                 }
             }
 
@@ -6212,6 +6391,71 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         if(btn) { btn.innerHTML = 'সাবমিট করুন'; btn.disabled = false; }
     }
 });
+
+// --- REAL-TIME NEW POST ALERT LOGIC ---
+        window.refreshFeed = () => {
+            document.getElementById('new-post-alert').classList.add('hidden'); // বাটনটি লুকিয়ে ফেলা
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // স্ক্রল করে একদম উপরে নিয়ে যাওয়া
+            loadFeed(currentFeedFilter, true); // নতুন করে ফিড লোড করা
+        };
+
+        function listenForNewPosts() {
+            // অ্যাপ ওপেন করার সময়টা সেভ করে রাখছি
+            const appOpenTime = Date.now();
+            
+            // ফায়ারবেসকে বলছি: "অ্যাপ ওপেন করার পর" যদি নতুন কোনো পোস্ট আসে, শুধু তখনই আমাকে জানাও
+            const recentPostsQuery = query(ref(db, 'posts'), orderByChild('timestamp'), startAt(appOpenTime));
+            
+            onChildAdded(recentPostsQuery, (snapshot) => {
+                const post = snapshot.val();
+                
+                // ইউজার নিজে পোস্ট করলে তো আর অ্যালার্ট দেখানোর দরকার নেই, তাই এই চেকটি করা হলো
+                if (window.currentUser && post.uid !== window.currentUser.uid) {
+                    const alertBtn = document.getElementById('new-post-alert');
+                    if (alertBtn) {
+                        alertBtn.classList.remove('hidden');
+                    }
+                }
+            });
+        }
+        
+        // --- INSTAGRAM STYLE DOUBLE TAP TO LIKE ---
+        window.handleDoubleTapLike = (postId) => {
+            // মোবাইলে ডাবল ট্যাপ করলে সুন্দর ভাইব্রেশন হবে (Haptic feedback)
+            if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+
+            // ১. বড় হার্ট অ্যানিমেশন দেখানো
+            const bigHeart = document.getElementById(`big-heart-${postId}`);
+            if (bigHeart) {
+                bigHeart.classList.remove('animate'); // আগের অ্যানিমেশন ক্লিয়ার
+                void bigHeart.offsetWidth; // রিফ্লো ট্রিগার
+                bigHeart.classList.add('animate'); // নতুন করে অ্যানিমেশন শুরু
+            }
+
+            // ২. অটোমেটিক লাইক দেওয়া (যদি আগে থেকে লাইক দেওয়া না থাকে)
+            const icon = document.getElementById(`like-icon-${postId}`);
+            if (icon && icon.classList.contains('fa-regular')) { 
+                // 'fa-regular' মানে হলো এখনো লাইক দেওয়া হয়নি, তাই toggleLike কল করা হলো
+                toggleLike(postId);
+            }
+        };
+        
+        // --- SMART CLICK HANDLER FOR IMAGES (Single vs Double Click) ---
+        let imageClickTimer = null;
+        window.handleSmartImageClick = (postId, imgSrc) => {
+            if (imageClickTimer === null) {
+                // প্রথম ক্লিক - ৩০০ মিলিসেকেন্ড অপেক্ষা করবে
+                imageClickTimer = setTimeout(() => {
+                    imageClickTimer = null;
+                    openImageViewer(imgSrc); // সিঙ্গেল ক্লিক হলে ছবি বড় হবে
+                }, 300);
+            } else {
+                // ৩০০ মিলিসেকেন্ডের মধ্যে দ্বিতীয় ক্লিক পড়লে
+                clearTimeout(imageClickTimer); // ছবি বড় হওয়া ক্যানসেল করে দিবে
+                imageClickTimer = null;
+                handleDoubleTapLike(postId); // ডাবল-ক্লিক লাইক অ্যানিমেশন চালু করবে
+            }
+        };
     </script>
 
     <script>
@@ -6459,37 +6703,6 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             }
         });
     </script>
-
-<!-- Capacitor Android Back Button Handler -->
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // Capacitor লোড হওয়ার জন্য একটু অপেক্ষা করা হচ্ছে
-        setTimeout(() => {
-            if (window.Capacitor && window.Capacitor.Plugins.App) {
-                window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
-                    
-                    // ১. যদি কোনো মডাল ওপেন থাকে, তবে সেটা আগে ক্লোজ করবে
-                    if (!document.getElementById('post-modal').classList.contains('hidden-custom')) { togglePostModal(false); return; }
-                    if (!document.getElementById('image-viewer-modal').classList.contains('hidden-custom')) { closeImageViewer(); return; }
-                    if (!document.getElementById('comment-full-modal').classList.contains('hidden-custom')) { closeFullCommentModal(); return; }
-                    if (!document.getElementById('chat-conversation-view').classList.contains('hidden')) { closeChat(); return; }
-                    
-                    // ২. যদি ইউজার হোম পেজে না থাকে, তবে হোম পেজে ফিরে আসবে
-                    const homePage = document.getElementById('page-home');
-                    if (homePage && homePage.classList.contains('hidden')) {
-                        switchPage('home');
-                        return;
-                    }
-
-                    // ৩. যদি ইউজার হোম পেজেই থাকে, তবে এক্সিট কনফার্মেশন চাইবে
-                    if (confirm("আপনি কি অ্যাপ থেকে বের হতে চান?")) {
-                        window.Capacitor.Plugins.App.exitApp();
-                    }
-                });
-            }
-        }, 1000);
-    });
-</script>
 
 </body>
 
