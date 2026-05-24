@@ -681,6 +681,9 @@
         }
     </style>
     <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
+    <!-- Dark Mode Files (Hosted on GitHub) -->
+<link rel="stylesheet" href="https://pathargata-digital-community-ltd.github.io/Pathargata/dark-mode.css">
+<script src="https://pathargata-digital-community-ltd.github.io/Pathargata/dark-mode.js" defer></script>
 </head>
 
 <body id="body-main">
@@ -1931,10 +1934,22 @@
                             <div class="flex items-center justify-between p-2"><span class="text-base text-gray-700">বাজার দর আপডেট</span><input type="checkbox" id="toggle-market-alert" onchange="updateSettings('marketAlert', this.checked)" class="w-6 h-6 text-green-600 rounded"></div>
                         </div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">ডিসপ্লে</div>
-                        <div class="p-4 flex gap-4"><button onclick="changeFontSize('small')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-sm font-medium">ছোট</button><button onclick="changeFontSize('normal')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-base font-bold bg-gray-100">স্বাভাবিক</button><button onclick="changeFontSize('large')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-lg font-medium">বড়</button></div>
-                    </div>
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+    <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">ডিসপ্লে ও থিম</div>
+    
+    <!-- ডার্ক মোড বাটন -->
+    <div class="flex items-center justify-between p-4 border-b">
+        <span class="text-base text-gray-700 font-bold"><i class="fa-solid fa-moon text-gray-500 mr-2"></i> ডার্ক মোড</span>
+        <input type="checkbox" onchange="toggleDarkMode(this.checked)" id="setting-dark-mode-toggle" class="w-6 h-6 text-green-600 rounded">
+    </div>
+
+    <!-- ফন্ট সাইজ বাটন (আগেরটাই) -->
+    <div class="p-4 flex gap-4">
+        <button onclick="changeFontSize('small')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-sm font-medium">ছোট</button>
+        <button onclick="changeFontSize('normal')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-base font-bold bg-gray-100">স্বাভাবিক</button>
+        <button onclick="changeFontSize('large')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-lg font-medium">বড়</button>
+    </div>
+</div>
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
                         <div class="p-3 bg-red-50 border-b font-bold text-red-700 text-sm">ডেঞ্জার জোন</div>
                         <div class="p-4"><button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button></div>
