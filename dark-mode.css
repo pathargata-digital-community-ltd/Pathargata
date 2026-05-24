@@ -1,0 +1,82 @@
+/* dark-mode.css */
+
+/* মেইন বডি এবং ব্যাকগ্রাউন্ড */
+body.dark-mode {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+/* কন্টেইনার এবং কার্ডের ব্যাকগ্রাউন্ড */
+.dark-mode .app-container,
+.dark-mode .bg-white,
+.dark-mode .bg-gray-50,
+.dark-mode .bg-gray-100 {
+    background-color: #1e1e1e !important;
+    border-color: #333 !important;
+    color: #e0e0e0 !important;
+}
+
+/* টেক্সট কালার ওভাররাইট */
+.dark-mode .text-gray-900,
+.dark-mode .text-gray-800,
+.dark-mode .text-gray-700 {
+    color: #f3f4f6 !important;
+}
+
+.dark-mode .text-gray-600,
+.dark-mode .text-gray-500,
+.dark-mode .text-gray-400 {
+    color: #9ca3af !important;
+}
+
+/* ন্যাভিগেশন বার এবং হেডার */
+.dark-mode header,
+.dark-mode nav,
+.dark-mode .sticky {
+    background-color: #1e1e1e !important;
+    border-color: #333 !important;
+}
+
+/* ইনপুট, টেক্সট এরিয়া এবং সিলেক্ট বক্স */
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+    background-color: #2d2d2d !important;
+    color: #ffffff !important;
+    border-color: #444 !important;
+}
+
+.dark-mode input:focus,
+.dark-mode textarea:focus,
+.dark-mode select:focus {
+    outline-color: #16a34a !important;
+}
+
+/* সাইডবার */
+.dark-mode #sidebar {
+    background-color: #1e1e1e !important;
+}
+.dark-mode .sidebar-item:hover,
+.dark-mode .sidebar-item:active {
+    background-color: #333 !important;
+}
+
+/* মডাল (Popups) */
+.dark-mode .fixed.inset-0 > div {
+    background-color: #1e1e1e !important;
+    border: 1px solid #333 !important;
+}
+
+/* ডার্ক মোডের নিচে ন্যাভ বার আইকন কালার */
+.dark-mode .nav-btn {
+    color: #9ca3af !important;
+}
+.dark-mode .nav-active {
+    color: #16a34a !important; /* সবুজ কালার ঠিক থাকবে */
+}
+
+/* চ্যাট বাবল */
+.dark-mode .chat-bubble-other {
+    background-color: #333 !important;
+    color: #fff !important;
+}
