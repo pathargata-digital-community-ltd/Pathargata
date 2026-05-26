@@ -1,0 +1,131 @@
+<!-- ১. প্রোফাইল এডিট মডাল -->
+<div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[160] flex items-center justify-center hidden-custom p-4">
+    <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+        <button onclick="window.toggleEditProfile(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <h3 class="text-lg font-bold text-gray-800 mb-5 border-b pb-2">তথ্য পরিবর্তন করুন</h3>
+        <div class="space-y-4">
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">প্রোফাইল ছবি পরিবর্তন করুন</label><input type="file" id="edit-profile-img" accept="image/*" class="w-full bg-gray-50 border p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">নাম</label><input type="text" id="edit-name" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">ডাক নাম (Nickname)</label><input type="text" id="edit-nickname" placeholder="যেমন: রানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">ইউনিয়ন (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-union" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">গ্রাম/মহল্লা (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-village" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">বর্তমান ঠিকানা</label><input type="text" id="edit-location" placeholder="বিস্তারিত ঠিকানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
+        </div>
+        <button onclick="window.saveProfileChanges()" id="btn-save-profile" class="w-full bg-green-600 text-white font-bold py-3 mt-6 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">সংরক্ষণ করুন</button>
+    </div>
+</div>
+
+<!-- ২. নিজের প্রোফাইল পেজ -->
+<div id="page-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-0">
+    <div class="relative bg-white shadow-sm pb-4 mb-3">
+        <div id="profile-cover" class="h-48 w-full cover-photo-gradient relative overflow-hidden">
+            <img id="profile-cover-img" class="w-full h-full object-cover hidden">
+            <button onclick="document.getElementById('cover-upload').click()" class="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md text-gray-700 hover:text-green-600 active:scale-95 transition z-10">
+                <i class="fa-solid fa-camera"></i>
+            </button>
+            <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
+        </div>
+        <div class="px-4">
+            <div class="relative -mt-24 mb-3 flex flex-col items-center">
+                <div class="w-40 h-40 rounded-full p-1.5 bg-white shadow-md z-10">
+                    <div id="profile-avatar-container" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-5xl overflow-hidden border-4 border-white"><i class="fa-solid fa-user"></i></div>
+                </div>
+            </div>
+            <div class="text-center">
+                <h2 id="profile-name" class="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">...</h2>
+                <span id="profile-union-badge" class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mt-1 mb-1 font-bold">---</span>
+                <p id="profile-village-badge" class="text-sm text-gray-500"><i class="fa-solid fa-location-dot"></i> <span id="profile-village-text">...</span></p>
+                <p id="profile-bio" class="text-sm text-gray-600 mt-2 max-w-xs mx-auto italic">...</p>
+            </div>
+            <div class="flex gap-3 mt-6 border-b pb-4">
+                <button onclick="window.toggleEditProfile(true)" class="flex-1 bg-gray-100 text-gray-800 py-2.5 rounded-lg font-bold text-sm hover:bg-gray-200 flex items-center justify-center gap-2 transition"><i class="fa-solid fa-pen"></i> এডিট প্রোফাইল</button>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white p-4 shadow-sm mb-3">
+        <h3 class="font-bold text-lg text-gray-800 mb-3">বিস্তারিত</h3>
+        <div class="space-y-3">
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-briefcase w-6 text-center text-gray-400 text-lg"></i><span class="text-base">পেশা: <strong id="profile-profession" class="text-gray-800 ml-1">---</strong></span></div>
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-location-dot w-6 text-center text-gray-400 text-lg"></i><span class="text-base">ঠিকানা: <strong id="profile-location" class="text-gray-800 ml-1">---</strong></span></div>
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-phone w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="profile-phone">---</span></div>
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-envelope w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="profile-email">---</span></div>
+        </div>
+    </div>
+    <div class="bg-white p-4 shadow-sm mb-3">
+        <div class="flex justify-between items-center mb-3">
+            <div>
+                <h3 class="font-bold text-lg text-gray-800">বন্ধুবান্ধব</h3>
+                <p class="text-sm text-gray-500" id="friends-count-me">0 জন বন্ধু</p>
+            </div>
+            <button onclick="window.showAllFriends('me')" class="text-green-600 text-sm font-bold hover:bg-gray-100 px-3 py-1.5 rounded transition">সব দেখুন</button>
+        </div>
+        <div id="profile-friends-preview-me" class="grid grid-cols-3 gap-2">
+            <p class="col-span-3 text-center text-sm text-gray-400 py-4">লোড হচ্ছে...</p>
+        </div>
+    </div>
+    <div class="px-0">
+        <div class="bg-white p-3 mb-2 shadow-sm flex items-center gap-2">
+            <h3 class="font-bold text-gray-700 text-lg">আমার পোস্টসমূহ</h3>
+        </div>
+        <div id="my-posts-feed" class="space-y-3 pb-10">
+            <p class="text-center text-gray-400 text-sm py-6">লোড হচ্ছে...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ৩. অন্যের প্রোফাইল দেখার পেজ -->
+<div id="page-view-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-50 absolute top-0 left-0 w-full">
+    <div class="bg-white p-2 sticky top-0 z-30 shadow-sm flex items-center gap-2 pt-safe">
+        <button onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <h2 class="font-bold text-lg text-gray-800" id="view-profile-header-name">প্রোফাইল</h2>
+    </div>
+    <div class="relative bg-white shadow-sm pb-4 mb-3">
+        <div class="h-48 w-full bg-gradient-to-r from-blue-500 to-indigo-600 relative overflow-hidden">
+            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden">
+        </div>
+        <div class="px-4">
+            <div class="relative -mt-24 mb-3 flex flex-col items-center">
+                <div class="w-40 h-40 rounded-full p-1.5 bg-white shadow-md z-10">
+                    <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-5xl overflow-hidden font-bold border-4 border-white" id="view-profile-avatar-container"><span id="view-profile-initial">U</span></div>
+                </div>
+            </div>
+            <div class="text-center">
+                <h2 id="view-profile-name" class="text-2xl font-bold text-gray-900 flex items-center justify-center gap-1">...</h2>
+                <span id="view-profile-union-badge" class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1 mb-1 font-bold">---</span>
+                <p class="text-sm text-gray-500"><i class="fa-solid fa-location-dot"></i> <span id="view-profile-village-text">...</span></p>
+                <p id="view-profile-bio" class="text-sm text-gray-600 mt-2 max-w-xs mx-auto italic">---</p>
+            </div>
+            <div id="view-profile-actions" class="flex gap-3 mt-6 border-b pb-4 px-2"></div>
+        </div>
+    </div>
+    <div class="bg-white p-4 shadow-sm mb-3">
+        <h3 class="font-bold text-lg text-gray-800 mb-3">বিস্তারিত</h3>
+        <div class="space-y-3">
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-briefcase w-6 text-center text-gray-400 text-lg"></i><span class="text-base">পেশা: <strong id="view-profile-profession" class="text-gray-800 ml-1">---</strong></span></div>
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-location-dot w-6 text-center text-gray-400 text-lg"></i><span class="text-base">ঠিকানা: <strong id="view-profile-location" class="text-gray-800 ml-1">---</strong></span></div>
+            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-phone w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="view-profile-phone">---</span></div>
+        </div>
+    </div>
+    <div class="bg-white p-4 shadow-sm mb-3">
+        <div class="flex justify-between items-center mb-3">
+            <div>
+                <h3 class="font-bold text-lg text-gray-800">বন্ধুবান্ধব</h3>
+                <p class="text-sm text-gray-500" id="friends-count-other">0 জন বন্ধু</p>
+            </div>
+            <button id="btn-view-friends-other" class="text-blue-600 text-sm font-bold hover:bg-gray-100 px-3 py-1.5 rounded transition">সব দেখুন</button>
+        </div>
+        <div id="profile-friends-preview-other" class="grid grid-cols-3 gap-2">
+            <p class="col-span-3 text-center text-sm text-gray-400 py-4">লোড হচ্ছে...</p>
+        </div>
+    </div>
+    <div class="px-0">
+        <div class="bg-white p-3 mb-2 shadow-sm border-t border-b border-gray-100">
+            <h3 id="view-profile-posts-title" class="font-bold text-gray-700 text-lg">পোস্টসমূহ</h3>
+        </div>
+        <div id="view-profile-posts-feed" class="space-y-3 pb-10">
+            <p class="text-center text-gray-400 text-sm">লোড হচ্ছে...</p>
+        </div>
+    </div>
+</div>
