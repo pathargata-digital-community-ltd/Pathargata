@@ -154,8 +154,12 @@ window.loadFriendsPreview = (uid, mode) => {
 
 // ৫. সকল বন্ধু দেখানো
 window.showAllFriends = (uid) => {
+    // যদি 'me' পাস করা হয়, তবে কারেন্ট ইউজারের UID নিবে
     const targetUid = uid === 'me' ? window.currentUser.uid : uid;
+    
+    // পেজ সুইচ করা
     window.switchPage('friends-list');
+    
     const container = document.getElementById('all-friends-container');
     container.innerHTML = '<div class="flex justify-center pt-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
     
@@ -165,15 +169,37 @@ window.showAllFriends = (uid) => {
             container.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো ফ্রেন্ড নেই</p>';
             return;
         }
-        const profiles = await Promise.all(friends.map(async fUid => {
-            const data = await window.getUserData(fUid);
-            return { ...data, uid: fUid };
-        }));
         
-        container.innerHTML = profiles.map(u => {
-            let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold">${u.name ? window.escapeHTML(u.name).charAt(0) : 'U'}</div>`;
-            return `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer" onclick="window.openUserProfile('${u.uid}')"><div class="flex items-center gap-3">${av}<div><h4 class="font-bold text-gray-800 text-sm">${window.escapeHTML(u.name)}</h4><p class="text-xs text-gray-500">${window.escapeHTML(u.profession) || 'সদস্য'}</p></div></div></div>`;
-        }).join('');
+        try {
+            // এখানে await Promise.all দিয়ে সব বন্ধুদের ডাটা আনা হচ্ছে
+            const profiles = await Promise.all(friends.map(async fUid => {
+                const data = await window.getUserData(fUid);
+                return { ...data, uid: fUid };
+            }));
+            
+            container.innerHTML = profiles.map(u => {
+                // নামের প্রথম অক্ষর বের করা
+                const firstLetter = u.name ? window.escapeHTML(u.name).charAt(0) : 'U';
+                
+                let av = u.profile_pic ? 
+                    `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover">` : 
+                    `<div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold">${firstLetter}</div>`;
+                    
+                return `
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer" onclick="window.openUserProfile('${u.uid}')">
+                    <div class="flex items-center gap-3">
+                        ${av}
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">${window.escapeHTML(u.name || 'User')}</h4>
+                            <p class="text-xs text-gray-500">${window.escapeHTML(u.profession || 'সদস্য')}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (error) {
+            console.error("Error loading all friends:", error);
+            container.innerHTML = '<p class="text-center text-red-500 mt-10">বন্ধুদের তালিকা লোড করতে সমস্যা হয়েছে।</p>';
+        }
     });
 };
 
