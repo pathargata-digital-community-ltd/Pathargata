@@ -80,6 +80,15 @@ window.openUserProfile = (uid) => {
         document.getElementById('view-profile-location').innerText = window.escapeHTML(user.location) || "ঠিকানা উল্লেখ নেই";
         document.getElementById('view-profile-bio').innerText = window.escapeHTML(user.bio) || "কোনো তথ্য নেই";
         document.getElementById('view-profile-phone').innerText = user.privacy_hide_contact ? "গোপনীয়" : (user.phone || "ফোন নেই");
+        // আপডেট কাউন্টারস
+        document.getElementById('view-stats-join-date').innerText = user.joinDate || "---";
+        get(query(ref(window.db, 'posts'), orderByChild('uid'), equalTo(uid))).then(postSnap => {
+            const count = postSnap.exists() ? Object.keys(postSnap.val()).length : 0;
+            document.getElementById('view-stats-posts-count').innerText = count;
+        });
+        get(ref(window.db, `users/${uid}/friends`)).then(fSnap => {
+            document.getElementById('view-stats-friends-count').innerText = fSnap.exists() ? Object.keys(fSnap.val()).length : 0;
+        });
         
         if (user.cover_pic) {
             coverImg.src = user.cover_pic;
