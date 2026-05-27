@@ -3640,6 +3640,13 @@ window.userDetails = userDetails;
             document.getElementById('profile-phone').innerHTML = `${userDetails.phone || "ফোন নেই"}`;
             document.getElementById('profile-email').innerHTML = `${userDetails.email}`;
             ['edit-name', 'edit-nickname', 'edit-profession', 'edit-location', 'edit-union', 'edit-village', 'edit-bio', 'donor-phone'].forEach(id => document.getElementById(id).value = userDetails[id.replace('edit-', '').replace('donor-', '')] || "");
+            // নিজের প্রোফাইলের কাউন্টারস
+        document.getElementById('stats-join-date').innerText = window.userDetails.joinDate || "---";
+        get(query(ref(window.db, 'posts'), orderByChild('uid'), equalTo(window.currentUser.uid))).then(postSnap => {
+            const count = postSnap.exists() ? Object.keys(postSnap.val()).length : 0;
+            document.getElementById('stats-posts-count').innerText = count;
+        });
+        document.getElementById('stats-friends-count').innerText = window.myFriends.length || 0;
 
             if (userDetails.cover_pic) {
                 const coverImg = document.getElementById('profile-cover-img');
