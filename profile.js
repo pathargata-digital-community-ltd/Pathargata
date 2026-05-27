@@ -103,27 +103,52 @@ window.openUserProfile = (uid) => {
 
 // ৪. ফ্রেন্ডস প্রিভিউ লোড করা
 window.loadFriendsPreview = (uid, mode) => {
-    const container = document.getElementById(mode === 'me' ? 'profile-friends-preview-me' : 'profile-friends-preview-other'),
-        countSpan = document.getElementById(mode === 'me' ? 'friends-count-me' : 'friends-count-other');
+    const container = document.getElementById(mode === 'me' ? 'profile-friends-preview-me' : 'profile-friends-preview-other');
+    const countSpan = document.getElementById(mode === 'me' ? 'friends-count-me' : 'friends-count-other');
+    
+    if (!container || !countSpan) return; // যদি কোনো কারণে এলিমেন্ট না থাকে, তাহলে এরর এড়াবে
     
     container.innerHTML = '<p class="col-span-3 text-center text-xs text-gray-400">লোড হচ্ছে...</p>';
     
     get(ref(window.db, `users/${uid}/friends`)).then(async snap => {
         const friends = Object.keys(snap.val() || {});
         countSpan.innerText = `${friends.length} জন বন্ধু`;
+        
         if (friends.length === 0) {
             container.innerHTML = '<p class="col-span-3 text-center text-xs text-gray-400 py-2">এখনো ফ্রেন্ড নেই</p>';
             return;
         }
-        const profiles = await Promise.all(friends.slice(0, 6).map(async fUid => {
-            const data = await window.getUserData(fUid);
-            return { ...data, uid: fUid };
-        }));
-        
-        container.innerHTML = profiles.map(uData => {
-            let av = uData.profile_pic ? `<img src="${uData.profile_pic}" class="w-full h-full object-cover">` : `<span class="text-2xl">${window.escapeHTML(uData.name).charAt(0)}</span>`;
-            return `<div onclick="window.openUserProfile('${uData.uid}')" class="flex flex-col items-center cursor-pointer"><div class="w-full aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 font-bold mb-1 border border-gray-200 overflow-hidden shadow-sm">${av}</div><p class="text-[11px] font-semibold text-gray-800 truncate w-full leading-tight mt-0.5">${window.escapeHTML(uData.name).split(' ')[0]}</p></div>`;
-        }).join('');
+
+        try {
+            // Promise.all এর ভেতরে window.getUserData ব্যবহার করা হয়েছে
+            const profiles = await Promise.all(friends.slice(0, 6).map(async fUid => {
+                const data = await window.getUserData(fUid);
+                return { ...data, uid: fUid };
+            }));
+            
+            container.innerHTML = profiles.map(uData => {
+                // uData.name না থাকলে ফলব্যাক হিসেবে 'User' ব্যবহার করা হয়েছে
+                const name = uData.name || 'User';
+                const firstLetter = name.charAt(0).toUpperCase();
+                
+                let av = uData.profile_pic ? 
+                    `<img src="${uData.profile_pic}" class="w-full h-full object-cover">` : 
+                    `<span class="text-2xl">${firstLetter}</span>`;
+                
+                return `
+                <div onclick="window.openUserProfile('${uData.uid}')" class="flex flex-col items-center cursor-pointer">
+                    <div class="w-full aspect-square bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 font-bold mb-1 border border-gray-200 overflow-hidden shadow-sm">
+                        ${av}
+                    </div>
+                    <p class="text-[11px] font-semibold text-gray-800 truncate w-full text-center leading-tight mt-0.5">
+                        ${window.escapeHTML(name).split(' ')[0]}
+                    </p>
+                </div>`;
+            }).join('');
+        } catch (error) {
+            console.error("Error loading friends preview:", error);
+            container.innerHTML = '<p class="col-span-3 text-center text-xs text-red-400">লোড করতে সমস্যা হয়েছে</p>';
+        }
     });
 }
 
