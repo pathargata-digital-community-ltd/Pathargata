@@ -3620,46 +3620,65 @@ window.userDetails = userDetails;
         };
 
         function updateUIWithUserData() {
-            // ফলব্যাক লজিক: ডাটাবেসে নাম না থাকলে কারেন্ট ইউজার ডিসপ্লে নেম দেখাবে
             const finalName = userDetails.name || (window.currentUser?.displayName) || "অজ্ঞাত";
-
             const badge = checkUserBadge(userDetails);
             const displayName = finalName + (userDetails.nickname ? ` (${userDetails.nickname})` : "");
-
             let avatarHtml = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user"></i>`;
 
-            // বাকি কোড অপরিবর্তিত থাকবে...
-            ['sidebar-avatar-container', 'profile-avatar-container'].forEach(id => document.getElementById(id).innerHTML = avatarHtml);
-            document.getElementById('my-comment-avatar-full').innerHTML = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-gray-400"></i>`;
-            document.getElementById('sidebar-name').innerHTML = document.getElementById('profile-name').innerHTML = displayName + badge;
-            document.getElementById('sidebar-village').innerText = document.getElementById('profile-village-text').innerText = userDetails.village || "গ্রাম উল্লেখ নেই";
-            document.getElementById('profile-union-badge').innerText = userDetails.union || "ইউনিয়ন নেই";
-            document.getElementById('profile-bio').innerText = userDetails.bio || "নিজের সম্পর্কে কিছু লিখুন...";
-            document.getElementById('profile-profession').innerText = userDetails.profession || "উল্লেখ নেই";
-            document.getElementById('profile-location').innerText = userDetails.location || "উল্লেখ নেই";
-            document.getElementById('profile-phone').innerHTML = `${userDetails.phone || "ফোন নেই"}`;
-            document.getElementById('profile-email').innerHTML = `${userDetails.email}`;
-            ['edit-name', 'edit-nickname', 'edit-profession', 'edit-location', 'edit-union', 'edit-village', 'edit-bio', 'donor-phone'].forEach(id => document.getElementById(id).value = userDetails[id.replace('edit-', '').replace('donor-', '')] || "");
-            // নিজের প্রোফাইলের কাউন্টারস
-        document.getElementById('stats-join-date').innerText = window.userDetails.joinDate || "---";
-        get(query(ref(window.db, 'posts'), orderByChild('uid'), equalTo(window.currentUser.uid))).then(postSnap => {
-            const count = postSnap.exists() ? Object.keys(postSnap.val()).length : 0;
-            document.getElementById('stats-posts-count').innerText = count;
-        });
-        document.getElementById('stats-friends-count').innerText = window.myFriends.length || 0;
+            // সেফটি ফাংশন (যাতে এলিমেন্ট না পেলেও কোড ক্র্যাশ না করে)
+            const setHTML = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
+            const setText = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
+            const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
 
-            if (userDetails.cover_pic) {
-                const coverImg = document.getElementById('profile-cover-img');
+            setHTML('sidebar-avatar-container', avatarHtml);
+            setHTML('profile-avatar-container', avatarHtml);
+            setHTML('my-comment-avatar-full', userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-gray-400"></i>`);
+            
+            setHTML('sidebar-name', displayName + badge);
+            if(document.getElementById('profile-name')) setHTML('profile-name', displayName + badge);
+
+            setText('sidebar-village', userDetails.village || "গ্রাম উল্লেখ নেই");
+            setText('profile-village-text', userDetails.village || "গ্রাম উল্লেখ নেই");
+            setText('profile-union-badge', userDetails.union || "ইউনিয়ন নেই");
+            setText('profile-bio', userDetails.bio || "নিজের সম্পর্কে কিছু লিখুন...");
+            setText('profile-profession', userDetails.profession || "উল্লেখ নেই");
+            setText('profile-location', userDetails.location || "উল্লেখ নেই");
+            
+            setHTML('profile-phone', userDetails.phone || "ফোন নেই");
+            setHTML('profile-email', userDetails.email);
+
+            ['edit-name', 'edit-nickname', 'edit-profession', 'edit-location', 'edit-union', 'edit-village', 'edit-bio', 'donor-phone'].forEach(id => {
+                setVal(id, userDetails[id.replace('edit-', '').replace('donor-', '')] || "");
+            });
+
+            setText('stats-join-date', window.userDetails.joinDate || "---");
+
+            get(query(ref(window.db, 'posts'), orderByChild('uid'), equalTo(window.currentUser.uid))).then(postSnap => {
+                const count = postSnap.exists() ? Object.keys(postSnap.val()).length : 0;
+                setText('stats-posts-count', count);
+            });
+            
+            if (window.myFriends) {
+                setText('stats-friends-count', window.myFriends.length || 0);
+            }
+
+            // কভার ফটো ফিক্স
+            const coverImg = document.getElementById('profile-cover-img');
+            if (coverImg && userDetails.cover_pic) {
                 coverImg.src = userDetails.cover_pic;
                 coverImg.classList.remove('hidden');
             }
+
+            // গ্রামের ট্যাব ফিক্স
             const tabVillage = document.getElementById('tab-feed-village');
-            if (userDetails.village) {
-                tabVillage.style.display = 'block';
-                tabVillage.innerText = userDetails.village;
-            } else {
-                tabVillage.style.display = 'none';
-                if (currentFeedFilter === 'village') filterFeed('all');
+            if (tabVillage) {
+                if (userDetails.village) {
+                    tabVillage.style.display = 'block';
+                    tabVillage.innerText = userDetails.village;
+                } else {
+                    tabVillage.style.display = 'none';
+                    if (currentFeedFilter === 'village') filterFeed('all');
+                }
             }
         }
 
@@ -6418,6 +6437,13 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 // Inject into the container
                 document.getElementById('profile-ui-container').innerHTML = htmlText;
                 console.log("Profile Design Loaded Successfully!");
+
+                // --- ফিক্স: ডিজাইন লোড হওয়ার পর ডাটাগুলো আবার কল করা হচ্ছে ---
+                if (window.currentUser && window.userDetails) {
+                    if(typeof updateUIWithUserData === 'function') updateUIWithUserData();
+                    if(typeof loadFriendsPreview === 'function') loadFriendsPreview(window.currentUser.uid, 'me');
+                }
+                // -------------------------------------------------------------
                 
             } catch (error) {
                 console.error("Error loading Profile UI:", error);
