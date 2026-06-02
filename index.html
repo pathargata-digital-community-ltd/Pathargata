@@ -3658,11 +3658,11 @@ window.userDetails = userDetails;
                 setText('stats-posts-count', count);
             });
             
-            // সরাসরি ফায়ারবেস থেকে ফ্রেন্ড কাউন্ট করা হচ্ছে
-            get(ref(window.db, `users/${window.currentUser.uid}/friends`)).then(fSnap => {
-                const friendCount = fSnap.exists() ? Object.keys(fSnap.val()).length : 0;
-                setText('stats-friends-count', friendCount);
-            });
+            // সরাসরি ফায়ারবেস থেকে রিয়েল-টাইম ফ্রেন্ড কাউন্ট করা হচ্ছে
+        onValue(ref(window.db, `users/${window.currentUser.uid}/friends`), fSnap => {
+            const friendCount = fSnap.exists() ? Object.keys(fSnap.val()).length : 0;
+            setText('stats-friends-count', friendCount);
+        });
 
             // কভার ফটো ফিক্স
             const coverImg = document.getElementById('profile-cover-img');
