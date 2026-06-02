@@ -7,286 +7,97 @@
             <div><label class="text-xs font-bold text-gray-500 block mb-1">প্রোফাইল ছবি পরিবর্তন করুন</label><input type="file" id="edit-profile-img" accept="image/*" class="w-full bg-gray-50 border p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">নাম</label><input type="text" id="edit-name" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">ডাক নাম (Nickname)</label><input type="text" id="edit-nickname" placeholder="যেমন: রানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">ইউনিয়ন (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-union" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">গ্রাম/মহল্লা (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-village" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">ইউনিয়ন (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-union" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">গ্রাম/মহল্লা (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-village" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বর্তমান ঠিকানা</label><input type="text" id="edit-location" placeholder="বিস্তারিত ঠিকানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
         </div>
         <button onclick="window.saveProfileChanges()" id="btn-save-profile" class="w-full bg-green-600 text-white font-bold py-3 mt-6 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">সংরক্ষণ করুন</button>
     </div>
 </div>
 
-<!-- স্মার্ট প্রোফাইল কার্ড মডাল — REDESIGNED -->
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Tiro+Bangla&display=swap');
-
-  #capture-card-area {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-  }
-
-  /* Holographic shimmer strip */
-  .holo-strip {
-    background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255,255,255,0.08) 20%,
-      rgba(255,255,255,0.18) 50%,
-      rgba(255,255,255,0.08) 80%,
-      transparent 100%
-    );
-    animation: holoShift 3s ease-in-out infinite;
-  }
-  @keyframes holoShift {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-
-  /* Diagonal pattern overlay */
-  .card-pattern {
-    background-image: repeating-linear-gradient(
-      -55deg,
-      transparent,
-      transparent 8px,
-      rgba(255,255,255,0.03) 8px,
-      rgba(255,255,255,0.03) 9px
-    );
-  }
-
-  /* Rotating circle decoration */
-  .deco-circle-lg {
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    border: 30px solid rgba(255,255,255,0.04);
-    position: absolute;
-    top: -60px;
-    right: -60px;
-    pointer-events: none;
-  }
-  .deco-circle-sm {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 20px solid rgba(255,255,255,0.05);
-    position: absolute;
-    bottom: -30px;
-    left: -30px;
-    pointer-events: none;
-  }
-
-  /* Watermark */
-  .card-watermark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-20deg);
-    font-size: 1.6rem;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    color: rgba(255,255,255,0.045);
-    white-space: nowrap;
-    line-height: 2;
-    text-align: center;
-    pointer-events: none;
-    z-index: 0;
-    user-select: none;
-  }
-
-  /* Dot-grid watermark pattern */
-  .card-dotgrid {
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
-    background-size: 14px 14px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* Photo frame */
-  .photo-frame {
-    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
-    border-radius: 10px;
-    padding: 3px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5);
-  }
-
-  /* Info label chip */
-  .info-chip {
-    background: rgba(0,0,0,0.2);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 9px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.6);
-    margin-bottom: 2px;
-    display: inline-block;
-  }
-
-  /* UID pill */
-  .uid-pill {
-    background: rgba(0,0,0,0.25);
-    border: 1px solid rgba(255,215,0,0.3);
-    border-radius: 6px;
-    padding: 4px 10px;
-  }
-
-  /* Bottom bar */
-  .card-footer-bar {
-    background: rgba(0,0,0,0.25);
-    border-top: 1px solid rgba(255,255,255,0.1);
-  }
-
-  /* QR box */
-  .qr-box {
-    background: white;
-    border-radius: 6px;
-    padding: 3px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-</style>
-
+<!-- স্মার্ট প্রোফাইল কার্ড মডাল -->
 <div id="profile-card-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-    <div class="w-full max-w-[390px] relative transform transition-all duration-300 scale-100">
-
+    <div class="w-full max-w-[380px] relative transform transition-all duration-300 scale-100">
         <!-- Close Button -->
         <button onclick="window.closeProfileCard()" class="absolute -top-12 right-0 bg-white bg-opacity-20 hover:bg-opacity-40 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md z-50">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
 
-        <!-- ═══════════════════════════════════════════
-             THE REDESIGNED ID CARD
-        ════════════════════════════════════════════ -->
-        <div id="capture-card-area" class="w-full bg-gradient-to-br from-green-600 via-green-700 to-teal-700 relative overflow-hidden shadow-2xl rounded-2xl text-white" style="min-height: 260px; border: 1px solid rgba(255,255,255,0.15);">
-
-            <!-- Background layers -->
-            <div class="card-dotgrid"></div>
-            <div class="card-pattern absolute inset-0 z-0"></div>
-            <div class="deco-circle-lg"></div>
-            <div class="deco-circle-sm"></div>
-
-            <!-- Holographic shimmer strip across middle -->
-            <div class="holo-strip absolute inset-x-0 z-0" style="top: 38%; height: 60px;"></div>
-
-            <!-- Watermark — stacked Bengali text -->
-            <div class="card-watermark">
-                পাথরঘাটা ডিজিটাল<br>
-                পাথরঘাটা ডিজিটাল<br>
-                পাথরঘাটা ডিজিটাল
+        <!-- The ID Card -->
+        <div id="capture-card-area" class="w-full h-[240px] bg-gradient-to-br from-green-600 to-teal-700 relative overflow-hidden shadow-2xl rounded-xl text-white border border-white/20">
+            
+            <!-- Watermark -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 text-[3.5rem] font-extrabold text-white/5 whitespace-nowrap pointer-events-none z-0 leading-none">
+                পাথরঘাটা ডিজিটাল<br>পাথরঘাটা ডিজিটাল
             </div>
 
-            <!-- ── TOP HEADER ── -->
-            <div class="relative z-10 flex items-center justify-between px-4 py-3" style="background: rgba(0,0,0,0.18); border-bottom: 1px solid rgba(255,255,255,0.12);">
-                <div class="flex items-center gap-2.5">
-                    <!-- Logo circle -->
-                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md shrink-0" style="box-shadow: 0 0 0 2px rgba(255,255,255,0.2);">
-                        <i class="fa-solid fa-map-location-dot text-green-600 text-base"></i>
+            <!-- Top Header -->
+            <div class="bg-white/10 backdrop-blur-md px-4 py-2 flex justify-between items-center relative z-10 border-b border-white/20">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
+                        <i class="fa-solid fa-map-location-dot text-sm"></i>
                     </div>
-                    <div class="leading-none">
-                        <p class="font-black text-sm tracking-wide">পাথরঘাটা ডিজিটাল</p>
-                        <p class="text-[9px] font-semibold tracking-[0.2em] uppercase text-green-200 mt-0.5">Member Smart ID Card</p>
+                    <div class="leading-tight">
+                        <h2 class="text-sm font-bold tracking-wide">পাথরঘাটা ডিজিটাল</h2>
+                        <p class="text-[9px] font-medium tracking-widest uppercase text-green-100">Smart ID Card</p>
                     </div>
                 </div>
-                <!-- Chip icon right -->
-                <div class="flex flex-col items-end gap-0.5">
-                    <i class="fa-solid fa-microchip text-2xl text-yellow-300" style="filter: drop-shadow(0 0 4px rgba(255,215,0,0.5));"></i>
-                    <p class="text-[8px] text-green-200 tracking-widest uppercase font-bold">NFC</p>
-                </div>
+                <i class="fa-solid fa-microchip text-2xl text-yellow-300 opacity-80"></i>
             </div>
 
-            <!-- ── BODY ── -->
-            <div class="relative z-10 flex gap-4 px-4 py-4">
-
-                <!-- LEFT: Photo + QR -->
-                <div class="flex flex-col items-center gap-2.5 shrink-0">
-                    <!-- Photo -->
-                    <div class="photo-frame">
-                        <div id="card-user-img" class="w-[76px] h-[88px] rounded-lg overflow-hidden bg-white/20 flex items-center justify-center">
-                            <!-- Image injected here -->
+            <!-- Body Content -->
+            <div class="px-4 py-3 h-full relative z-10 flex items-start gap-4">
+                
+                <!-- Left Side: Image & QR -->
+                <div class="flex flex-col items-center gap-3 shrink-0">
+                    <div class="relative">
+                        <div id="card-user-img" class="w-20 h-20 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center overflow-hidden">
+                            <!-- Image will be injected here -->
+                        </div>
+                        <div id="card-verify-badge" class="hidden absolute -bottom-2 -right-2 bg-blue-500 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm" title="Verified">
+                            <i class="fa-solid fa-check text-[10px] text-white"></i>
                         </div>
                     </div>
-                    <!-- Verify badge (conditionally shown) -->
-                    <div id="card-verify-badge" class="hidden items-center gap-1 bg-blue-500 rounded-full px-2 py-0.5 text-[9px] font-bold border border-white/30">
-                        <i class="fa-solid fa-check text-[8px]"></i> Verified
-                    </div>
-                    <!-- QR Code -->
-                    <div class="qr-box">
-                        <img id="card-qr-code" src="" alt="QR Code" class="w-[52px] h-[52px] block">
+                    <!-- QR Code Container -->
+                    <div class="bg-white p-1 rounded-md shadow-sm">
+                        <img id="card-qr-code" src="" alt="QR Code" class="w-12 h-12">
                     </div>
                 </div>
 
-                <!-- RIGHT: Info -->
-                <div class="flex-1 min-w-0 flex flex-col justify-between">
-
-                    <!-- Name -->
-                    <div class="mb-3">
-                        <p class="info-chip">নাম / Name</p>
-                        <h3 id="card-user-name" class="font-black text-xl leading-tight truncate" style="text-shadow: 0 1px 3px rgba(0,0,0,0.3);">...</h3>
+                <!-- Right Side: Details Information -->
+                <div class="flex-1 min-w-0 mt-1">
+                    <h3 id="card-user-name" class="font-bold text-xl leading-tight truncate border-b border-white/20 pb-1 mb-2">...</h3>
+                    
+                    <div class="space-y-1.5 text-xs text-white">
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-phone w-3 mt-1 text-green-200"></i>
+                            <span id="card-user-phone" class="font-mono tracking-widest leading-tight">...</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-location-dot w-3 mt-1 text-green-200"></i>
+                            <span id="card-user-address" class="leading-tight">...</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-briefcase w-3 mt-1 text-green-200"></i>
+                            <span id="card-user-profession" class="leading-tight font-medium">...</span>
+                        </div>
                     </div>
 
-                    <!-- Info rows -->
-                    <div class="space-y-2">
-                        <!-- Phone -->
-                        <div>
-                            <p class="info-chip">মোবাইল</p>
-                            <div class="flex items-center gap-1.5">
-                                <i class="fa-solid fa-phone text-green-300 text-[10px]"></i>
-                                <span id="card-user-phone" class="text-sm font-mono tracking-wider text-white font-semibold">...</span>
-                            </div>
-                        </div>
-                        <!-- Address -->
-                        <div>
-                            <p class="info-chip">ঠিকানা</p>
-                            <div class="flex items-start gap-1.5">
-                                <i class="fa-solid fa-location-dot text-green-300 text-[10px] mt-0.5"></i>
-                                <span id="card-user-address" class="text-xs text-green-50 leading-snug">...</span>
-                            </div>
-                        </div>
-                        <!-- Profession -->
-                        <div>
-                            <p class="info-chip">পেশা</p>
-                            <div class="flex items-center gap-1.5">
-                                <i class="fa-solid fa-briefcase text-green-300 text-[10px]"></i>
-                                <span id="card-user-profession" class="text-xs text-green-50 font-semibold">...</span>
-                            </div>
+                    <!-- Codes Section -->
+                    <div class="flex gap-2 mt-3 pt-2 border-t border-white/20">
+                        <div class="bg-black/20 rounded px-2 py-1 flex-1 text-center">
+                            <p class="text-[8px] text-green-200 uppercase tracking-widest mb-0.5">UID / Ref Code</p>
+                            <p id="card-user-uid" class="font-mono font-bold text-xs text-yellow-300">...</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- ── FOOTER BAR: UID + decorative strip ── -->
-            <div class="card-footer-bar relative z-10 flex items-center justify-between px-4 py-2.5">
-                <div class="uid-pill flex items-center gap-2">
-                    <i class="fa-solid fa-fingerprint text-yellow-300 text-sm"></i>
-                    <div>
-                        <p class="text-[8px] text-green-300 uppercase tracking-widest font-bold leading-none mb-0.5">UID / Ref Code</p>
-                        <p id="card-user-uid" class="font-mono font-black text-sm text-yellow-300 leading-none" style="letter-spacing: 0.12em;">...</p>
-                    </div>
-                </div>
-                <!-- Decorative barcode lines -->
-                <div class="flex items-end gap-[2px] opacity-40">
-                    <div style="width:2px;height:20px;background:white;border-radius:1px;"></div>
-                    <div style="width:1px;height:14px;background:white;border-radius:1px;"></div>
-                    <div style="width:3px;height:22px;background:white;border-radius:1px;"></div>
-                    <div style="width:1px;height:10px;background:white;border-radius:1px;"></div>
-                    <div style="width:2px;height:18px;background:white;border-radius:1px;"></div>
-                    <div style="width:1px;height:22px;background:white;border-radius:1px;"></div>
-                    <div style="width:3px;height:12px;background:white;border-radius:1px;"></div>
-                    <div style="width:1px;height:20px;background:white;border-radius:1px;"></div>
-                    <div style="width:2px;height:16px;background:white;border-radius:1px;"></div>
-                    <div style="width:1px;height:22px;background:white;border-radius:1px;"></div>
-                    <div style="width:2px;height:14px;background:white;border-radius:1px;"></div>
-                    <div style="width:3px;height:20px;background:white;border-radius:1px;"></div>
-                </div>
-            </div>
-
         </div>
-        <!-- ══════════════════════════════════════════ -->
-
+        
         <!-- Action Button below card -->
-        <button onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
+        <button onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
             <i class="fa-solid fa-download"></i> কার্ড সেভ করুন
         </button>
     </div>
