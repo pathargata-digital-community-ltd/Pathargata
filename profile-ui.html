@@ -17,6 +17,92 @@
     </div>
 </div>
 
+<!-- স্মার্ট প্রোফাইল কার্ড মডাল -->
+<div id="profile-card-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+    <div class="w-full max-w-[380px] relative transform transition-all duration-300 scale-100">
+        <!-- Close Button -->
+        <button onclick="window.closeProfileCard()" class="absolute -top-12 right-0 bg-white bg-opacity-20 hover:bg-opacity-40 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md z-50">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+
+        <!-- The ID Card -->
+        <div id="capture-card-area" class="w-full h-[240px] bg-gradient-to-br from-green-600 to-teal-700 relative overflow-hidden shadow-2xl rounded-xl text-white border border-white/20">
+            
+            <!-- Watermark -->
+            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 text-[3.5rem] font-extrabold text-white/5 whitespace-nowrap pointer-events-none z-0 leading-none">
+                পাথরঘাটা ডিজিটাল<br>পাথরঘাটা ডিজিটাল
+            </div>
+
+            <!-- Top Header -->
+            <div class="bg-white/10 backdrop-blur-md px-4 py-2 flex justify-between items-center relative z-10 border-b border-white/20">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
+                        <i class="fa-solid fa-map-location-dot text-sm"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <h2 class="text-sm font-bold tracking-wide">পাথরঘাটা ডিজিটাল</h2>
+                        <p class="text-[9px] font-medium tracking-widest uppercase text-green-100">Smart ID Card</p>
+                    </div>
+                </div>
+                <i class="fa-solid fa-microchip text-2xl text-yellow-300 opacity-80"></i>
+            </div>
+
+            <!-- Body Content -->
+            <div class="px-4 py-3 h-full relative z-10 flex items-start gap-4">
+                
+                <!-- Left Side: Image & QR -->
+                <div class="flex flex-col items-center gap-3 shrink-0">
+                    <div class="relative">
+                        <div id="card-user-img" class="w-20 h-20 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center overflow-hidden">
+                            <!-- Image will be injected here -->
+                        </div>
+                        <div id="card-verify-badge" class="hidden absolute -bottom-2 -right-2 bg-blue-500 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm" title="Verified">
+                            <i class="fa-solid fa-check text-[10px] text-white"></i>
+                        </div>
+                    </div>
+                    <!-- QR Code Container -->
+                    <div class="bg-white p-1 rounded-md shadow-sm">
+                        <img id="card-qr-code" src="" alt="QR Code" class="w-12 h-12">
+                    </div>
+                </div>
+
+                <!-- Right Side: Details Information -->
+                <div class="flex-1 min-w-0 mt-1">
+                    <h3 id="card-user-name" class="font-bold text-xl leading-tight truncate border-b border-white/20 pb-1 mb-2">...</h3>
+                    
+                    <div class="space-y-1.5 text-xs text-white">
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-phone w-3 mt-1 text-green-200"></i>
+                            <span id="card-user-phone" class="font-mono tracking-widest leading-tight">...</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-location-dot w-3 mt-1 text-green-200"></i>
+                            <span id="card-user-address" class="leading-tight">...</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-briefcase w-3 mt-1 text-green-200"></i>
+                            <span id="card-user-profession" class="leading-tight font-medium">...</span>
+                        </div>
+                    </div>
+
+                    <!-- Codes Section -->
+                    <div class="flex gap-2 mt-3 pt-2 border-t border-white/20">
+                        <div class="bg-black/20 rounded px-2 py-1 flex-1 text-center">
+                            <p class="text-[8px] text-green-200 uppercase tracking-widest mb-0.5">UID / Ref Code</p>
+                            <p id="card-user-uid" class="font-mono font-bold text-xs text-yellow-300">...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Button below card -->
+        <button onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
+            <i class="fa-solid fa-download"></i> কার্ড সেভ করুন
+        </button>
+    </div>
+</div>
+
 <!-- ২. নিজের প্রোফাইল পেজ (UPDATED DESIGN) -->
 <div id="page-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-0">
     <div class="relative bg-white shadow-sm mb-3 pb-4">
@@ -40,10 +126,15 @@
                     </div>
                 </div>
                 
-                <!-- Edit Profile Button -->
-                <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 flex items-center justify-center gap-2 transition mb-2 shadow-sm">
-                    <i class="fa-solid fa-pen"></i> এডিট প্রোফাইল
-                </button>
+                <!-- Action Buttons: Edit Profile & My Card -->
+                <div class="flex gap-2 mb-2 relative z-10">
+                    <button onclick="window.openProfileCard()" class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 flex items-center justify-center gap-2 transition shadow-md active:scale-95">
+                        <i class="fa-solid fa-id-card"></i> আমার কার্ড
+                    </button>
+                    <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-200 flex items-center justify-center gap-2 transition shadow-sm active:scale-95">
+                        <i class="fa-solid fa-pen"></i> এডিট
+                    </button>
+                </div>
             </div>
 
             <!-- Name and Bio -->
