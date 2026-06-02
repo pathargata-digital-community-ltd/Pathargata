@@ -1298,51 +1298,9 @@
                         <div id="scroll-sentinel" style="height: 10px; width: 100%;"></div>
                     </div>
                 </div>
+                
+                <div id="contest-ui-container" class="hidden-custom"></div>
 
-                <!-- 3. Contest Container -->
-                <div id="contest-container" class="hidden-custom pb-20">
-                    <!-- Premium Banner -->
-                    <div class="bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 p-6 text-center text-white relative overflow-hidden">
-                        <i class="fa-solid fa-camera-retro absolute -right-4 -bottom-4 text-8xl opacity-20 transform -rotate-12"></i>
-                        <h2 class="text-2xl font-extrabold mb-1 shadow-sm">সেরা ছবি প্রতিযোগিতা</h2>
-                        <p class="text-xs text-purple-100 mb-2 opacity-90">আপনার তোলা সেরা ছবিটি আপলোড করুন এবং জিতে নিন আকর্ষণীয় পুরষ্কার!</p>
-                        <button onclick="toggleContestModal(true)" class="bg-white text-purple-700 px-6 py-2.5 rounded-full font-bold shadow-lg transform active:scale-95 transition hover:bg-gray-50 text-sm mt-2">
-                            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> ছবি আপলোড করুন
-                        </button>
-                    </div>
-
-                    <!-- Contest Details Bar (Sponsor, Date, Rules) -->
-                    <div class="bg-white px-4 py-3 flex justify-between items-center shadow-sm border-b z-10 relative">
-    <div class="flex flex-col gap-1">
-        <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-handshake text-purple-500 w-4 text-center"></i> স্পন্সর: <span id="dyn-contest-sponsor" class="text-gray-800">লোড হচ্ছে...</span></span>
-        <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-clock text-pink-500 w-4 text-center"></i> শেষ সময়: <span id="dyn-contest-date" class="text-red-500">লোড হচ্ছে...</span></span>
-    </div>
-    <button onclick="toggleContestRulesModal(true)" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm border border-blue-100">
-        <i class="fa-solid fa-info text-lg"></i>
-    </button>
-</div>
-<!-- Contest Prizes Section -->
-    <div id="dyn-contest-prizes-container" class="hidden-custom bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-3 border-b border-yellow-200 flex items-center gap-3 shadow-inner">
-        <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-md">
-            <i class="fa-solid fa-gift text-lg animate-bounce"></i>
-        </div>
-        <div class="flex-1">
-            <h4 class="font-bold text-gray-800 text-sm">বিজয়ী পুরস্কার</h4>
-            <p id="dyn-contest-prizes" class="text-[11px] text-gray-700 font-bold mt-0.5 leading-tight">লোড হচ্ছে...</p>
-        </div>
-    </div>
-                    
-                    <div class="p-4 flex justify-between items-center bg-gray-50 shadow-sm border-b">
-                        <h3 class="font-bold text-gray-700">অংশগ্রহণকারীদের ছবি</h3>
-                        <span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-bold shadow-sm" id="contest-total-participants">0 জন</span>
-                    </div>
-
-                    <!-- Photos Grid -->
-                    <div id="contest-photos-grid" class="p-3 grid grid-cols-2 gap-3 bg-gray-100 min-h-[300px]">
-                        <p class="col-span-2 text-center text-gray-400 py-10">লোড হচ্ছে...</p>
-                    </div>
-                </div>
-                </div>
             <div id="page-services" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
                 <div class="bg-white p-3 sticky top-20 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl">
                     <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
@@ -1946,6 +1904,9 @@
             <div onclick="toggleFab()" id="main-fab" class="fab-btn bg-green-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-2xl cursor-pointer hover:bg-green-700 border-2 border-white"><i class="fa-solid fa-plus"></i></div>
         </div>
     </div>
+    
+    <div id="contest-modals-container"></div>
+    
     <!-- Add Note Modal -->
         <div id="note-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
             <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative transform transition-all">
@@ -1962,50 +1923,7 @@
                 </button>
             </div>
         </div>
-        <!-- Contest Rules Modal -->
-<div id="contest-rules-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative transform transition-all">
-        <button onclick="toggleContestRulesModal(false)" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <h3 class="font-bold text-xl text-purple-600 mb-4 border-b pb-2"><i class="fa-solid fa-scroll text-purple-500 mr-1"></i> নিয়ম ও শর্তাবলী</h3>
         
-        <ul id="dyn-contest-rules-list" class="text-sm text-gray-600 space-y-2.5 mb-6">
-    <p class="text-center text-gray-400 text-xs py-4">লোড হচ্ছে...</p>
-</ul>
-        
-        <button onclick="toggleContestRulesModal(false)" class="w-full bg-gray-100 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-200 transition">বুঝতে পেরেছি</button>
-    </div>
-</div>
-        <!-- Contest Photo Upload Modal -->
-<div id="contest-upload-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative transform transition-all">
-        <button onclick="toggleContestModal(false)" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <h3 class="font-bold text-xl text-purple-600 mb-1">প্রতিযোগিতায় অংশ নিন</h3>
-        <p class="text-xs text-gray-500 mb-4">একটি সুন্দর ক্যাপশন সহ আপনার সেরা ছবিটি দিন।</p>
-        
-        <div class="space-y-4">
-            <div class="flex flex-col items-center justify-center w-full">
-                <label for="contest-img-input" class="flex flex-col items-center justify-center w-full h-40 border-2 border-purple-300 border-dashed rounded-xl cursor-pointer bg-purple-50 hover:bg-purple-100 overflow-hidden relative">
-                    <img id="contest-img-preview" class="w-full h-full object-cover hidden absolute inset-0 z-10">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-purple-500 z-0">
-                        <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
-                        <p class="text-sm font-semibold">ছবি নির্বাচন করুন</p>
-                    </div>
-                    <input id="contest-img-input" type="file" accept="image/*" class="hidden" onchange="previewContestImage(this)" />
-                </label>
-            </div>
-            <textarea id="contest-caption" rows="2" placeholder="ছবির ক্যাপশন বা বিবরণ লিখুন..." class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm focus:bg-white resize-none"></textarea>
-        </div>
-        
-        <button onclick="submitContestPhoto()" id="btn-contest-submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 mt-4 rounded-xl shadow-lg hover:opacity-90 transition flex justify-center items-center gap-2">
-            সাবমিট করুন
-        </button>
-    </div>
-</div>
-
     <script type="module">
         import {
             initializeApp
@@ -6185,10 +6103,52 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Profile UI:", error);
             }
         }
+        
+        // Contest HTML Fetcher
+        async function loadContestUI() {
+            try {
+                // Fetch the external HTML file
+                const response = await fetch('contest-ui.html');
+                if (!response.ok) throw new Error('Failed to load Contest UI');
+                
+                const htmlText = await response.text();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlText;
+                
+                // কনটেস্ট কন্টেইনারটি বের করে নির্দিষ্ট জায়গায় বসানো
+                const mainContainer = tempDiv.querySelector('#contest-container');
+                if (mainContainer) {
+                    document.getElementById('contest-ui-container').appendChild(mainContainer);
+                    
+                    // ক্লাস ঠিক করা (যেন filterFeed কাজ করে)
+                    document.getElementById('contest-ui-container').className = mainContainer.className;
+                    mainContainer.className = ""; // ভেতরের ক্লাসের দরকার নেই
+                }
+                
+                // মডালগুলো বের করে নির্দিষ্ট জায়গায় বসানো
+                const uploadModal = tempDiv.querySelector('#contest-upload-modal');
+                const rulesModal = tempDiv.querySelector('#contest-rules-modal');
+                
+                const modalsContainer = document.getElementById('contest-modals-container');
+                if (uploadModal) modalsContainer.appendChild(uploadModal);
+                if (rulesModal) modalsContainer.appendChild(rulesModal);
+
+                console.log("Contest Design Loaded Successfully!");
+                
+                // কনটেস্টের ডাটা লোড করার ফাংশন কল করা (যদি আগে থেকে কল না হয়ে থাকে)
+                if (currentFeedFilter === 'contest' && typeof window.loadContestFeed === 'function') {
+                    window.loadContestFeed();
+                }
+                
+            } catch (error) {
+                console.error("Error loading Contest UI:", error);
+            }
+        }
 
         // Load the UI as soon as the main DOM is ready
         document.addEventListener("DOMContentLoaded", () => {
             loadProfileUI();
+            loadContestUI();
         });
     </script>
     
