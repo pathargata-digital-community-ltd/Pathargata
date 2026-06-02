@@ -268,3 +268,66 @@ window.toggleEditProfile = (s) => {
         if (history.state?.modal === 'edit-profile-modal') history.back();
     }
 };
+
+// ৯. প্রোফাইল কার্ড ওপেন করা (My Smart ID Card)
+window.openProfileCard = () => {
+    // ইউজারের ডাটা চেক করা
+    if (!window.userDetails) {
+        return window.showToast("ডাটা লোড হয়নি। একটু অপেক্ষা করুন।", "error");
+    }
+
+    const u = window.userDetails;
+    
+    // নাম ও পেশা
+    document.getElementById('card-user-name').innerText = u.name || "অজ্ঞাত নাম";
+    document.getElementById('card-user-profession').innerText = u.profession || "পেশা উল্লেখ নেই";
+    
+    // ফোন নাম্বার
+    document.getElementById('card-user-phone').innerText = u.privacy_hide_contact ? "গোপন রাখা হয়েছে" : (u.phone || "দেওয়া নেই");
+    
+    // ঠিকানা (গ্রাম ও ইউনিয়ন)
+    const address = (u.village && u.union) ? `${u.village},\n${u.union}` : (u.village || u.union || "পাথরঘাটা");
+    document.getElementById('card-user-address').innerHTML = address;
+
+    // UID Number (প্রথম ১০ ক্যারেক্টার)
+    const uidText = window.currentUser.uid; 
+    document.getElementById('card-user-uid').innerText = uidText.substring(0, 10).toUpperCase();
+
+    // প্রোফাইল ছবি
+    const imgContainer = document.getElementById('card-user-img');
+    if (u.profile_pic) {
+        imgContainer.innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover rounded-md">`;
+    } else {
+        const firstLetter = u.name ? window.escapeHTML(u.name).charAt(0).toUpperCase() : 'U';
+        imgContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-400 text-3xl font-bold rounded-md bg-gray-100">${firstLetter}</div>`;
+    }
+
+    // ভেরিফাইড ব্যাজ লজিক (ভেরিফাইড হলে টিক চিহ্ন দেখাবে)
+    const verifyBadge = document.getElementById('card-verify-badge');
+    if (verifyBadge) {
+        if (u.isVerified || ['chairman', 'member', 'admin', 'doctor', 'uno', 'oc', 'journalist'].includes(u.role?.toLowerCase())) {
+            verifyBadge.classList.remove('hidden');
+        } else {
+            verifyBadge.classList.add('hidden');
+        }
+    }
+
+    // QR Code Generate (স্ক্যান করলে সরাসরি রেফার লিংকে চলে যাবে)
+    const appLink = "https://pathargata-digital-community-ltd.github.io/Pathargata/"; // আপনার মূল অ্যাপের লিংক
+    const referLink = `${appLink}?ref=${uidText}`;
+    
+    const qrImg = document.getElementById('card-qr-code');
+    if (qrImg) {
+        // API দিয়ে QR Code তৈরি (150x150 সাইজ, সবুজ রঙের)
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(referLink)}&color=0d9488`;
+    }
+
+    // মডাল ওপেন করা
+    window.openModalWithHistory('profile-card-modal', "#my-card");
+};
+
+// ১০. প্রোফাইল কার্ড ক্লোজ করা
+window.closeProfileCard = () => {
+    document.getElementById('profile-card-modal').classList.add('hidden-custom');
+    if (history.state?.modal === 'profile-card-modal') history.back();
+};
