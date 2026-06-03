@@ -1,10 +1,10 @@
-// contest.js
 import {
     ref,
     set,
     get,
     remove,
-    runTransaction
+    runTransaction,
+    onValue
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // --- CONTEST LOGIC ---
@@ -140,34 +140,50 @@ window.loadContestInfo = () => {
 
 // --- LOAD CONTEST FEED (NO ADS) ---
 window.loadContestFeed = () => {
-    window.loadContestInfo();
+    window.loadContestInfo(); // ইনফো লোড করবে
     const grid = document.getElementById('contest-photos-grid');
+    
+    // সেফগার্ড: HTML এলিমেন্ট না পাওয়া গেলে ফাংশনটি বন্ধ হয়ে যাবে
+    if (!grid) {
+        console.warn("contest-photos-grid পাওয়া যায়নি। HTML লোড হওয়ার জন্য অপেক্ষা করা হচ্ছে...");
+        return;
+    }
+
     grid.innerHTML = '<div class="col-span-2 flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div></div>';
 
     get(ref(window.db, 'contest_participants')).then(async (snap) => {
         const data = snap.val();
         if (!data) {
             grid.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-10">এখনো কেউ অংশগ্রহণ করেনি</p>';
-            document.getElementById('contest-total-participants').innerText = "0 জন";
+            const totalEl = document.getElementById('contest-total-participants');
+            if(totalEl) totalEl.innerText = "0 জন";
             return;
         }
 
-        const myVotesSnap = await get(ref(window.db, `contest_votes_by_user/${window.currentUser.uid}`));
-        const myVotedUid = myVotesSnap.exists() ? myVotesSnap.val().votedFor : null;
+        let myVotedUid = null;
+        if (window.currentUser) {
+            try {
+                const myVotesSnap = await get(ref(window.db, `contest_votes_by_user/${window.currentUser.uid}`));
+                myVotedUid = myVotesSnap.exists() ? myVotesSnap.val().votedFor : null;
+            } catch (e) {
+                console.warn("ভোট চেক করতে সমস্যা হয়েছে", e);
+            }
+        }
 
-        const participants = Object.values(data).sort((a, b) => b.votes - a.votes);
-        document.getElementById('contest-total-participants').innerText = `${participants.length} জন`;
+        const participants = Object.values(data).sort((a, b) => (b.votes || 0) - (a.votes || 0));
+        const totalEl = document.getElementById('contest-total-participants');
+        if(totalEl) totalEl.innerText = `${participants.length} জন`;
 
         grid.innerHTML = participants.map((p, index) => {
             const isVotedByMe = (myVotedUid === p.uid);
-            const rankBadge = index === 0 && p.votes > 0 ? `<div class="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md z-10"><i class="fa-solid fa-crown text-sm"></i></div>` : '';
+            const rankBadge = index === 0 && (p.votes > 0) ? `<div class="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md z-10"><i class="fa-solid fa-crown text-sm"></i></div>` : '';
             
             let actionBtnHtml = '';
             if (isVotedByMe) {
                 actionBtnHtml = `<button class="w-full mt-2 bg-green-100 text-green-700 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-green-200" disabled><i class="fa-solid fa-check-circle"></i> ভোটেড</button>`;
             } else if (myVotedUid) {
                 actionBtnHtml = `<button class="w-full mt-2 bg-gray-100 text-gray-400 py-2 rounded-lg font-bold text-xs cursor-not-allowed" disabled>ভোট দিয়েছেন</button>`;
-            } else if (p.uid === window.currentUser.uid) {
+            } else if (window.currentUser && p.uid === window.currentUser.uid) {
                 actionBtnHtml = `<button onclick="deleteContestPhoto('${p.uid}')" class="w-full mt-2 bg-red-50 text-red-600 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 border border-red-200 hover:bg-red-100 transition"><i class="fa-solid fa-trash"></i> ডিলিট করুন</button>`;
             } else {
                 actionBtnHtml = `<button onclick="voteForContestant('${p.uid}')" id="vote-btn-${p.uid}" class="w-full mt-2 bg-purple-600 text-white py-2 rounded-lg font-bold text-xs shadow hover:bg-purple-700 transform active:scale-95 transition flex items-center justify-center gap-1"><i class="fa-solid fa-heart"></i> ভোট দিন</button>`;
@@ -185,13 +201,16 @@ window.loadContestFeed = () => {
                 <div class="p-2 flex-1 flex flex-col justify-between">
                     <div class="flex items-center gap-2 mb-1">
                         <img src="${p.authorPic || 'https://via.placeholder.com/40'}" class="w-6 h-6 rounded-full object-cover border border-gray-200">
-                        <span class="text-xs font-bold text-gray-800 truncate">${window.escapeHTML(p.authorName)}</span>
+                        <span class="text-xs font-bold text-gray-800 truncate">${window.escapeHTML(p.authorName || 'অজ্ঞাত')}</span>
                     </div>
-                    <p class="text-[10px] text-gray-500 line-clamp-2 mb-1">${window.escapeHTML(p.caption)}</p>
+                    <p class="text-[10px] text-gray-500 line-clamp-2 mb-1">${window.escapeHTML(p.caption || '')}</p>
                     ${actionBtnHtml}
                 </div>
             </div>`;
         }).join('');
+    }).catch(err => {
+        console.error("Contest Data Load Error:", err);
+        grid.innerHTML = '<p class="col-span-2 text-center text-red-400 py-10">ডাটা লোড করতে সমস্যা হয়েছে। রিফ্রেশ করুন।</p>';
     });
 };
 
