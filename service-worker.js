@@ -5,7 +5,7 @@
  * handles: Static Caching, Offline Support
  */
 
-const CACHE_NAME = 'patharghata-pwa-v4.3';
+const CACHE_NAME = 'patharghata-pwa-v4.4';
 const DYNAMIC_CACHE_NAME = 'patharghata-dynamic-v4';
 
 // অফলাইনে যে ফাইলগুলো কাজ করবে
