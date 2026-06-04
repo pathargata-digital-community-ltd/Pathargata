@@ -372,3 +372,55 @@ window.loadQuickChatFriends = async () => {
         return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px] transform active:scale-95 transition">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
     }).join('');
 };
+
+
+// =========================================================
+// --- NATIVE FLOATING CHAT HEAD LOGIC (SYSTEM ALERT WINDOW) ---
+// =========================================================
+
+let floatingChatUserId = null;
+let floatingChatUserName = null;
+let initialChatLoad = true; 
+
+// অ্যাপ চালু হওয়ার পর গ্লোবালি মেসেজ চেক করা
+export const listenForGlobalMessages = (uid) => {
+    onValue(ref(window.db, `user_chats/${uid}`), (snap) => {
+        if (initialChatLoad) {
+            initialChatLoad = false;
+            return; // প্রথমবার অ্যাপ লোড হওয়ার সময় বাবল দেখাবে না
+        }
+
+        const list = snap.val() || {};
+        
+        // সর্বশেষ মেসেজটি বের করা
+        let latestPeer = null;
+        let latestInfo = null;
+        
+        for (const [peerUid, info] of Object.entries(list)) {
+            if (!latestInfo || info.timestamp > latestInfo.timestamp) {
+                latestInfo = info;
+                latestPeer = peerUid;
+            }
+        }
+
+        if (latestInfo && latestPeer) {
+            // যদি মেসেজটা নিজের পাঠানো না হয় এবং ইউজার বর্তমানে ওই চ্যাটে না থাকে
+            if (!latestInfo.lastMessage.startsWith("You:") && (!window.currentChatUser || window.currentChatUser.uid !== latestPeer)) {
+                showFloatingChatHead(latestPeer, latestInfo);
+            }
+        }
+    });
+};
+
+// ফ্লোটিং বাবল দেখানোর ফাংশন (অ্যান্ড্রয়েড নেটিভ বাবল কল করা)
+function showFloatingChatHead(peerUid, info) {
+    floatingChatUserId = peerUid;
+    floatingChatUserName = info.name;
+    
+    // AndroidBridge কল করে নেটিভ বাবল দেখানো
+    if (window.AndroidBridge && window.AndroidBridge.showBubble) {
+        window.AndroidBridge.showBubble();
+    } else {
+        console.warn("Android Bridge not found. Cannot show native bubble.");
+    }
+}
