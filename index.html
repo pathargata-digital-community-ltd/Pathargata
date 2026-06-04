@@ -2378,38 +2378,32 @@ if (refUid) {
                 mainApp.classList.remove('hidden-custom');
                 
                 // --- Presence System (Active/Inactive Status) START ---
-                // ফায়ারবেস থেকে অন-ডিসকানেক্ট এবং টাইমস্ট্যাম্প ইমপোর্ট করা না থাকলে এখানে কল করা হলো
-                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
-                    const { ref, onValue, onDisconnect, set, serverTimestamp } = module;
-                    
-                    const userStatusRef = ref(db, `status/${user.uid}`);
-                    
-                    // অফলাইন হওয়ার ডাটা
-                    const isOfflineForDatabase = {
-                        state: 'offline',
-                        last_changed: serverTimestamp(),
-                    };
+import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
+    const { ref, onValue, onDisconnect, set, serverTimestamp } = module;
+    
+    // ডাটাবেসে status ফোল্ডারে ইউজারের ডাটা যাবে
+    const userStatusRef = ref(db, `status/${user.uid}`);
+    
+    const isOfflineForDatabase = {
+        state: 'offline',
+        last_changed: serverTimestamp(),
+    };
+    
+    const isOnlineForDatabase = {
+        state: 'online',
+        last_changed: serverTimestamp(),
+    };
 
-                    // অনলাইন হওয়ার ডাটা
-                    const isOnlineForDatabase = {
-                        state: 'online',
-                        last_changed: serverTimestamp(),
-                    };
-
-                    // ফায়ারবেসের স্পেশাল কানেকশন ট্র্যাকার
-                    const connectedRef = ref(db, '.info/connected');
-                    
-                    onValue(connectedRef, (snap) => {
-                        if (snap.val() === true) {
-                            // অ্যাপ ক্লোজ করলে বা নেট চলে গেলে ফায়ারবেস অটোমেটিক অফলাইন সেট করবে
-                            onDisconnect(userStatusRef).set(isOfflineForDatabase).then(() => {
-                                // কানেক্টেড হলে অনলাইন সেট করবে
-                                set(userStatusRef, isOnlineForDatabase);
-                            });
-                        }
-                    });
-                });
-                // --- Presence System END ---
+    const connectedRef = ref(db, '.info/connected');
+    onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+            onDisconnect(userStatusRef).set(isOfflineForDatabase).then(() => {
+                set(userStatusRef, isOnlineForDatabase);
+            });
+        }
+    });
+}).catch(err => console.log("Presence error: ", err));
+// --- Presence System END ---
 
                 const savedSize = localStorage.getItem('fontSize');
                 if (savedSize) changeFontSize(savedSize);
