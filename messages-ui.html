@@ -1,0 +1,73 @@
+<!-- চ্যাট লিস্ট ভিউ -->
+<div id="chat-list-view" class="h-full">
+    <div class="p-4 border-b flex justify-between items-center">
+        <h2 class="text-xl font-bold text-gray-800">মেসেজ</h2>
+    </div>
+    <div class="px-4 py-3 border-b bg-gray-50 overflow-x-auto whitespace-nowrap">
+        <h4 class="text-xs font-bold text-gray-500 mb-2">Active Friends</h4>
+        <div id="quick-chat-friends" class="flex gap-4">
+            <p class="text-xs text-gray-400">লোড হচ্ছে...</p>
+        </div>
+    </div>
+    <div id="chat-list-container" class="space-y-0">
+        <p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>
+    </div>
+</div>
+
+<!-- চ্যাট কনভারসেশন ভিউ -->
+<div id="chat-conversation-view" class="hidden hidden-custom fixed inset-0 z-[200] bg-white flex flex-col">
+    
+    <!-- Header -->
+    <div class="bg-white p-2 border-b flex items-center justify-between sticky top-0 z-20 shadow-sm pt-safe">
+        <div class="flex items-center gap-1">
+            <button onclick="closeChat()" class="text-gray-500 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 shrink-0"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            
+            <!-- Clickable Profile Area (Image + Name + Status) -->
+            <div class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-1.5 rounded-lg transition" onclick="openUserProfile(currentChatUser.uid)">
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold border border-green-200 overflow-hidden relative shrink-0" id="chat-header-img">U</div>
+                <div class="min-w-0">
+                    <h3 class="font-bold text-gray-800 text-base leading-tight truncate" id="chat-header-name">User</h3>
+                    <p id="chat-header-status" class="text-[11px] text-gray-500 font-medium truncate">Loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Delete Conversation Button -->
+        <button onclick="deleteEntireConversation()" class="w-10 h-10 rounded-full hover:bg-red-50 text-red-500 flex items-center justify-center transition shrink-0" title="Delete Chat">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
+    </div>
+
+    <!-- Messages Area -->
+    <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-[#f0f2f5] pb-32"></div>
+    
+    <!-- Chat Input Area -->
+    <div class="bg-white p-3 border-t fixed bottom-0 w-full pb-safe z-50 flex flex-col gap-2 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        
+        <!-- Voice Recording Preview UI -->
+        <div id="chat-voice-recording-ui" class="hidden flex items-center justify-between bg-red-50 p-2 rounded-lg border border-red-100">
+            <div class="flex items-center gap-2 text-red-600">
+                <div class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
+                <span class="text-sm font-bold" id="chat-record-timer">00:00</span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="cancelChatRecording()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-trash text-lg"></i></button>
+                <button onclick="stopAndSendChatRecording()" class="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+            </div>
+        </div>
+
+        <!-- Default Input UI -->
+        <div id="chat-default-input-ui" class="flex gap-2 items-center">
+            <input type="file" id="chat-img-input" accept="image/*" class="hidden" onchange="handleChatImageSelect()">
+            <button onclick="document.getElementById('chat-img-input').click()" class="text-blue-500 text-xl p-2 hover:bg-blue-50 rounded-full w-10 h-10 flex items-center justify-center shrink-0"><i class="fa-solid fa-image"></i></button>
+            
+            <input type="text" id="msg-input" onkeydown="handleEnter(event, 'chat')" placeholder="মেসেজ লিখুন..." class="flex-1 bg-gray-100 rounded-full px-5 py-2.5 text-sm border-0 focus:ring-1 focus:ring-green-500">
+            
+            <!-- Voice Record Button -->
+            <button onclick="startChatRecording()" id="btn-chat-mic" class="text-red-500 text-xl p-2 hover:bg-red-50 rounded-full w-10 h-10 flex items-center justify-center shrink-0 transition"><i class="fa-solid fa-microphone"></i></button>
+            
+            <!-- Send Button -->
+            <button onclick="sendMsg()" id="btn-chat-send" class="text-green-600 text-xl p-2 hover:bg-green-50 rounded-full w-10 h-10 flex items-center justify-center shrink-0 hidden transition"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
