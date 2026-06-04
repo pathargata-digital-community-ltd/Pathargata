@@ -1,10 +1,10 @@
 import {
-    ref, push, set, onValue, get, update, remove, query, limitToLast, onDisconnect, serverTimestamp
+    ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // --- STATUS FORMATTER HELPER ---
 function formatStatusTime(timestamp) {
-    if (!timestamp) return "Offline";
+    if (!timestamp || typeof timestamp !== 'number') return "Offline";
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     if (seconds < 60) return "Active just now";
     const minutes = Math.floor(seconds / 60);
@@ -19,25 +19,26 @@ function formatStatusTime(timestamp) {
 let statusUnsubscribe = null;
 
 window.startChat = (uid, name) => {
-    window.currentChatUser = { uid, name, profile_pic: null }; // profile_pic যুক্ত করা হলো
+    window.currentChatUser = { uid, name, profile_pic: null }; 
     window.switchPage('messages');
     
     document.getElementById('chat-list-view').classList.add('hidden', 'hidden-custom');
     document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
     document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
     
-    // Fetch Profile Image & Store it
+    // Fetch Profile Image safely
     window.getUserData(uid).then(u => {
         if(u && u.profile_pic) {
             document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover">`;
-            window.currentChatUser.profile_pic = u.profile_pic; // মেসেজ বাবলের জন্য সেভ রাখা হলো
+            window.currentChatUser.profile_pic = u.profile_pic; 
         } else {
             document.getElementById('chat-header-img').innerHTML = window.escapeHTML(name).charAt(0);
         }
     });
 
-    // --- REALTIME STATUS LISTENER ---
+    // --- REALTIME STATUS LISTENER (Fixed) ---
     const statusText = document.getElementById('chat-header-status');
+    statusText.innerText = "Checking...";
     if (statusUnsubscribe) statusUnsubscribe();
     
     const statusRef = ref(window.db, `status/${uid}`);
@@ -46,14 +47,17 @@ window.startChat = (uid, name) => {
             const data = snap.val();
             if (data.state === 'online') {
                 statusText.innerText = "Active now";
-                statusText.classList.replace('text-gray-500', 'text-green-500');
+                statusText.classList.remove('text-gray-500');
+                statusText.classList.add('text-green-500');
             } else {
                 statusText.innerText = formatStatusTime(data.last_changed);
-                statusText.classList.replace('text-green-500', 'text-gray-500');
+                statusText.classList.remove('text-green-500');
+                statusText.classList.add('text-gray-500');
             }
         } else {
             statusText.innerText = "Offline";
-            statusText.classList.replace('text-green-500', 'text-gray-500');
+            statusText.classList.remove('text-green-500');
+            statusText.classList.add('text-gray-500');
         }
     });
 
@@ -65,23 +69,29 @@ window.closeChat = () => {
     document.getElementById('chat-list-view').classList.remove('hidden', 'hidden-custom');
     document.getElementById('chat-conversation-view').classList.add('hidden', 'hidden-custom');
     window.currentChatUser = null;
-    if (statusUnsubscribe) statusUnsubscribe(); 
+    if (statusUnsubscribe) { statusUnsubscribe(); statusUnsubscribe = null; }
 };
 
-// --- CHAT LIST (Recent Conversations) ---
+// --- CHAT LIST (Fixed Array Loading) ---
 window.loadChatList = (uid) => {
     onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
         const list = snap.val() || {};
         const container = document.getElementById('chat-list-container');
 
         if (Object.keys(list).length > 0) {
-            const promises = Object.entries(list).sort((a, b) => b[1].timestamp - a[1].timestamp).map(async ([peerUid, info]) => {
-                const userData = await window.getUserData(peerUid);
-                const profilePic = userData?.profile_pic;
-                return { peerUid, info, profilePic };
-            });
-
-            const chatItems = await Promise.all(promises);
+            // Safe Async Loading
+            const chatItems = await Promise.all(
+                Object.entries(list)
+                    .sort((a, b) => b[1].timestamp - a[1].timestamp)
+                    .map(async ([peerUid, info]) => {
+                        try {
+                            const userData = await window.getUserData(peerUid);
+                            return { peerUid, info, profilePic: userData?.profile_pic || null };
+                        } catch (e) {
+                            return { peerUid, info, profilePic: null };
+                        }
+                    })
+            );
 
             container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
                 let rawLastMsg = info.lastMessage || "";
@@ -120,7 +130,7 @@ window.loadChatList = (uid) => {
     });
 };
 
-// --- LOAD MESSAGES (WITH PROFILE PICS & DELETE BUTTON) ---
+// --- LOAD MESSAGES (Fixed Content Display) ---
 window.loadMessages = (otherUid) => {
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
@@ -130,18 +140,15 @@ window.loadMessages = (otherUid) => {
         const msgs = snap.val() || {};
         if (Object.keys(msgs).length > 0) {
             
-            // Current User Avatar
             const myPic = window.userDetails?.profile_pic;
             const myAvatarHtml = myPic 
                 ? `<img src="${myPic}" class="w-6 h-6 rounded-full object-cover self-end mb-1 ml-2 border border-gray-200 shrink-0">` 
                 : `<div class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-500 self-end mb-1 ml-2 shrink-0">${window.userDetails?.name?.charAt(0) || 'M'}</div>`;
 
-            // Peer Avatar
             const peerPic = window.currentChatUser?.profile_pic;
             const peerAvatarHtml = peerPic 
                 ? `<img src="${peerPic}" class="w-6 h-6 rounded-full object-cover self-end mb-1 mr-2 border border-gray-200 shrink-0">` 
                 : `<div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-[10px] font-bold text-green-700 self-end mb-1 mr-2 shrink-0">${window.currentChatUser?.name?.charAt(0) || 'U'}</div>`;
-
 
             div.innerHTML = Object.entries(msgs).map(([msgId, m]) => {
                 const isMe = m.sender === window.currentUser.uid;
@@ -154,10 +161,8 @@ window.loadMessages = (otherUid) => {
                     content += `<span class="break-words">${window.escapeHTML(decrypted)}</span>`;
                 }
 
-                // Delete Icon 
                 const deleteBtn = isMe ? `<div onclick="deleteSpecificMessage('${chatId}', '${msgId}')" class="opacity-0 group-hover:opacity-100 transition cursor-pointer text-red-400 text-xs self-center mx-2 hover:text-red-600" title="Delete"><i class="fa-solid fa-trash"></i></div>` : '';
 
-                // Final Bubble HTML (With Avatars)
                 return `
                 <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-1 group items-end">
                     ${isMe ? deleteBtn : peerAvatarHtml}
@@ -194,7 +199,7 @@ window.deleteEntireConversation = () => {
     }
 };
 
-// --- VOICE RECORDING LOGIC FOR CHAT ---
+// --- VOICE RECORDING LOGIC ---
 let chatMediaRecorder;
 let chatAudioChunks = [];
 let chatRecordingTimer;
@@ -282,7 +287,7 @@ const sendChatVoice = async (audioBlob) => {
     }
 };
 
-// --- SEND MESSAGE ---
+// --- SEND MESSAGE (Fixed & Clean) ---
 window.sendMsg = (imageUrl = null, audioUrl = null) => {
     if (!window.currentChatUser) return;
     const input = document.getElementById('msg-input');
@@ -317,29 +322,14 @@ window.sendMsg = (imageUrl = null, audioUrl = null) => {
     update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
 
     input.value = "";
-    document.getElementById('btn-chat-send').classList.add('hidden');
-    document.getElementById('btn-chat-mic').classList.remove('hidden');
 };
 
-// --- INPUT FIELD LOGIC ---
-document.getElementById('msg-input')?.addEventListener('input', function() {
-    const btnSend = document.getElementById('btn-chat-send');
-    const btnMic = document.getElementById('btn-chat-mic');
-    if (this.value.trim().length > 0) {
-        btnSend.classList.remove('hidden');
-        btnMic.classList.add('hidden');
-    } else {
-        btnSend.classList.add('hidden');
-        btnMic.classList.remove('hidden');
-    }
-});
-
+// Image Upload Fix
 window.handleChatImageSelect = () => {
     const file = document.getElementById('chat-img-input').files[0];
     if (file) {
         const btn = document.getElementById('btn-chat-send');
-        btn.classList.remove('hidden');
-        document.getElementById('btn-chat-mic').classList.add('hidden');
+        const oldHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
         btn.disabled = true;
 
@@ -348,7 +338,8 @@ window.handleChatImageSelect = () => {
             document.getElementById('chat-img-input').value = "";
         }).catch(e => {
             window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane text-sm"></i>';
+        }).finally(() => {
+            btn.innerHTML = oldHtml;
             btn.disabled = false;
         });
     }
