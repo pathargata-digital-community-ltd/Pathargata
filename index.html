@@ -2067,15 +2067,16 @@
 window.auth = auth;
 
         window.currentUser = null;
+        window.myFriends = [];
+        window.currentChatUser = null;
+
         let userDetails = {},
             allUsers = [],
-            myFriends = [],
-            currentChatUser = null,
             allDonors = [],
             currentFullPostId = null,
             globalMarketItems = [],
             globalDirectory = {};
-        let allAds = []; // Store fetched ads
+            allAds = [];
         
         // --- NEW GLOBALS FOR MONETIZATION & POINTS ---
         window.dynamicPoints = {
@@ -2192,7 +2193,7 @@ if (refUid) {
             }
         };
 
-        function timeAgo(timestamp) {
+        window.timeAgo = function(timestamp) {
             const seconds = Math.floor((Date.now() - timestamp) / 1000);
             if (seconds < 60) return "এইমাত্র";
             const minutes = Math.floor(seconds / 60);
@@ -2316,7 +2317,7 @@ if (refUid) {
         window.handleEnter = (e, type, param) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (type === 'chat') sendMsg();
+                if (type === 'chat') { if(window.sendMsg) window.sendMsg(); }
                 else if (type === 'comment') submitInlineComment(param);
                 else if (type === 'full-comment') submitFullComment();
             }
@@ -2430,8 +2431,8 @@ window.userDetails = userDetails;
                             userDetails.role = 'tourist'; 
                         }
                         updateUIWithUserData();
-                        loadFriendsPreview(user.uid, 'me');
-                        loadSettingsData();
+        if(window.loadFriendsPreview) window.loadFriendsPreview(user.uid, 'me');
+        loadSettingsData();
                         if (document.getElementById('setting-privacy-toggle')) document.getElementById('setting-privacy-toggle').checked = userDetails.privacy_hide_contact || false;
                         checkMonetizationStatus();
                     } else {
@@ -2456,9 +2457,9 @@ window.userDetails = userDetails;
                 loadServiceCategories();
                 loadDynamicSidebar();
                 onValue(ref(db, `users/${user.uid}/friends`), (snap) => {
-                    myFriends = snap.exists() ? Object.keys(snap.val()) : [];
-                    loadQuickChatFriends();
-                });
+    myFriends = snap.exists() ? Object.keys(snap.val()) : [];
+    if(window.loadQuickChatFriends) window.loadQuickChatFriends(); 
+});
                 loadUserSuggestions();
                 onValue(ref(db, 'directory'), (snap) => {
                     globalDirectory = snap.val() || {};
@@ -2466,8 +2467,8 @@ window.userDetails = userDetails;
                 listenForFriendRequests(user.uid);
                 listenForNotificationBadge(user.uid);
                 loadNotifications(true);
-                loadChatList(user.uid);
-                loadMyComplaints();
+if(window.loadChatList) window.loadChatList(user.uid);
+loadMyComplaints();
                 loadEmergencyAlerts();
 
                 loadAds();
@@ -2699,166 +2700,8 @@ window.userDetails = userDetails;
             document.getElementById('btn-record-start')?.classList.remove('hidden');
             document.getElementById('btn-record-stop')?.classList.add('hidden');
             clearInterval(recordingTimerInterval);
-        };
-
-        window.handleChatImageSelect = () => {
-            const file = document.getElementById('chat-img-input').files[0];
-            if (file) {
-                const btn = document.getElementById('btn-chat-send');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                btn.disabled = true;
-
-                uploadMediaToCloudinary(file).then(res => {
-                    sendMsg(res.url);
-                    document.getElementById('chat-img-input').value = "";
-                }).catch(e => {
-                    showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-                    btn.disabled = false;
-                });
-            }
-        };
-
-        // --- UPDATED SEND MSG WITH ENCRYPTION ---
-        window.sendMsg = (imageUrl = null) => {
-            if (!currentChatUser) return;
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if (!text && !imageUrl) return;
-            const btn = document.getElementById('btn-chat-send');
-            const chatId = getChatId(window.currentUser.uid, currentChatUser.uid);
-            const ts = Date.now();
-
-            // Encrypt Text
-            const encryptedText = text ? window.encryptMsg(text) : "";
-
-            const msgData = {
-                sender: window.currentUser.uid,
-                timestamp: ts
-            };
-            if (text) msgData.text = encryptedText; // Store Encrypted
-            if (imageUrl) msgData.image = imageUrl;
-
-            push(ref(db, `chats/${chatId}`), msgData);
-
-            // For Last Message in User Chats (Encrypted)
-            const lastMsg = imageUrl ? (text ? "📷 " + encryptedText : "📷 ছবি পাঠিয়েছেন") : encryptedText;
-            const myUpdate = {
-                name: currentChatUser.name,
-                lastMessage: "You: " + lastMsg,
-                timestamp: ts
-            };
-            const peerUpdate = {
-                name: userDetails.name,
-                lastMessage: lastMsg,
-                timestamp: ts
-            };
-
-            update(ref(db, `user_chats/${window.currentUser.uid}/${currentChatUser.uid}`), myUpdate);
-            update(ref(db, `user_chats/${currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
-
-            input.value = "";
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-            btn.disabled = false;
-        };
-
-        // --- UPDATED LOAD MESSAGES (Decryption & Scrolling) ---
-        function loadMessages(otherUid) {
-            const chatId = getChatId(window.currentUser.uid, otherUid);
-            const div = document.getElementById('messages-container');
-            div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
-            onValue(query(ref(db, `chats/${chatId}`), limitToLast(50)), (snap) => {
-                const msgs = snap.val() || {};
-                if (Object.keys(msgs).length > 0) {
-                    div.innerHTML = Object.values(msgs).map(m => {
-                        const isMe = m.sender === window.currentUser.uid;
-                        let content = '';
-                        if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
-
-                        // Decrypt Message
-                        if (m.text) {
-                            const decrypted = window.decryptMsg(m.text);
-                            content += `<span>${escapeHTML(decrypted)}</span>`;
-                        }
-
-                        return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2"><div class="px-4 py-2 max-w-[75%] text-sm ${isMe ? 'chat-bubble-me' : 'chat-bubble-other'}">${content}</div></div>`;
-                    }).join('');
-
-                    // Better Scroll to Bottom
-                    setTimeout(() => {
-                        div.scrollTop = div.scrollHeight;
-                    }, 100);
-                } else div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">কথপোকথন শুরু করুন</p>';
-            });
-        }
-
-        // --- UPDATED LOAD CHAT LIST (Fetch Profile Pic, Fixed Layout, Decryption) ---
-        function loadChatList(uid) {
-            onValue(ref(db, `user_chats/${uid}`), async (snap) => {
-                const list = snap.val() || {};
-                const container = document.getElementById('chat-list-container');
-
-                if (Object.keys(list).length > 0) {
-                    // Prepare Promises to fetch user profile pics
-                    const promises = Object.entries(list).sort((a, b) => b[1].timestamp - a[1].timestamp).map(async ([peerUid, info]) => {
-                        const userData = await getUserData(peerUid);
-                        const profilePic = userData?.profile_pic;
-                        return {
-                            peerUid,
-                            info,
-                            profilePic
-                        };
-                    });
-
-                    const chatItems = await Promise.all(promises);
-
-                    container.innerHTML = chatItems.map(({
-                        peerUid,
-                        info,
-                        profilePic
-                    }) => {
-                        // Decrypt Last Message for preview
-                        let rawLastMsg = info.lastMessage || "";
-                        let displayMsg = rawLastMsg;
-
-                        // Check if it starts with "You: "
-                        let prefix = "";
-                        if (rawLastMsg.startsWith("You: ")) {
-                            prefix = "You: ";
-                            rawLastMsg = rawLastMsg.substring(5);
-                        }
-
-                        // Check if image
-                        if (rawLastMsg.includes("📷")) {
-                            // Keep simple
-                        } else {
-                            rawLastMsg = window.decryptMsg(rawLastMsg);
-                        }
-                        displayMsg = prefix + rawLastMsg;
-
-                        let av = profilePic ?
-                            `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
-                            `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${escapeHTML(info.name).charAt(0)}</div>`;
-
-                        // Updated HTML Structure for Fixed Layout
-                        return `
-                    <div onclick="startChat('${peerUid}', '${escapeHTML(info.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
-                        ${av}
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-center mb-0.5">
-                                <h4 class="font-bold text-gray-800 text-base truncate pr-2">${escapeHTML(info.name)}</h4>
-                                <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${timeAgo(info.timestamp)}</span>
-                            </div>
-                            <p class="text-sm text-gray-500 truncate block">${escapeHTML(displayMsg)}</p>
-                        </div>
-                    </div>`;
-                    }).join('');
-                } else {
-                    container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
-                }
-            });
-        }
-
+        };        
+                
         function renderPeopleList(users, isSearch) {
             const div = document.getElementById('users-list');
             let html = isSearch ? `<p class="text-xs font-bold text-green-600 mb-2">Search Results (${users.length})</p>` : '';
@@ -4277,26 +4120,13 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             [`users/${uid}/friends/${window.currentUser.uid}`]: null
         }).then(() => {
             showToast("আনফ্রেন্ড করা হয়েছে");
-            if (currentChatUser?.uid === uid) closeChat();
+            if (window.currentChatUser?.uid === uid) window.closeChat();
             get(ref(db, `users/${window.currentUser.uid}/friends`)).then(s => {
                 myFriends = Object.keys(s.val() || {});
                 updatePeopleTab();
             });
         });
-
-        async function loadQuickChatFriends() {
-            const div = document.getElementById('quick-chat-friends');
-            if (myFriends.length === 0) {
-                div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
-                return;
-            }
-            const friendsData = await Promise.all(myFriends.slice(0, 15).map(uid => getUserData(uid)));
-            div.innerHTML = friendsData.filter(u => u).map(u => {
-                let av = u.profile_pic ? `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
-                return `<div onclick="startChat('${u.uid}', '${escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${escapeHTML(u.name).split(' ')[0]}</span></div>`;
-            }).join('');
-        }
-
+        
         // --- DIRECTORY ---
         window.openDirectoryCategory = (category, title) => {
             switchPage('directory-list');
@@ -4645,7 +4475,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         }).then(() => {
             showToast("রিকুয়েস্ট এক্সেপ্ট করা হয়েছে!");
             get(ref(db, `users/${window.currentUser.uid}/friends`)).then((snap) => {
-                myFriends = Object.keys(snap.val() || {});
+                window.myFriends = Object.keys(snap.val() || {});
                 updatePeopleTab();
                 loadQuickChatFriends();
             });
@@ -4661,34 +4491,8 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                     btn.disabled = false;
                 }
             }
-        });
-
-        window.startChat = (uid, name) => {
-            currentChatUser = {
-                uid,
-                name
-            };
-            switchPage('messages');
-            document.getElementById('chat-list-view').classList.add('hidden', 'hidden-custom');
-            document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
-            document.getElementById('chat-header-name').innerText = escapeHTML(name);
-            document.getElementById('chat-header-img').innerText = escapeHTML(name).charAt(0);
-            history.pushState({
-                page: 'chat-conversation',
-                uid
-            }, "", "#chat");
-            loadMessages(uid);
-        };
-        window.closeChat = () => {
-            document.getElementById('chat-list-view').classList.remove('hidden', 'hidden-custom');
-            document.getElementById('chat-conversation-view').classList.add('hidden', 'hidden-custom');
-            currentChatUser = null;
-        };
-
-        function getChatId(uid1, uid2) {
-            return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
-        }
-
+        });                
+        
         onValue(ref(db, 'notices'), (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -6063,7 +5867,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     closeFullCommentModal();
                     history.back();
                 } else if (event.state.page === 'chat-conversation') {
-                    closeChat();
+                    if(window.closeChat) window.closeChat();
                 } else {
                     switchPage(event.state.page, false);
                 }
@@ -6154,6 +5958,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     
     <script type="module" src="profile.js"></script>
     <script type="module" src="contest.js"></script>
+    <script type="module" src="messages.js"></script>
 </body>
 
 </html>
