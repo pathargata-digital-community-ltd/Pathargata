@@ -36,9 +36,10 @@ window.startChat = (uid, name) => {
         }
     });
 
-    // --- REALTIME STATUS LISTENER (Fixed) ---
+    // --- REALTIME STATUS LISTENER (FIXED) ---
     const statusText = document.getElementById('chat-header-status');
-    statusText.innerText = "Checking...";
+    statusText.innerText = "Connecting..."; // Checking এর বদলে Connecting
+    
     if (statusUnsubscribe) statusUnsubscribe();
     
     const statusRef = ref(window.db, `status/${uid}`);
@@ -55,10 +56,15 @@ window.startChat = (uid, name) => {
                 statusText.classList.add('text-gray-500');
             }
         } else {
+            // যদি ফায়ারবেসে স্ট্যাটাস না থাকে, তবে অটোমেটিক অফলাইন দেখাবে
             statusText.innerText = "Offline";
             statusText.classList.remove('text-green-500');
             statusText.classList.add('text-gray-500');
         }
+    }, (error) => {
+        // কোনো ডাটাবেস এরর হলে
+        console.error("Status check failed:", error);
+        statusText.innerText = "Offline";
     });
 
     history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
@@ -72,14 +78,13 @@ window.closeChat = () => {
     if (statusUnsubscribe) { statusUnsubscribe(); statusUnsubscribe = null; }
 };
 
-// --- CHAT LIST (Fixed Array Loading) ---
+// --- CHAT LIST ---
 window.loadChatList = (uid) => {
     onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
         const list = snap.val() || {};
         const container = document.getElementById('chat-list-container');
 
         if (Object.keys(list).length > 0) {
-            // Safe Async Loading
             const chatItems = await Promise.all(
                 Object.entries(list)
                     .sort((a, b) => b[1].timestamp - a[1].timestamp)
@@ -130,7 +135,7 @@ window.loadChatList = (uid) => {
     });
 };
 
-// --- LOAD MESSAGES (Fixed Content Display) ---
+// --- LOAD MESSAGES ---
 window.loadMessages = (otherUid) => {
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
@@ -197,6 +202,49 @@ window.deleteEntireConversation = () => {
             window.closeChat(); 
         });
     }
+};
+
+// --- SEND MESSAGE LOGIC (FIXED) ---
+window.sendMsg = (imageUrl = null, audioUrl = null) => {
+    if (!window.currentChatUser) return;
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    
+    if (!text && !imageUrl && !audioUrl) return;
+    
+    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
+    const ts = Date.now();
+
+    const msgData = { sender: window.currentUser.uid, timestamp: ts };
+    let lastMsgPreview = "";
+
+    if (text) {
+        msgData.text = window.encryptMsg(text);
+        lastMsgPreview = msgData.text;
+    }
+    if (imageUrl) {
+        msgData.image = imageUrl;
+        lastMsgPreview = text ? ("📷 " + msgData.text) : "📷 ছবি পাঠিয়েছেন";
+    }
+    if (audioUrl) {
+        msgData.audio = audioUrl;
+        lastMsgPreview = "🎤 ভয়েস মেসেজ";
+    }
+
+    // ফায়ারবেসে পুশ করা
+    push(ref(window.db, `chats/${chatId}`), msgData).then(() => {
+        // সাকসেস হলে ইনপুট বক্স ক্লিয়ার করবে
+        input.value = "";
+    }).catch(e => {
+        console.error("Message send failed:", e);
+        window.showToast("মেসেজ পাঠানো যায়নি!", "error");
+    });
+
+    const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgPreview, timestamp: ts };
+    const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgPreview, timestamp: ts };
+
+    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
+    update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
 };
 
 // --- VOICE RECORDING LOGIC ---
@@ -285,43 +333,6 @@ const sendChatVoice = async (audioBlob) => {
         msgInput.placeholder = "মেসেজ লিখুন...";
         msgInput.disabled = false;
     }
-};
-
-// --- SEND MESSAGE (Fixed & Clean) ---
-window.sendMsg = (imageUrl = null, audioUrl = null) => {
-    if (!window.currentChatUser) return;
-    const input = document.getElementById('msg-input');
-    const text = input.value.trim();
-    if (!text && !imageUrl && !audioUrl) return;
-    
-    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
-    const ts = Date.now();
-
-    const msgData = { sender: window.currentUser.uid, timestamp: ts };
-    let lastMsgPreview = "";
-
-    if (text) {
-        msgData.text = window.encryptMsg(text);
-        lastMsgPreview = msgData.text;
-    }
-    if (imageUrl) {
-        msgData.image = imageUrl;
-        lastMsgPreview = text ? ("📷 " + msgData.text) : "📷 ছবি পাঠিয়েছেন";
-    }
-    if (audioUrl) {
-        msgData.audio = audioUrl;
-        lastMsgPreview = "🎤 ভয়েস মেসেজ";
-    }
-
-    push(ref(window.db, `chats/${chatId}`), msgData);
-
-    const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgPreview, timestamp: ts };
-    const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgPreview, timestamp: ts };
-
-    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
-    update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
-
-    input.value = "";
 };
 
 // Image Upload Fix
