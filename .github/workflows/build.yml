@@ -61,7 +61,150 @@ jobs:
 
       - name: Add Permissions
         run: |
-          sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>' android/app/src/main/AndroidManifest.xml
+          sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" \/>' android/app/src/main/AndroidManifest.xml
+
+      - name: Add Native Floating Chat Code
+        run: |
+          # ১. MainActivity.java আপডেট করা (JS Bridge তৈরি)
+          cat << 'EOF' > android/app/src/main/java/com/pathargata/digital/MainActivity.java
+          package com.pathargata.digital;
+
+          import android.os.Bundle;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.WebView;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.provider.Settings;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+              }
+
+              @Override
+              public void onStart() {
+                  super.onStart();
+                  try {
+                      WebView webView = this.bridge.getWebView();
+                      webView.addJavascriptInterface(new FloatingBridge(), "AndroidBridge");
+                  } catch (Exception e) {}
+              }
+
+              class FloatingBridge {
+                  @JavascriptInterface
+                  public void showBubble() {
+                      if (!Settings.canDrawOverlays(MainActivity.this)) {
+                          // পারমিশন না থাকলে সেটিংসে নিয়ে যাবে
+                          Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                          startActivity(intent);
+                      } else {
+                          // পারমিশন থাকলে বাবল ভাসাবে
+                          Intent intent = new Intent(MainActivity.this, FloatingBubbleService.class);
+                          startService(intent);
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public void hideBubble() {
+                          Intent intent = new Intent(MainActivity.this, FloatingBubbleService.class);
+                          stopService(intent);
+                  }
+              }
+          }
+          EOF
+
+          # ২. FloatingBubbleService.java তৈরি করা (বাবলের ডিজাইন)
+          cat << 'EOF' > android/app/src/main/java/com/pathargata/digital/FloatingBubbleService.java
+          package com.pathargata.digital;
+
+          import android.app.Service;
+          import android.content.Intent;
+          import android.graphics.PixelFormat;
+          import android.os.Build;
+          import android.os.IBinder;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.view.WindowManager;
+          import android.widget.TextView;
+          import android.graphics.Color;
+          import android.graphics.drawable.GradientDrawable;
+
+          public class FloatingBubbleService extends Service {
+              private WindowManager mWindowManager;
+              private View mFloatingView;
+
+              @Override
+              public IBinder onBind(Intent intent) { return null; }
+
+              @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  if (mFloatingView == null) {
+                      setupFloatingWindow();
+                  }
+                  return START_NOT_STICKY;
+              }
+
+              private void setupFloatingWindow() {
+                  mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+                  
+                  TextView tv = new TextView(this);
+                  tv.setText("💬");
+                  tv.setTextSize(30);
+                  tv.setGravity(Gravity.CENTER);
+                  
+                  GradientDrawable shape = new GradientDrawable();
+                  shape.setShape(GradientDrawable.OVAL);
+                  shape.setColor(Color.parseColor("#16a34a")); // সবুজ ব্যাকগ্রাউন্ড
+                  shape.setStroke(6, Color.WHITE); // সাদা বর্ডার
+                  tv.setBackground(shape);
+                  
+                  mFloatingView = tv;
+
+                  int layoutFlag;
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      layoutFlag = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+                  } else {
+                      layoutFlag = WindowManager.LayoutParams.TYPE_PHONE;
+                  }
+
+                  final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                          160, 160,
+                          layoutFlag,
+                          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                          PixelFormat.TRANSLUCENT);
+
+                  params.gravity = Gravity.TOP | Gravity.RIGHT;
+                  params.x = 20;
+                  params.y = 300;
+
+                  mWindowManager.addView(mFloatingView, params);
+
+                  // বাবলে ক্লিক করলে অ্যাপ ওপেন হবে
+                  mFloatingView.setOnClickListener(new View.OnClickListener() {
+                      @Override
+                      public void onClick(View v) {
+                          Intent openApp = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                          if (openApp != null) {
+                              openApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                              startActivity(openApp);
+                          }
+                          stopSelf(); // বাবলটি হাইড হয়ে যাবে
+                      }
+                  });
+              }
+
+              @Override
+              public void onDestroy() {
+                  super.onDestroy();
+                  if (mFloatingView != null) mWindowManager.removeView(mFloatingView);
+              }
+          }
+          EOF
+
+          # ৩. AndroidManifest.xml এ সার্ভিসটি রেজিস্টার করা
+          sed -i '/<\/application>/i \        <service android:name=".FloatingBubbleService" android:exported="false" />' android/app/src/main/AndroidManifest.xml
 
       - name: Fix Kotlin Dependency Conflict
         run: |
