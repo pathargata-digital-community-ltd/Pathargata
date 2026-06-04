@@ -2,6 +2,11 @@ import {
     ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// --- CHAT ID GENERATOR (FIXED) ---
+window.getChatId = function(uid1, uid2) {
+    return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+};
+
 // --- STATUS FORMATTER HELPER ---
 function formatStatusTime(timestamp) {
     if (!timestamp || typeof timestamp !== 'number') return "Offline";
@@ -36,9 +41,9 @@ window.startChat = (uid, name) => {
         }
     });
 
-    // --- REALTIME STATUS LISTENER (FIXED) ---
+    // --- REALTIME STATUS LISTENER ---
     const statusText = document.getElementById('chat-header-status');
-    statusText.innerText = "Connecting..."; // Checking এর বদলে Connecting
+    statusText.innerText = "Connecting..."; 
     
     if (statusUnsubscribe) statusUnsubscribe();
     
@@ -56,13 +61,11 @@ window.startChat = (uid, name) => {
                 statusText.classList.add('text-gray-500');
             }
         } else {
-            // যদি ফায়ারবেসে স্ট্যাটাস না থাকে, তবে অটোমেটিক অফলাইন দেখাবে
             statusText.innerText = "Offline";
             statusText.classList.remove('text-green-500');
             statusText.classList.add('text-gray-500');
         }
     }, (error) => {
-        // কোনো ডাটাবেস এরর হলে
         console.error("Status check failed:", error);
         statusText.innerText = "Offline";
     });
@@ -204,7 +207,7 @@ window.deleteEntireConversation = () => {
     }
 };
 
-// --- SEND MESSAGE LOGIC (FIXED) ---
+// --- SEND MESSAGE LOGIC ---
 window.sendMsg = (imageUrl = null, audioUrl = null) => {
     if (!window.currentChatUser) return;
     const input = document.getElementById('msg-input');
@@ -231,9 +234,7 @@ window.sendMsg = (imageUrl = null, audioUrl = null) => {
         lastMsgPreview = "🎤 ভয়েস মেসেজ";
     }
 
-    // ফায়ারবেসে পুশ করা
     push(ref(window.db, `chats/${chatId}`), msgData).then(() => {
-        // সাকসেস হলে ইনপুট বক্স ক্লিয়ার করবে
         input.value = "";
     }).catch(e => {
         console.error("Message send failed:", e);
