@@ -2,12 +2,30 @@ import {
     ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// --- CHAT ID GENERATOR (FIXED) ---
-window.getChatId = function(uid1, uid2) {
-    return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+// --- GLOBAL VARIABLES & CACHE ---
+window.userCache = window.userCache || {};
+let statusUnsubscribe = null;
+let currentChatId = null;
+let isCurrentChatGroup = false;
+let replyingToMsg = null; // নতুন: রিপ্লাই ট্র্যাকিং
+
+// --- HELPER FUNCTIONS ---
+window.getChatId = function(uid1, uid2) { return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`; };
+
+window.getCachedUserData = async (uid) => {
+    if (window.userCache[uid]) return window.userCache[uid];
+    try {
+        const data = await window.getUserData(uid);
+        if (data) window.userCache[uid] = data;
+        return data;
+    } catch (e) { return null; }
 };
 
-// --- STATUS FORMATTER HELPER ---
+window.scrollToBottom = () => {
+    const div = document.getElementById('messages-container');
+    if (div) div.scrollTo({ top: div.scrollHeight, behavior: 'smooth' });
+};
+
 function formatStatusTime(timestamp) {
     if (!timestamp || typeof timestamp !== 'number') return "Offline";
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -16,68 +34,128 @@ function formatStatusTime(timestamp) {
     if (minutes < 60) return `Active ${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `Active ${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days === 1) return `Active 1 day ago`;
-    return `Active ${days} days ago`;
+    return `Active ${Math.floor(hours / 24)} days ago`;
 }
 
-let statusUnsubscribe = null;
-
-window.startChat = (uid, name) => {
-    window.currentChatUser = { uid, name, profile_pic: null }; 
-    window.switchPage('messages');
+// --- SEARCH FEATURE ---
+window.searchChats = () => {
+    const input = document.getElementById('chat-search-input').value.toLowerCase();
+    const chatItems = document.querySelectorAll('.chat-list-item');
     
-    document.getElementById('chat-list-view').classList.add('hidden', 'hidden-custom');
-    document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
+    chatItems.forEach(item => {
+        const name = item.querySelector('.chat-name').innerText.toLowerCase();
+        const msg = item.querySelector('.chat-msg').innerText.toLowerCase();
+        if (name.includes(input) || msg.includes(input)) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+};
+
+// --- PHOTO VIEWER FEATURE ---
+window.openPhotoViewer = (url) => {
+    const modal = document.getElementById('photo-viewer-modal');
+    const img = document.getElementById('photo-viewer-img');
+    img.src = url;
+    modal.classList.remove('hidden');
+    setTimeout(() => img.classList.remove('scale-95'), 10);
+};
+
+window.closePhotoViewer = () => {
+    document.getElementById('photo-viewer-modal').classList.add('hidden');
+    document.getElementById('photo-viewer-img').classList.add('scale-95');
+};
+
+// --- CUSTOM AUDIO PLAYER (NEW FEATURE) ---
+window.toggleCustomAudio = (msgId) => {
+    const audio = document.getElementById('audio-' + msgId);
+    const icon = document.getElementById('audio-icon-' + msgId);
+    const progress = document.getElementById('audio-progress-' + msgId);
+
+    if (audio.paused) {
+        // Pause other audios
+        document.querySelectorAll('.chat-audio-element').forEach(a => {
+            if(!a.paused) {
+                a.pause();
+                document.getElementById('audio-icon-' + a.id.split('-')[1]).className = 'fa-solid fa-play text-white';
+            }
+        });
+        audio.play();
+        icon.className = 'fa-solid fa-pause text-white';
+    } else {
+        audio.pause();
+        icon.className = 'fa-solid fa-play text-white';
+    }
+
+    audio.ontimeupdate = () => {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = percent + '%';
+    };
+
+    audio.onended = () => {
+        icon.className = 'fa-solid fa-play text-white';
+        progress.style.width = '0%';
+    };
+};
+
+// --- OPEN CHAT ---
+window.startChat = (targetId, name, isGroup = false) => {
+    window.currentChatUser = { uid: targetId, name, isGroup }; 
+    isCurrentChatGroup = isGroup;
+    currentChatId = isGroup ? targetId : window.getChatId(window.currentUser.uid, targetId);
+    cancelReply(); // Reset reply
+    
+    document.getElementById('chat-list-view').classList.add('hidden');
+    document.getElementById('chat-conversation-view').classList.remove('hidden');
     document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
     
-    // Fetch Profile Image safely
-    window.getUserData(uid).then(u => {
-        if(u && u.profile_pic) {
-            document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover">`;
-            window.currentChatUser.profile_pic = u.profile_pic; 
-        } else {
-            document.getElementById('chat-header-img').innerHTML = window.escapeHTML(name).charAt(0);
-        }
-    });
-
-    // --- REALTIME STATUS LISTENER ---
     const statusText = document.getElementById('chat-header-status');
-    statusText.innerText = "Connecting..."; 
     
-    if (statusUnsubscribe) statusUnsubscribe();
-    
-    const statusRef = ref(window.db, `status/${uid}`);
-    statusUnsubscribe = onValue(statusRef, (snap) => {
-        if (snap.exists()) {
-            const data = snap.val();
-            if (data.state === 'online') {
-                statusText.innerText = "Active now";
-                statusText.classList.remove('text-gray-500');
-                statusText.classList.add('text-green-500');
+    if (isGroup) {
+        document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fa-solid fa-users"></i></div>`;
+        statusText.innerText = "Group Chat";
+        statusText.className = "text-[11px] text-gray-500 font-medium truncate";
+        if (statusUnsubscribe) { statusUnsubscribe(); statusUnsubscribe = null; }
+    } else {
+        window.getCachedUserData(targetId).then(u => {
+            if(u && u.profile_pic) {
+                document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover">`;
+                window.currentChatUser.profile_pic = u.profile_pic; 
             } else {
-                statusText.innerText = formatStatusTime(data.last_changed);
-                statusText.classList.remove('text-green-500');
-                statusText.classList.add('text-gray-500');
+                document.getElementById('chat-header-img').innerHTML = window.escapeHTML(name).charAt(0);
             }
-        } else {
-            statusText.innerText = "Offline";
-            statusText.classList.remove('text-green-500');
-            statusText.classList.add('text-gray-500');
-        }
-    }, (error) => {
-        console.error("Status check failed:", error);
-        statusText.innerText = "Offline";
-    });
+        });
 
-    history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
-    window.loadMessages(uid);
+        statusText.innerText = "Connecting..."; 
+        if (statusUnsubscribe) statusUnsubscribe();
+        
+        statusUnsubscribe = onValue(ref(window.db, `status/${targetId}`), (snap) => {
+            if (snap.exists()) {
+                const data = snap.val();
+                if (data.state === 'online') {
+                    statusText.innerText = "Active now";
+                    statusText.className = "text-[11px] text-green-500 font-bold truncate";
+                } else {
+                    statusText.innerText = formatStatusTime(data.last_changed);
+                    statusText.className = "text-[11px] text-gray-500 font-medium truncate";
+                }
+            } else {
+                statusText.innerText = "Offline";
+                statusText.className = "text-[11px] text-gray-500 font-medium truncate";
+            }
+        });
+    }
+
+    window.loadMessages();
 };
 
 window.closeChat = () => {
-    document.getElementById('chat-list-view').classList.remove('hidden', 'hidden-custom');
-    document.getElementById('chat-conversation-view').classList.add('hidden', 'hidden-custom');
+    document.getElementById('chat-list-view').classList.remove('hidden');
+    document.getElementById('chat-conversation-view').classList.add('hidden');
     window.currentChatUser = null;
+    currentChatId = null;
+    cancelReply();
     if (statusUnsubscribe) { statusUnsubscribe(); statusUnsubscribe = null; }
 };
 
@@ -92,122 +170,214 @@ window.loadChatList = (uid) => {
                 Object.entries(list)
                     .sort((a, b) => b[1].timestamp - a[1].timestamp)
                     .map(async ([peerUid, info]) => {
-                        try {
-                            const userData = await window.getUserData(peerUid);
-                            return { peerUid, info, profilePic: userData?.profile_pic || null };
-                        } catch (e) {
-                            return { peerUid, info, profilePic: null };
+                        let profilePic = null;
+                        if (!info.isGroup) {
+                            const userData = await window.getCachedUserData(peerUid);
+                            profilePic = userData?.profile_pic || null;
                         }
+                        return { peerUid, info, profilePic };
                     })
             );
 
             container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
                 let rawLastMsg = info.lastMessage || "";
                 let displayMsg = rawLastMsg;
+                let isUnread = info.unreadCount > 0;
 
-                let prefix = "";
-                if (rawLastMsg.startsWith("You: ")) {
-                    prefix = "You: ";
-                    rawLastMsg = rawLastMsg.substring(5);
-                }
+                let prefix = rawLastMsg.startsWith("You: ") ? "You: " : "";
+                if (prefix) rawLastMsg = rawLastMsg.substring(5);
 
                 if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
-                    rawLastMsg = window.decryptMsg(rawLastMsg);
+                    try { rawLastMsg = window.decryptMsg(rawLastMsg); } catch(e) {}
                 }
                 displayMsg = prefix + rawLastMsg;
 
-                let av = profilePic ?
-                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
-                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
+                let av = info.isGroup ? 
+                    `<div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600 text-xl shrink-0 border border-blue-200"><i class="fa-solid fa-users text-sm"></i></div>` :
+                    (profilePic ? `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200" loading="lazy">` : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`);
 
+                // Added 'chat-list-item', 'chat-name', 'chat-msg' for Search Feature
                 return `
-            <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+            <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}', ${info.isGroup ? 'true' : 'false'})" class="chat-list-item p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition">
                 ${av}
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between items-center mb-0.5">
-                        <h4 class="font-bold text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                        <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
+                        <h4 class="chat-name ${isUnread && !prefix ? 'font-extrabold text-black' : 'font-bold text-gray-800'} text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                        <span class="text-[10px] ${isUnread && !prefix ? 'text-green-600 font-bold' : 'text-gray-400'} shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
                     </div>
-                    <p class="text-sm text-gray-500 truncate block">${window.escapeHTML(displayMsg)}</p>
+                    <div class="flex justify-between items-center">
+                        <p class="chat-msg text-sm ${isUnread && !prefix ? 'font-bold text-gray-800' : 'text-gray-500'} truncate block">${window.escapeHTML(displayMsg)}</p>
+                        ${isUnread && !prefix ? `<span class="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">${info.unreadCount}</span>` : ''}
+                    </div>
                 </div>
             </div>`;
             }).join('');
         } else {
-            container.innerHTML = '<div class="text-center mt-20"><div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300 text-3xl"><i class="fa-solid fa-comments"></i></div><p class="text-gray-400 text-sm font-bold">কোনো চ্যাট হিস্ট্রি নেই</p></div>';
+            container.innerHTML = '<div class="text-center mt-20"><div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-300 text-2xl"><i class="fa-solid fa-comments"></i></div><p class="text-gray-400 text-sm font-bold">কোনো চ্যাট নেই</p></div>';
         }
     });
 };
 
+// --- SWIPE TO REPLY LOGIC (NEW) ---
+window.prepareReply = (msgId, senderName, text) => {
+    replyingToMsg = { id: msgId, name: senderName, text: text };
+    document.getElementById('reply-preview-box').classList.remove('hidden');
+    document.getElementById('reply-preview-name').innerText = senderName;
+    document.getElementById('reply-preview-text').innerText = text;
+    document.getElementById('msg-input').focus();
+};
+
+window.cancelReply = () => {
+    replyingToMsg = null;
+    document.getElementById('reply-preview-box').classList.add('hidden');
+};
+
+// Touch Swiper logic
+let touchStartX = 0;
+let swipingBlock = null;
+
+document.getElementById('messages-container').addEventListener('touchstart', e => {
+    const block = e.target.closest('.msg-swipe-block');
+    if (block) {
+        touchStartX = e.changedTouches[0].screenX;
+        swipingBlock = block;
+        block.style.transition = 'none';
+    }
+}, {passive: true});
+
+document.getElementById('messages-container').addEventListener('touchmove', e => {
+    if (!swipingBlock) return;
+    const currentX = e.changedTouches[0].screenX;
+    const diff = currentX - touchStartX;
+    if (diff > 0 && diff < 80) { // Only swipe right up to 80px
+        swipingBlock.style.transform = `translateX(${diff}px)`;
+    }
+}, {passive: true});
+
+document.getElementById('messages-container').addEventListener('touchend', e => {
+    if (!swipingBlock) return;
+    const currentX = e.changedTouches[0].screenX;
+    const diff = currentX - touchStartX;
+    swipingBlock.style.transition = 'transform 0.3s ease';
+    swipingBlock.style.transform = 'translateX(0)';
+    
+    if (diff > 50) {
+        // Trigger Reply
+        const msgId = swipingBlock.getAttribute('data-id');
+        const sName = swipingBlock.getAttribute('data-name');
+        const text = swipingBlock.getAttribute('data-text');
+        window.prepareReply(msgId, sName, text);
+    }
+    swipingBlock = null;
+});
+
 // --- LOAD MESSAGES ---
-window.loadMessages = (otherUid) => {
-    const chatId = window.getChatId(window.currentUser.uid, otherUid);
+window.loadMessages = () => {
     const div = document.getElementById('messages-container');
     div.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
-    
-    onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(50)), (snap) => {
+    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), { unreadCount: 0 });
+
+    onValue(query(ref(window.db, `chats/${currentChatId}`), limitToLast(100)), async (snap) => {
         const msgs = snap.val() || {};
         if (Object.keys(msgs).length > 0) {
             
-            const myPic = window.userDetails?.profile_pic;
-            const myAvatarHtml = myPic 
-                ? `<img src="${myPic}" class="w-6 h-6 rounded-full object-cover self-end mb-1 ml-2 border border-gray-200 shrink-0">` 
-                : `<div class="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-[10px] font-bold text-gray-500 self-end mb-1 ml-2 shrink-0">${window.userDetails?.name?.charAt(0) || 'M'}</div>`;
+            let htmlContent = "";
+            let peerProfilePic = window.currentChatUser?.profile_pic;
 
-            const peerPic = window.currentChatUser?.profile_pic;
-            const peerAvatarHtml = peerPic 
-                ? `<img src="${peerPic}" class="w-6 h-6 rounded-full object-cover self-end mb-1 mr-2 border border-gray-200 shrink-0">` 
-                : `<div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center text-[10px] font-bold text-green-700 self-end mb-1 mr-2 shrink-0">${window.currentChatUser?.name?.charAt(0) || 'U'}</div>`;
-
-            div.innerHTML = Object.entries(msgs).map(([msgId, m]) => {
+            for (const [msgId, m] of Object.entries(msgs)) {
                 const isMe = m.sender === window.currentUser.uid;
-                let content = '';
-                
-                if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-[200px] h-auto cursor-pointer border border-black/10" onclick="window.open('${m.image}')">`;
-                if (m.audio) content += `<audio controls src="${m.audio}" class="w-full max-w-[220px] h-10 mb-1"></audio>`;
-                if (m.text) {
-                    const decrypted = window.decryptMsg(m.text);
-                    content += `<span class="break-words">${window.escapeHTML(decrypted)}</span>`;
+                if (!isMe && m.status !== 'seen') {
+                    update(ref(window.db, `chats/${currentChatId}/${msgId}`), { status: 'seen' });
                 }
 
-                const deleteBtn = isMe ? `<div onclick="deleteSpecificMessage('${chatId}', '${msgId}')" class="opacity-0 group-hover:opacity-100 transition cursor-pointer text-red-400 text-xs self-center mx-2 hover:text-red-600" title="Delete"><i class="fa-solid fa-trash"></i></div>` : '';
+                // Profile Pic Logic (Left Side) - NEW ALIGNMENT
+                let avatarHtml = '';
+                if (!isMe) {
+                    avatarHtml = peerProfilePic 
+                        ? `<img src="${peerProfilePic}" class="w-7 h-7 rounded-full object-cover shrink-0 mr-2 self-end mb-1 border border-gray-200">` 
+                        : `<div class="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-[11px] font-bold text-green-700 shrink-0 mr-2 self-end mb-1">${window.currentChatUser?.name?.charAt(0) || 'U'}</div>`;
+                }
 
-                return `
-                <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-1 group items-end">
-                    ${isMe ? deleteBtn : peerAvatarHtml}
-                    <div class="px-3.5 py-2.5 max-w-[70%] text-[15px] shadow-sm ${isMe ? 'bg-green-600 text-white rounded-[18px_18px_4px_18px]' : 'bg-white text-gray-800 rounded-[18px_18px_18px_4px] border border-gray-100'} relative">
-                        ${content}
-                        <div class="text-[9px] ${isMe ? 'text-green-100' : 'text-gray-400'} text-right mt-1">${window.timeAgo(m.timestamp)}</div>
+                // Sender Name Resolution
+                let senderNameText = isMe ? "You" : window.currentChatUser.name;
+                if (!isMe && isCurrentChatGroup) {
+                    const senderData = await window.getCachedUserData(m.sender);
+                    senderNameText = senderData ? senderData.name.split(' ')[0] : 'Member';
+                }
+
+                // Message Content Decryption
+                let rawText = "";
+                let contentHtml = '';
+                
+                // Reply Block Rendering
+                if (m.replyTo) {
+                    contentHtml += `
+                    <div class="bg-black/5 border-l-4 ${isMe ? 'border-green-300' : 'border-green-500'} p-1.5 rounded mb-1.5 text-left cursor-pointer hover:bg-black/10 transition" onclick="document.getElementById('msg-${m.replyTo.id}').scrollIntoView({behavior:'smooth'})">
+                        <p class="text-[10px] font-bold ${isMe ? 'text-green-100' : 'text-green-600'}">${window.escapeHTML(m.replyTo.name)}</p>
+                        <p class="text-[11px] ${isMe ? 'text-white/80' : 'text-gray-500'} truncate w-full max-w-[150px]">${window.escapeHTML(m.replyTo.text)}</p>
+                    </div>`;
+                }
+
+                if (m.image) {
+                    contentHtml += `<img src="${m.image}" onload="window.scrollToBottom()" class="rounded-lg mb-1 max-w-[200px] h-auto cursor-pointer border border-black/10 transition transform active:scale-95" onclick="window.openPhotoViewer('${m.image}')">`;
+                    rawText = "📷 Photo";
+                }
+                if (m.audio) {
+                    // Custom Audio Player UI
+                    contentHtml += `
+                    <div class="flex items-center gap-2 ${isMe ? 'bg-green-700' : 'bg-gray-100'} p-1.5 rounded-full mb-1 w-[180px]">
+                        <button onclick="window.toggleCustomAudio('${msgId}')" class="${isMe ? 'bg-green-500' : 'bg-green-500'} w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm active:scale-90 transition">
+                            <i id="audio-icon-${msgId}" class="fa-solid fa-play text-white text-xs pl-0.5"></i>
+                        </button>
+                        <div class="flex-1 h-1.5 bg-black/10 rounded-full relative overflow-hidden">
+                            <div id="audio-progress-${msgId}" class="absolute left-0 top-0 h-full ${isMe ? 'bg-green-300' : 'bg-green-500'} w-0"></div>
+                        </div>
+                        <audio id="audio-${msgId}" class="chat-audio-element hidden" src="${m.audio}"></audio>
+                    </div>`;
+                    rawText = "🎤 Voice";
+                }
+                if (m.text) {
+                    try {
+                        const decrypted = window.decryptMsg(m.text);
+                        contentHtml += `<span class="break-words inline-block text-left">${window.escapeHTML(decrypted)}</span>`;
+                        rawText = decrypted;
+                    } catch(e) { contentHtml += `Corrupted`; }
+                }
+
+                // Status Icon
+                let statusIcon = '';
+                if (isMe) {
+                    if (m.status === 'seen') statusIcon = `<i class="fa-solid fa-check-double text-blue-300 ml-1 text-[10px]" title="Seen"></i>`;
+                    else if (m.status === 'delivered') statusIcon = `<i class="fa-solid fa-check-double text-white/70 ml-1 text-[10px]" title="Delivered"></i>`;
+                    else statusIcon = `<i class="fa-solid fa-check text-white/70 ml-1 text-[10px]" title="Sent"></i>`;
+                }
+
+                const msgDateHtml = `<div class="text-[9px] flex items-center justify-end gap-1 ${isMe ? 'text-green-100' : 'text-gray-400'} mt-1 min-w-[50px]"><span>${window.timeAgo(m.timestamp)}</span>${statusIcon}</div>`;
+
+                // Swipe Block wrapper logic
+                htmlContent += `
+                <div id="msg-${msgId}" class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-3 overflow-hidden">
+                    ${avatarHtml}
+                    <div class="msg-swipe-block max-w-[75%] flex flex-col ${isMe ? 'items-end' : 'items-start'}" data-id="${msgId}" data-name="${window.escapeHTML(senderNameText)}" data-text="${window.escapeHTML(rawText)}">
+                        ${(!isMe && isCurrentChatGroup) ? `<div class="text-[10px] font-bold text-blue-600 mb-0.5 ml-2">${senderNameText}</div>` : ''}
+                        
+                        <div class="px-3.5 py-2.5 text-[15px] shadow-sm relative ${isMe ? 'bg-green-600 text-white rounded-[18px_18px_4px_18px]' : 'bg-white text-gray-800 rounded-[18px_18px_18px_4px] border border-gray-100'}">
+                            ${contentHtml}
+                            ${msgDateHtml}
+                        </div>
                     </div>
-                    ${isMe ? myAvatarHtml : deleteBtn}
                 </div>`;
-            }).join('');
+            }
 
-            setTimeout(() => { div.scrollTop = div.scrollHeight; }, 100);
+            div.innerHTML = htmlContent;
+            requestAnimationFrame(() => window.scrollToBottom());
         } else {
-            div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-10">কথপোকথন শুরু করুন</p>';
+            div.innerHTML = '<div class="text-center mt-20 text-gray-400"><div class="bg-gray-200 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-hand-wave text-2xl text-gray-500"></i></div><p class="text-sm font-bold">কথপোকথন শুরু করুন</p></div>';
         }
     });
 };
 
-window.deleteSpecificMessage = (chatId, msgId) => {
-    if(confirm("এই মেসেজটি ডিলিট করতে চান? (এটি উভয়ের চ্যাট থেকেই ডিলিট হবে)")) {
-        remove(ref(window.db, `chats/${chatId}/${msgId}`)).then(() => {
-            window.showToast("মেসেজ ডিলিট হয়েছে");
-        });
-    }
-};
-
-window.deleteEntireConversation = () => {
-    if(!window.currentChatUser) return;
-    if(confirm("পুরো চ্যাট হিস্ট্রি ডিলিট করতে চান? (শুধুমাত্র আপনার লিস্ট থেকে মুছে যাবে)")) {
-        remove(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`)).then(() => {
-            window.showToast("চ্যাট ডিলিট করা হয়েছে");
-            window.closeChat(); 
-        });
-    }
-};
-
-// --- SEND MESSAGE LOGIC ---
+// --- SEND MESSAGE (UPDATED FOR REPLY) ---
 window.sendMsg = (imageUrl = null, audioUrl = null) => {
     if (!window.currentChatUser) return;
     const input = document.getElementById('msg-input');
@@ -215,212 +385,60 @@ window.sendMsg = (imageUrl = null, audioUrl = null) => {
     
     if (!text && !imageUrl && !audioUrl) return;
     
-    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
     const ts = Date.now();
+    const msgData = { sender: window.currentUser.uid, timestamp: ts, status: 'sent' };
+    
+    // Attach reply data if exists
+    if (replyingToMsg) {
+        msgData.replyTo = replyingToMsg;
+    }
 
-    const msgData = { sender: window.currentUser.uid, timestamp: ts };
     let lastMsgPreview = "";
 
     if (text) {
         msgData.text = window.encryptMsg(text);
-        lastMsgPreview = msgData.text;
+        lastMsgPreview = text;
     }
     if (imageUrl) {
         msgData.image = imageUrl;
-        lastMsgPreview = text ? ("📷 " + msgData.text) : "📷 ছবি পাঠিয়েছেন";
+        lastMsgPreview = text ? ("📷 " + text) : "📷 ছবি";
     }
     if (audioUrl) {
         msgData.audio = audioUrl;
         lastMsgPreview = "🎤 ভয়েস মেসেজ";
     }
 
-    push(ref(window.db, `chats/${chatId}`), msgData).then(() => {
+    push(ref(window.db, `chats/${currentChatId}`), msgData).then(() => {
         input.value = "";
-    }).catch(e => {
-        console.error("Message send failed:", e);
-        window.showToast("মেসেজ পাঠানো যায়নি!", "error");
-    });
+        cancelReply(); // Clear reply after sending
+    }).catch(e => window.showToast("মেসেজ পাঠানো যায়নি!", "error"));
 
-    const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgPreview, timestamp: ts };
-    const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgPreview, timestamp: ts };
+    // Update Recent Chats
+    if (isCurrentChatGroup) {
+        get(ref(window.db, `groups/${currentChatId}/members`)).then(snap => {
+            const members = snap.val() || [];
+            members.forEach(memberUid => {
+                const isMe = memberUid === window.currentUser.uid;
+                const prefix = isMe ? "You: " : `${window.userDetails.name.split(' ')[0]}: `;
+                const updateData = { name: window.currentChatUser.name, lastMessage: prefix + lastMsgPreview, timestamp: ts, isGroup: true };
+                
+                get(ref(window.db, `user_chats/${memberUid}/${currentChatId}/unreadCount`)).then(uSnap => {
+                    let count = uSnap.val() || 0;
+                    if (!isMe) updateData.unreadCount = count + 1;
+                    update(ref(window.db, `user_chats/${memberUid}/${currentChatId}`), updateData);
+                });
+            });
+        });
+    } else {
+        const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgPreview, timestamp: ts, isGroup: false };
+        const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgPreview, timestamp: ts, isGroup: false };
 
-    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
-    update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
-};
-
-// --- VOICE RECORDING LOGIC ---
-let chatMediaRecorder;
-let chatAudioChunks = [];
-let chatRecordingTimer;
-let chatRecordSeconds = 0;
-
-window.startChatRecording = async () => {
-    if (navigator.userAgent.indexOf('wv') > -1 || navigator.userAgent.indexOf('Median') > -1) {
-        window.location.href = 'median://permissions/request?permissions=android.permission.RECORD_AUDIO';
-    }
-    await new Promise(r => setTimeout(r, 500));
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        return window.showToast("অডিও রেকর্ড সাপোর্ট করছে না।", "error");
-    }
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        chatMediaRecorder = new MediaRecorder(stream);
-        chatAudioChunks = [];
-
-        chatMediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) chatAudioChunks.push(event.data);
-        };
-
-        chatMediaRecorder.onstop = () => {
-            const audioBlob = new Blob(chatAudioChunks, { type: 'audio/mp3' });
-            sendChatVoice(audioBlob); 
-        };
-
-        chatMediaRecorder.start();
-        
-        document.getElementById('chat-default-input-ui').classList.add('hidden');
-        document.getElementById('chat-voice-recording-ui').classList.remove('hidden');
-        
-        chatRecordSeconds = 0;
-        document.getElementById('chat-record-timer').innerText = "00:00";
-        chatRecordingTimer = setInterval(() => {
-            chatRecordSeconds++;
-            const mins = Math.floor(chatRecordSeconds / 60).toString().padStart(2, '0');
-            const secs = (chatRecordSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('chat-record-timer').innerText = `${mins}:${secs}`;
-        }, 1000);
-
-    } catch (err) {
-        window.showToast("মাইক্রোফোন পারমিশন দিন", "error");
-    }
-};
-
-window.stopAndSendChatRecording = () => {
-    if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        chatMediaRecorder.stop(); 
-        clearInterval(chatRecordingTimer);
-        chatMediaRecorder.stream.getTracks().forEach(t => t.stop());
-    }
-};
-
-window.cancelChatRecording = () => {
-    if (chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        chatMediaRecorder.onstop = null; 
-        chatMediaRecorder.stop();
-        chatMediaRecorder.stream.getTracks().forEach(t => t.stop());
-    }
-    clearInterval(chatRecordingTimer);
-    document.getElementById('chat-voice-recording-ui').classList.add('hidden');
-    document.getElementById('chat-default-input-ui').classList.remove('hidden');
-};
-
-const sendChatVoice = async (audioBlob) => {
-    const file = new File([audioBlob], "chat_voice.mp3", { type: 'audio/mp3' });
-    
-    document.getElementById('chat-voice-recording-ui').classList.add('hidden');
-    document.getElementById('chat-default-input-ui').classList.remove('hidden');
-    const msgInput = document.getElementById('msg-input');
-    msgInput.placeholder = "Sending audio...";
-    msgInput.disabled = true;
-
-    try {
-        const res = await window.uploadMediaToCloudinary(file);
-        window.sendMsg(null, res.url); 
-    } catch (e) {
-        window.showToast("ভয়েস পাঠানো যায়নি!", 'error');
-    } finally {
-        msgInput.placeholder = "মেসেজ লিখুন...";
-        msgInput.disabled = false;
-    }
-};
-
-// Image Upload Fix
-window.handleChatImageSelect = () => {
-    const file = document.getElementById('chat-img-input').files[0];
-    if (file) {
-        const btn = document.getElementById('btn-chat-send');
-        const oldHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i>';
-        btn.disabled = true;
-
-        window.uploadMediaToCloudinary(file).then(res => {
-            window.sendMsg(res.url);
-            document.getElementById('chat-img-input').value = "";
-        }).catch(e => {
-            window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
-        }).finally(() => {
-            btn.innerHTML = oldHtml;
-            btn.disabled = false;
+        update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
+        get(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}/unreadCount`)).then(uSnap => {
+            peerUpdate.unreadCount = (uSnap.val() || 0) + 1;
+            update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
         });
     }
 };
 
-// QUICK CHAT FRIENDS (Top Bar)
-window.loadQuickChatFriends = async () => {
-    const div = document.getElementById('quick-chat-friends');
-    if (!window.myFriends || window.myFriends.length === 0) {
-        div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
-        return;
-    }
-    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
-    div.innerHTML = friendsData.filter(u => u).map(u => {
-        let av = u.profile_pic ? 
-            `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover border border-gray-200"></div>` : 
-            `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative border border-green-200">${window.escapeHTML(u.name).charAt(0)}</div>`;
-        return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px] transform active:scale-95 transition">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
-    }).join('');
-};
-
-
-// =========================================================
-// --- NATIVE FLOATING CHAT HEAD LOGIC (SYSTEM ALERT WINDOW) ---
-// =========================================================
-
-let floatingChatUserId = null;
-let floatingChatUserName = null;
-let initialChatLoad = true; 
-
-// অ্যাপ চালু হওয়ার পর গ্লোবালি মেসেজ চেক করা
-window.listenForGlobalMessages = (uid) => {
-    onValue(ref(window.db, `user_chats/${uid}`), (snap) => {
-        if (initialChatLoad) {
-            initialChatLoad = false;
-            return; // প্রথমবার অ্যাপ লোড হওয়ার সময় বাবল দেখাবে না
-        }
-
-        const list = snap.val() || {};
-        
-        // সর্বশেষ মেসেজটি বের করা
-        let latestPeer = null;
-        let latestInfo = null;
-        
-        for (const [peerUid, info] of Object.entries(list)) {
-            if (!latestInfo || info.timestamp > latestInfo.timestamp) {
-                latestInfo = info;
-                latestPeer = peerUid;
-            }
-        }
-
-        if (latestInfo && latestPeer) {
-            // যদি মেসেজটা নিজের পাঠানো না হয় এবং ইউজার বর্তমানে ওই চ্যাটে না থাকে
-            if (!latestInfo.lastMessage.startsWith("You:") && (!window.currentChatUser || window.currentChatUser.uid !== latestPeer)) {
-                showFloatingChatHead(latestPeer, latestInfo);
-            }
-        }
-    });
-};
-
-// ফ্লোটিং বাবল দেখানোর ফাংশন (অ্যান্ড্রয়েড নেটিভ বাবল কল করা)
-function showFloatingChatHead(peerUid, info) {
-    floatingChatUserId = peerUid;
-    floatingChatUserName = info.name;
-    
-    // AndroidBridge কল করে নেটিভ বাবল দেখানো
-    if (window.AndroidBridge && window.AndroidBridge.showBubble) {
-        window.AndroidBridge.showBubble();
-    } else {
-        console.warn("Android Bridge not found. Cannot show native bubble.");
-    }
-}
+window.handleEnter = (e) => { if (e.key === 'Enter') window.sendMsg(); };
