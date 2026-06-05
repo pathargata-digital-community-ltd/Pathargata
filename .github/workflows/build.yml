@@ -34,7 +34,6 @@ jobs:
       - name: Setup Capacitor & Plugins
         run: |
           npm init -y
-          # এখানে Capacitor এর মূল ফাইলের সাথে App এবং Keyboard প্লাগিন যুক্ত করা হয়েছে
           npm install @capacitor/core@5 @capacitor/android@5 @capacitor/app@5 @capacitor/keyboard@5
           npm install -D @capacitor/cli@5 @capacitor/assets@3
           npx cap init "Patharghata Digital" "com.pathargata.digital" --web-dir www
@@ -42,12 +41,10 @@ jobs:
 
       - name: Generate App Icons and Splash Screen
         run: |
-          # Assets ফোল্ডার তৈরি করুন
           mkdir assets
 
       - name: Configure Capacitor
         run: |
-          # কীবোর্ড ওপেন হলে যেন অ্যাপের ডিজাইন ভেঙে না যায় তার ফিক্স
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.pathargata.digital",
@@ -71,10 +68,12 @@ jobs:
       - name: Add Native Floating Chat Code
         run: |
           # ১. MainActivity.java আপডেট করা (JS Bridge তৈরি)
+          # এখানে আমি কোডটি ফিক্স করেছি যাতে ডাবল JavascriptInterface না আসে
           cat << 'EOF' > android/app/src/main/java/com/pathargata/digital/MainActivity.java
           package com.pathargata.digital;
 
           import android.os.Bundle;
+          import android.os.Build;
           import android.webkit.JavascriptInterface;
           import android.webkit.WebView;
           import android.content.Intent;
@@ -101,11 +100,9 @@ jobs:
                   @JavascriptInterface
                   public void showBubble() {
                       if (!Settings.canDrawOverlays(MainActivity.this)) {
-                          // পারমিশন না থাকলে সেটিংসে নিয়ে যাবে
                           Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
                           startActivity(intent);
                       } else {
-                          // পারমিশন থাকলে বাবল ভাসাবে
                           Intent intent = new Intent(MainActivity.this, FloatingBubbleService.class);
                           startService(intent);
                       }
@@ -116,11 +113,22 @@ jobs:
                           Intent intent = new Intent(MainActivity.this, FloatingBubbleService.class);
                           stopService(intent);
                   }
+
+                  @JavascriptInterface
+                  public void startBackgroundListener(String uid) {
+                      Intent intent = new Intent(MainActivity.this, FirebaseChatListenerService.class);
+                      intent.putExtra("UID", uid);
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          startForegroundService(intent);
+                      } else {
+                          startService(intent);
+                      }
+                  }
               }
           }
           EOF
 
-          # ২. FloatingBubbleService.java তৈরি করা (বাবলের ডিজাইন)
+          # ২. FloatingBubbleService.java তৈরি করা
           cat << 'EOF' > android/app/src/main/java/com/pathargata/digital/FloatingBubbleService.java
           package com.pathargata.digital;
 
@@ -161,8 +169,8 @@ jobs:
                   
                   GradientDrawable shape = new GradientDrawable();
                   shape.setShape(GradientDrawable.OVAL);
-                  shape.setColor(Color.parseColor("#16a34a")); // সবুজ ব্যাকগ্রাউন্ড
-                  shape.setStroke(6, Color.WHITE); // সাদা বর্ডার
+                  shape.setColor(Color.parseColor("#16a34a"));
+                  shape.setStroke(6, Color.WHITE);
                   tv.setBackground(shape);
                   
                   mFloatingView = tv;
@@ -186,7 +194,6 @@ jobs:
 
                   mWindowManager.addView(mFloatingView, params);
 
-                  // বাবলে ক্লিক করলে অ্যাপ ওপেন হবে
                   mFloatingView.setOnClickListener(new View.OnClickListener() {
                       @Override
                       public void onClick(View v) {
@@ -195,7 +202,7 @@ jobs:
                               openApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                               startActivity(openApp);
                           }
-                          stopSelf(); // বাবলটি হাইড হয়ে যাবে
+                          stopSelf();
                       }
                   });
               }
@@ -217,6 +224,7 @@ jobs:
           sed -i '/dependencies {/a \    implementation platform("com.google.firebase:firebase-bom:32.7.0")\n    implementation "com.google.firebase:firebase-database"' android/app/build.gradle
 
           # ২. Firebase Background Service তৈরি করা (Java)
+          # এখানে আমি onCancelled মেথডটি ফিক্স করেছি
           cat << 'EOF' > android/app/src/main/java/com/pathargata/digital/FirebaseChatListenerService.java
           package com.pathargata.digital;
 
@@ -320,7 +328,7 @@ jobs:
                       }
 
                       @Override
-                      public void cancelled(@NonNull DatabaseError error) {}
+                      public void onCancelled(@NonNull DatabaseError error) {} // FIXED: onCancelled added correctly
                   });
               }
           }
@@ -328,9 +336,6 @@ jobs:
 
           # ৩. AndroidManifest.xml এ সার্ভিসটি যুক্ত করা
           sed -i '/<\/application>/i \        <service android:name=".FirebaseChatListenerService" android:exported="false" />' android/app/src/main/AndroidManifest.xml
-
-          # ৪. MainActivity.java (JS Bridge) আপডেট করা যাতে JS থেকে Java কে UID পাঠানো যায়
-          sed -i '/public void showBubble() {/i \        @JavascriptInterface\n        public void startBackgroundListener(String uid) {\n            Intent intent = new Intent(MainActivity.this, FirebaseChatListenerService.class);\n            intent.putExtra("UID", uid);\n            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {\n                startForegroundService(intent);\n            } else {\n                startService(intent);\n            }\n        }' android/app/src/main/java/com/pathargata/digital/MainActivity.java
 
       - name: Fix Kotlin Dependency Conflict
         run: |
