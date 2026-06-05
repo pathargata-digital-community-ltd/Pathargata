@@ -2470,6 +2470,13 @@ window.userDetails = userDetails;
                 listenForNotificationBadge(user.uid);
                 loadNotifications(true);
 if(window.loadChatList) window.loadChatList(user.uid);
+if(window.listenForGlobalMessages) window.listenForGlobalMessages(user.uid); // বাবল চালু করার লাইন
+
+// লগইন হওয়ার পর Java-এর ব্যাকগ্রাউন্ড সার্ভিস চালু করে দেওয়া
+if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
+    window.AndroidBridge.startBackgroundListener(user.uid);
+}
+
 loadMyComplaints();
                 loadEmergencyAlerts();
 
