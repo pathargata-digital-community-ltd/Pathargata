@@ -1,12 +1,3 @@
-আপনার কথা আমি পরিষ্কার বুঝতে পেরেছি। আপনার রিকোয়েস্ট অনুযায়ী, মেসেজ বাবল
-(Native Android Bubble) ঠিক রেখে এবং প্রয়োজনীয় পারমিশনের লজিক অ্যাড করে আমি
-সম্পূর্ণ messages.js ফাইলটি তৈরি করে দিয়েছি।
-
-কোথাও কোনো ফাংশন মিসিং নেই এবং Swipe to Reply এর কারণে যে ক্র্যাশ হচ্ছিল, তা
-সম্পূর্ণ ফিক্স করা হয়েছে।
-
-নিচের সম্পূর্ণ কোডটি কপি করে আপনার messages.js ফাইলে পেস্ট করে সেভ করুন:
-
 import {
     ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
