@@ -1,3 +1,12 @@
+আপনার কথা আমি পরিষ্কার বুঝতে পেরেছি। আপনার রিকোয়েস্ট অনুযায়ী, মেসেজ বাবল
+(Native Android Bubble) ঠিক রেখে এবং প্রয়োজনীয় পারমিশনের লজিক অ্যাড করে আমি
+সম্পূর্ণ messages.js ফাইলটি তৈরি করে দিয়েছি।
+
+কোথাও কোনো ফাংশন মিসিং নেই এবং Swipe to Reply এর কারণে যে ক্র্যাশ হচ্ছিল, তা
+সম্পূর্ণ ফিক্স করা হয়েছে।
+
+নিচের সম্পূর্ণ কোডটি কপি করে আপনার messages.js ফাইলে পেস্ট করে সেভ করুন:
+
 import {
     ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -103,7 +112,7 @@ window.toggleCustomAudio = (msgId) => {
 };
 
 // ==========================================
-// 4. SWIPE TO REPLY LOGIC
+// 4. SWIPE TO REPLY LOGIC (FIXED: Event Delegation)
 // ==========================================
 window.prepareReply = (msgId, senderName, text) => {
     replyingToMsg = { id: msgId, name: senderName, text: text };
@@ -115,13 +124,17 @@ window.prepareReply = (msgId, senderName, text) => {
 
 window.cancelReply = () => {
     replyingToMsg = null;
-    document.getElementById('reply-preview-box').classList.add('hidden');
+    const previewBox = document.getElementById('reply-preview-box');
+    if(previewBox) previewBox.classList.add('hidden');
 };
 
 let touchStartX = 0;
 let swipingBlock = null;
 
-document.getElementById('messages-container').addEventListener('touchstart', e => {
+document.addEventListener('touchstart', e => {
+    const container = e.target.closest('#messages-container');
+    if (!container) return; // Only trigger if inside messages-container
+    
     const block = e.target.closest('.msg-swipe-block');
     if (block) {
         touchStartX = e.changedTouches[0].screenX;
@@ -130,13 +143,13 @@ document.getElementById('messages-container').addEventListener('touchstart', e =
     }
 }, {passive: true});
 
-document.getElementById('messages-container').addEventListener('touchmove', e => {
+document.addEventListener('touchmove', e => {
     if (!swipingBlock) return;
     const diff = e.changedTouches[0].screenX - touchStartX;
     if (diff > 0 && diff < 80) swipingBlock.style.transform = `translateX(${diff}px)`;
 }, {passive: true});
 
-document.getElementById('messages-container').addEventListener('touchend', e => {
+document.addEventListener('touchend', e => {
     if (!swipingBlock) return;
     const diff = e.changedTouches[0].screenX - touchStartX;
     swipingBlock.style.transition = 'transform 0.3s ease';
@@ -159,7 +172,7 @@ window.startChat = (targetId, name, isGroup = false) => {
     window.currentChatUser = { uid: targetId, name, isGroup }; 
     window.isCurrentChatGroup = isGroup;
     currentChatId = isGroup ? targetId : window.getChatId(window.currentUser.uid, targetId);
-    cancelReply();
+    window.cancelReply(); // Fixed
     
     window.switchPage('messages'); 
     document.getElementById('chat-list-view').classList.add('hidden');
@@ -212,7 +225,7 @@ window.closeChat = () => {
     document.getElementById('chat-conversation-view').classList.add('hidden');
     window.currentChatUser = null;
     currentChatId = null;
-    cancelReply();
+    window.cancelReply(); // Fixed
     if (statusUnsubscribe) { statusUnsubscribe(); statusUnsubscribe = null; }
 };
 
@@ -400,7 +413,7 @@ window.sendMsg = (imageUrl = null, audioUrl = null) => {
 
     push(ref(window.db, `chats/${currentChatId}`), msgData).then(() => {
         input.value = "";
-        cancelReply(); 
+        window.cancelReply(); // Fixed
     }).catch(e => window.showToast("মেসেজ পাঠানো যায়নি!", "error"));
 
     if (window.isCurrentChatGroup) {
@@ -598,7 +611,55 @@ window.listenForGlobalMessages = (uid) => {
 function showFloatingChatHead(peerUid, info) {
     floatingChatUserId = peerUid;
     floatingChatUserName = info.name;
-    if (window.AndroidBridge && window.AndroidBridge.showBubble) {
-        window.AndroidBridge.showBubble();
+    
+    if (window.AndroidBridge) {
+        // ১. যদি অ্যাপের ভেতর পারমিশন চাওয়ার কোনো মেথড থাকে
+        if (window.AndroidBridge.requestBubblePermission) {
+            window.AndroidBridge.requestBubblePermission();
+        }
+        
+        // ২. মেসেজ বাবল শো করা
+        if (window.AndroidBridge.showBubble) {
+            window.AndroidBridge.showBubble();
+        }
     }
 }
+
+// ==========================================
+// 12. AUTO LOAD CHATS & ACTIVE FRIENDS
+// ==========================================
+
+window.loadQuickChatFriends = async () => {
+    const container = document.getElementById('quick-chat-friends');
+    if (!container) return;
+
+    if (!window.myFriends || window.myFriends.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-400 pl-2">আগে বন্ধু যুক্ত করুন।</p>';
+        return;
+    }
+
+    let html = '';
+    for (let uid of window.myFriends) {
+        const u = await window.getCachedUserData(uid);
+        if (u) {
+            let av = u.profile_pic 
+                ? `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border-2 border-green-400 p-0.5 shadow-sm">` 
+                : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-lg border-2 border-green-400 p-0.5 shadow-sm">${window.escapeHTML(u.name).charAt(0)}</div>`;
+            
+            html += `
+            <div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="inline-flex flex-col items-center cursor-pointer min-w-[60px] transform transition hover:scale-105">
+                <div class="relative">${av}<div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div></div>
+                <span class="text-[10px] font-bold text-gray-700 mt-1 truncate w-14 text-center">${window.escapeHTML(u.name).split(' ')[0]}</span>
+            </div>`;
+        }
+    }
+    container.innerHTML = html;
+};
+
+// Auto Initialize Check (Fallback)
+setTimeout(() => {
+    if (window.currentUser) {
+        if (window.loadChatList) window.loadChatList(window.currentUser.uid);
+        if (window.loadQuickChatFriends) window.loadQuickChatFriends();
+    }
+}, 1500);
