@@ -383,7 +383,7 @@ let floatingChatUserName = null;
 let initialChatLoad = true; 
 
 // অ্যাপ চালু হওয়ার পর গ্লোবালি মেসেজ চেক করা
-export const listenForGlobalMessages = (uid) => {
+window.listenForGlobalMessages = (uid) => {
     onValue(ref(window.db, `user_chats/${uid}`), (snap) => {
         if (initialChatLoad) {
             initialChatLoad = false;
