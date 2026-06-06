@@ -103,7 +103,7 @@ window.toggleCustomAudio = (msgId) => {
 };
 
 // ==========================================
-// 4. SWIPE TO REPLY LOGIC (FIXED: Event Delegation)
+// 4. SWIPE TO REPLY LOGIC 
 // ==========================================
 window.prepareReply = (msgId, senderName, text) => {
     replyingToMsg = { id: msgId, name: senderName, text: text };
@@ -124,7 +124,7 @@ let swipingBlock = null;
 
 document.addEventListener('touchstart', e => {
     const container = e.target.closest('#messages-container');
-    if (!container) return; // Only trigger if inside messages-container
+    if (!container) return; 
     
     const block = e.target.closest('.msg-swipe-block');
     if (block) {
@@ -163,7 +163,7 @@ window.startChat = (targetId, name, isGroup = false) => {
     window.currentChatUser = { uid: targetId, name, isGroup }; 
     window.isCurrentChatGroup = isGroup;
     currentChatId = isGroup ? targetId : window.getChatId(window.currentUser.uid, targetId);
-    window.cancelReply(); // Fixed
+    window.cancelReply(); 
     
     window.switchPage('messages'); 
     document.getElementById('chat-list-view').classList.add('hidden');
@@ -216,7 +216,7 @@ window.closeChat = () => {
     document.getElementById('chat-conversation-view').classList.add('hidden');
     window.currentChatUser = null;
     currentChatId = null;
-    window.cancelReply(); // Fixed
+    window.cancelReply(); 
     if (statusUnsubscribe) { statusUnsubscribe(); statusUnsubscribe = null; }
 };
 
@@ -276,13 +276,12 @@ window.loadChatList = (uid) => {
 };
 
 // ==========================================
-// 6. LOAD MESSAGES & READ RECEIPTS
+// 6. LOAD MESSAGES, READ RECEIPTS & DELETE BTN
 // ==========================================
 window.loadMessages = () => {
     const div = document.getElementById('messages-container');
     div.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
     
-    // Reset Unread Count
     update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), { unreadCount: 0 });
 
     onValue(query(ref(window.db, `chats/${currentChatId}`), limitToLast(100)), async (snap) => {
@@ -294,12 +293,10 @@ window.loadMessages = () => {
             for (const [msgId, m] of Object.entries(msgs)) {
                 const isMe = m.sender === window.currentUser.uid;
                 
-                // Read Receipt Logic
                 if (!isMe && m.status !== 'seen') {
                     update(ref(window.db, `chats/${currentChatId}/${msgId}`), { status: 'seen' });
                 }
 
-                // Left Align Profile Pic
                 let avatarHtml = '';
                 if (!isMe) {
                     avatarHtml = peerProfilePic 
@@ -316,7 +313,6 @@ window.loadMessages = () => {
                 let rawText = "";
                 let contentHtml = '';
                 
-                // Reply Block
                 if (m.replyTo) {
                     contentHtml += `
                     <div class="bg-black/5 border-l-4 ${isMe ? 'border-green-300' : 'border-green-500'} p-1.5 rounded mb-1.5 text-left cursor-pointer hover:bg-black/10 transition" onclick="document.getElementById('msg-${m.replyTo.id}').scrollIntoView({behavior:'smooth'})">
@@ -350,15 +346,19 @@ window.loadMessages = () => {
                     } catch(e) { contentHtml += `Corrupted`; }
                 }
 
-                // Message Status Icon (Sent/Delivered/Seen)
                 let statusIcon = '';
+                let deleteBtn = '';
+
                 if (isMe) {
                     if (m.status === 'seen') statusIcon = `<i class="fa-solid fa-check-double text-blue-300 ml-1 text-[10px]" title="Seen"></i>`;
                     else if (m.status === 'delivered') statusIcon = `<i class="fa-solid fa-check-double text-white/70 ml-1 text-[10px]" title="Delivered"></i>`;
                     else statusIcon = `<i class="fa-solid fa-check text-white/70 ml-1 text-[10px]" title="Sent"></i>`;
+                    
+                    // Added Delete Button for specific message
+                    deleteBtn = `<button onclick="window.deleteSpecificMessage('${currentChatId}', '${msgId}')" class="ml-3 text-white/70 hover:text-red-400 transition" title="Delete Message"><i class="fa-solid fa-trash text-[10px]"></i></button>`;
                 }
 
-                const msgDateHtml = `<div class="text-[9px] flex items-center justify-end gap-1 ${isMe ? 'text-green-100' : 'text-gray-400'} mt-1 min-w-[50px]"><span>${window.timeAgo(m.timestamp)}</span>${statusIcon}</div>`;
+                const msgDateHtml = `<div class="text-[9px] flex items-center justify-end gap-1 ${isMe ? 'text-green-100' : 'text-gray-400'} mt-1 min-w-[50px]"><span>${window.timeAgo(m.timestamp)}</span>${statusIcon}${deleteBtn}</div>`;
 
                 htmlContent += `
                 <div id="msg-${msgId}" class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-3 overflow-hidden">
@@ -404,7 +404,7 @@ window.sendMsg = (imageUrl = null, audioUrl = null) => {
 
     push(ref(window.db, `chats/${currentChatId}`), msgData).then(() => {
         input.value = "";
-        window.cancelReply(); // Fixed
+        window.cancelReply(); 
     }).catch(e => window.showToast("মেসেজ পাঠানো যায়নি!", "error"));
 
     if (window.isCurrentChatGroup) {
@@ -516,49 +516,84 @@ window.handleChatImageSelect = () => {
 };
 
 // ==========================================
-// 9. GROUP CREATION LOGIC
+// 9. GROUP CREATION LOGIC (FIXED)
 // ==========================================
-let selectedGroupFriends = [];
+window.selectedGroupFriends = [];
 
 window.openGroupCreateModal = async () => {
-    selectedGroupFriends = [];
+    window.selectedGroupFriends = [];
     document.getElementById('group-name-input').value = "";
-    document.getElementById('group-create-modal').classList.remove('hidden');
+    document.getElementById('group-create-modal').classList.remove('hidden', 'hidden-custom');
+    
     const listDiv = document.getElementById('group-friends-list');
     listDiv.innerHTML = '<p class="text-center text-sm text-gray-500 py-4">লোড হচ্ছে...</p>';
 
     if (!window.myFriends || window.myFriends.length === 0) {
-        listDiv.innerHTML = '<p class="text-center text-sm text-red-400 py-4">আগে বন্ধু যুক্ত করুন!</p>'; return;
+        listDiv.innerHTML = '<p class="text-center text-sm text-red-400 py-4">আগে বন্ধু যুক্ত করুন!</p>'; 
+        return;
     }
+    
     const friendsData = await Promise.all(window.myFriends.map(uid => window.getCachedUserData(uid)));
     listDiv.innerHTML = friendsData.filter(u => u).map(u => {
         let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold">${window.escapeHTML(u.name).charAt(0)}</div>`;
         return `
         <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition">
-            <input type="checkbox" value="${u.uid}" onchange="toggleGroupFriend(this)" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500">
+            <input type="checkbox" value="${u.uid}" onchange="window.toggleGroupFriend(this)" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500">
             ${av} <span class="font-bold text-gray-700">${window.escapeHTML(u.name)}</span>
         </label>`;
     }).join('');
 };
 
-window.closeGroupModal = () => document.getElementById('group-create-modal').classList.add('hidden');
-window.toggleGroupFriend = (cb) => { if (cb.checked) selectedGroupFriends.push(cb.value); else selectedGroupFriends = selectedGroupFriends.filter(id => id !== cb.value); };
+window.closeGroupModal = () => document.getElementById('group-create-modal').classList.add('hidden', 'hidden-custom');
+
+window.toggleGroupFriend = (cb) => { 
+    if (cb.checked) window.selectedGroupFriends.push(cb.value); 
+    else window.selectedGroupFriends = window.selectedGroupFriends.filter(id => id !== cb.value); 
+};
 
 window.createGroup = () => {
     const name = document.getElementById('group-name-input').value.trim();
     if (!name) return window.showToast("গ্রুপের নাম দিন!", "error");
-    if (selectedGroupFriends.length < 1) return window.showToast("১ জন বন্ধু সিলেক্ট করুন!", "error");
+    if (window.selectedGroupFriends.length < 1) return window.showToast("অন্তত ১ জন বন্ধু সিলেক্ট করুন!", "error");
+
+    const btn = document.querySelector('#group-create-modal button.bg-green-600');
+    const originalText = btn.innerText;
+    btn.innerText = "তৈরি হচ্ছে...";
+    btn.disabled = true;
 
     const groupId = 'group_' + Date.now();
-    const members = [...selectedGroupFriends, window.currentUser.uid];
+    const members = [...window.selectedGroupFriends, window.currentUser.uid];
 
-    set(ref(window.db, `groups/${groupId}`), { name: name, admin: window.currentUser.uid, members: members, createdAt: Date.now() }).then(() => {
+    set(ref(window.db, `groups/${groupId}`), { 
+        name: name, 
+        admin: window.currentUser.uid, 
+        members: members, 
+        createdAt: Date.now() 
+    }).then(() => {
         const ts = Date.now();
+        const updates = {};
+        
+        // Update user_chats for all selected members simultaneously
         members.forEach(memberUid => {
-            update(ref(window.db, `user_chats/${memberUid}/${groupId}`), { name: name, lastMessage: "Group created", timestamp: ts, isGroup: true, unreadCount: 0 });
+            updates[`user_chats/${memberUid}/${groupId}`] = { 
+                name: name, 
+                lastMessage: "Group created", 
+                timestamp: ts, 
+                isGroup: true, 
+                unreadCount: 0 
+            };
         });
-        window.closeGroupModal();
-        window.startChat(groupId, name, true); 
+        
+        update(ref(window.db), updates).then(() => {
+            window.closeGroupModal();
+            window.startChat(groupId, name, true); 
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+    }).catch(e => {
+        window.showToast("ত্রুটি: " + e.message, "error");
+        btn.innerText = originalText;
+        btn.disabled = false;
     });
 };
 
@@ -566,7 +601,13 @@ window.createGroup = () => {
 // 10. DELETE CHATS
 // ==========================================
 window.deleteSpecificMessage = (chatId, msgId) => {
-    if(confirm("এই মেসেজটি ডিলিট করতে চান?")) remove(ref(window.db, `chats/${chatId}/${msgId}`)).then(() => window.showToast("ডিলিট হয়েছে"));
+    if(confirm("এই মেসেজটি ডিলিট করতে চান?")) {
+        remove(ref(window.db, `chats/${chatId}/${msgId}`)).then(() => {
+            window.showToast("ডিলিট হয়েছে");
+        }).catch(e => {
+            window.showToast("ডিলিট করতে সমস্যা হয়েছে", "error");
+        });
+    }
 };
 
 window.deleteEntireConversation = () => {
@@ -604,12 +645,9 @@ function showFloatingChatHead(peerUid, info) {
     floatingChatUserName = info.name;
     
     if (window.AndroidBridge) {
-        // ১. যদি অ্যাপের ভেতর পারমিশন চাওয়ার কোনো মেথড থাকে
         if (window.AndroidBridge.requestBubblePermission) {
             window.AndroidBridge.requestBubblePermission();
         }
-        
-        // ২. মেসেজ বাবল শো করা
         if (window.AndroidBridge.showBubble) {
             window.AndroidBridge.showBubble();
         }
@@ -617,9 +655,8 @@ function showFloatingChatHead(peerUid, info) {
 }
 
 // ==========================================
-// 12. AUTO LOAD CHATS & ACTIVE FRIENDS
+// 12. AUTO LOAD CHATS & ACTIVE FRIENDS (REAL-TIME STATUS)
 // ==========================================
-
 window.loadQuickChatFriends = async () => {
     const container = document.getElementById('quick-chat-friends');
     if (!container) return;
@@ -634,20 +671,50 @@ window.loadQuickChatFriends = async () => {
         const u = await window.getCachedUserData(uid);
         if (u) {
             let av = u.profile_pic 
-                ? `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border-2 border-green-400 p-0.5 shadow-sm">` 
-                : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-lg border-2 border-green-400 p-0.5 shadow-sm">${window.escapeHTML(u.name).charAt(0)}</div>`;
+                ? `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200 p-0.5 shadow-sm">` 
+                : `<div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-700 text-lg border-2 border-gray-200 p-0.5 shadow-sm">${window.escapeHTML(u.name).charAt(0)}</div>`;
             
             html += `
             <div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="inline-flex flex-col items-center cursor-pointer min-w-[60px] transform transition hover:scale-105">
-                <div class="relative">${av}<div class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div></div>
+                <div class="relative">
+                    ${av}
+                    <div id="status-dot-${u.uid}" class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-gray-400 border-2 border-white rounded-full hidden"></div>
+                </div>
                 <span class="text-[10px] font-bold text-gray-700 mt-1 truncate w-14 text-center">${window.escapeHTML(u.name).split(' ')[0]}</span>
+                <span id="status-text-${u.uid}" class="text-[8px] text-gray-400 truncate w-14 text-center">Offline</span>
             </div>`;
         }
     }
     container.innerHTML = html;
+
+    // Attach Real-Time Listeners for Each Friend's Status
+    window.myFriends.forEach(uid => {
+        onValue(ref(window.db, `status/${uid}`), (snap) => {
+            const dot = document.getElementById(`status-dot-${uid}`);
+            const text = document.getElementById(`status-text-${uid}`);
+            if (!dot || !text) return;
+
+            if (snap.exists()) {
+                const data = snap.val();
+                dot.classList.remove('hidden'); 
+                if (data.state === 'online') {
+                    dot.classList.replace('bg-gray-400', 'bg-green-500');
+                    text.innerText = 'Active';
+                    text.classList.replace('text-gray-400', 'text-green-500');
+                } else {
+                    dot.classList.replace('bg-green-500', 'bg-gray-400');
+                    text.innerText = window.timeAgo(data.last_changed) || 'Offline';
+                    text.classList.replace('text-green-500', 'text-gray-400');
+                }
+            } else {
+                dot.classList.add('hidden');
+                text.innerText = 'Offline';
+            }
+        });
+    });
 };
 
-// Auto Initialize Check (Fallback)
+// Auto Initialize Check
 setTimeout(() => {
     if (window.currentUser) {
         if (window.loadChatList) window.loadChatList(window.currentUser.uid);
