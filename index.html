@@ -1300,6 +1300,16 @@
                 </div>
                 
                 <div id="contest-ui-container" class="hidden-custom"></div>
+                <div id="fifa-ui-container" class="hidden-custom"></div>
+                <div class="flex">
+    <div onclick="filterFeed('all')" id="tab-feed-all" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab active uppercase">উপজেলা</div>
+    <div onclick="filterFeed('union')" id="tab-feed-union" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase">ইউনিয়ন</div>
+    <div onclick="filterFeed('village')" id="tab-feed-village" class="flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase" style="display: none;">গ্রাম</div>
+    <div onclick="filterFeed('contest')" id="tab-feed-contest" class="flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer feed-tab uppercase">প্রতিযোগিতা</div>
+    
+    <!-- নতুন ফিফা ট্যাব যুক্ত করা হলো -->
+    <div onclick="filterFeed('fifa')" id="tab-feed-fifa" class="flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-500 cursor-pointer feed-tab uppercase">ফিফা</div>
+</div>
               </div>
             <div id="page-services" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
                 <div class="bg-white p-3 sticky top-20 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl">
@@ -2910,41 +2920,48 @@ loadMyComplaints();
         };
 
         window.filterFeed = (type) => {
-            currentFeedFilter = type;
-            
-            // সব ট্যাবের অ্যাক্টিভ ক্লাস রিমুভ করা
-            ['all', 'union', 'village', 'contest'].forEach(t => {
-                const el = document.getElementById(`tab-feed-${t}`);
-                if(el) {
-                    if (t === 'contest') {
-                        el.classList.toggle('border-b-2', type === t);
-                        el.classList.toggle('border-purple-500', type === t);
-                    } else {
-                        el.classList.toggle('active', type === t);
-                    }
-                }
-            });
-
-            // কন্টেইনারগুলো খুঁজে বের করা
-            const regularFeedWrapper = document.getElementById('regular-feed-section');
-            const contestContainer = document.getElementById('contest-ui-container');
-
-            // যদি HTML এ কোনো সমস্যা থাকে তবে যেন ক্র্যাশ না করে তার জন্য সেফগার্ড
-            if (!regularFeedWrapper || !contestContainer) {
-                console.error("HTML ট্যাগগুলো পাওয়া যাচ্ছে না! পেজ রিলোড করুন।");
-                return;
-            }
-
-            if (type === 'contest') {
-                regularFeedWrapper.classList.add('hidden-custom');
-                contestContainer.classList.remove('hidden-custom');
-                if (typeof loadContestFeed === 'function') loadContestFeed(); 
+    currentFeedFilter = type;
+    
+    // সব ট্যাবের অ্যাক্টিভ ক্লাস রিমুভ করা (এখানে 'fifa' যুক্ত করা হয়েছে)
+    ['all', 'union', 'village', 'contest', 'fifa'].forEach(t => {
+        const el = document.getElementById(`tab-feed-${t}`);
+        if(el) {
+            if (t === 'contest') {
+                el.classList.toggle('border-b-2', type === t);
+                el.classList.toggle('border-purple-500', type === t);
+            } else if (t === 'fifa') {
+                el.classList.toggle('border-b-2', type === t);
+                el.classList.toggle('border-green-500', type === t);
             } else {
-                contestContainer.classList.add('hidden-custom');
-                regularFeedWrapper.classList.remove('hidden-custom');
-                loadFeed(type, true); 
+                el.classList.toggle('active', type === t);
             }
         }
+    });
+
+    const regularFeedWrapper = document.getElementById('regular-feed-section');
+    const contestContainer = document.getElementById('contest-ui-container');
+    const fifaContainer = document.getElementById('fifa-ui-container');
+
+    if (!regularFeedWrapper || !contestContainer || !fifaContainer) return;
+
+    // লজিক আপডেট
+    if (type === 'contest') {
+        regularFeedWrapper.classList.add('hidden-custom');
+        fifaContainer.classList.add('hidden-custom');
+        contestContainer.classList.remove('hidden-custom');
+        if (typeof loadContestFeed === 'function') loadContestFeed(); 
+    } else if (type === 'fifa') {
+        regularFeedWrapper.classList.add('hidden-custom');
+        contestContainer.classList.add('hidden-custom');
+        fifaContainer.classList.remove('hidden-custom');
+        if (typeof window.loadFifaData === 'function') window.loadFifaData(); 
+    } else {
+        contestContainer.classList.add('hidden-custom');
+        fifaContainer.classList.add('hidden-custom');
+        regularFeedWrapper.classList.remove('hidden-custom');
+        loadFeed(type, true); 
+    }
+}
 
         // --- REFACTORED LOAD FEED (ALGORITHMIC + ADS) ---
         window.loadFeed = (type, isInitial = false) => {
@@ -5957,6 +5974,29 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Contest UI:", error);
             }
         }
+        
+        // FIFA HTML Fetcher
+async function loadFifaUI() {
+    try {
+        const response = await fetch('fifa-ui.html');
+        if (!response.ok) throw new Error('Failed to load FIFA UI');
+        
+        const htmlText = await response.text();
+        document.getElementById('fifa-ui-container').innerHTML = htmlText;
+        console.log("FIFA Design Loaded Successfully!");
+        
+    } catch (error) {
+        console.error("Error loading FIFA UI:", error);
+    }
+}
+
+// DOMContentLoaded এর ভিতরে loadFifaUI() কল করে দিন
+document.addEventListener("DOMContentLoaded", () => {
+    loadProfileUI();
+    loadContestUI();
+    loadMessagesUI();
+    loadFifaUI(); // এটি যুক্ত করুন
+});
 
         // Messages HTML Fetcher
         async function loadMessagesUI() {
@@ -5992,6 +6032,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="profile.js"></script>
     <script type="module" src="contest.js"></script>
     <script type="module" src="messages.js"></script>
+    <script type="module" src="fifa.js"></script>
 </body>
 
 </html>
