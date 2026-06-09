@@ -60,9 +60,72 @@ window.formatMessageTime = (timestamp) => {
     return hours + ':' + minutes + ' ' + ampm;
 };
 
-// --- CHAT LIST --- (Kept original logic)
+// --- QUICK CHAT FRIENDS (Top Bar) ---
+window.loadQuickChatFriends = async () => {
+    const div = document.getElementById('quick-chat-friends');
+    if (!window.myFriends || window.myFriends.length === 0) {
+        div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
+        return;
+    }
+    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
+    div.innerHTML = friendsData.filter(u => u).map(u => {
+        let av = u.profile_pic ? 
+            `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
+            `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
+        return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
+    }).join('');
+};
+
+// --- CHAT LIST (Recent Conversations) ---
 window.loadChatList = (uid) => {
-    // ... (Your existing loadChatList code goes here, it is perfectly fine) ...
+    onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
+        const list = snap.val() || {};
+        const container = document.getElementById('chat-list-container');
+
+        if (Object.keys(list).length > 0) {
+            const promises = Object.entries(list).sort((a, b) => b[1].timestamp - a[1].timestamp).map(async ([peerUid, info]) => {
+                const userData = await window.getUserData(peerUid);
+                const profilePic = userData?.profile_pic;
+                return { peerUid, info, profilePic };
+            });
+
+            const chatItems = await Promise.all(promises);
+
+            container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+                let rawLastMsg = info.lastMessage || "";
+                let displayMsg = rawLastMsg;
+
+                let prefix = "";
+                if (rawLastMsg.startsWith("You: ")) {
+                    prefix = "You: ";
+                    rawLastMsg = rawLastMsg.substring(5);
+                }
+
+                if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
+                    rawLastMsg = window.decryptMsg(rawLastMsg);
+                }
+                displayMsg = prefix + rawLastMsg;
+
+                let av = profilePic ?
+                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
+                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
+
+                return `
+            <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+                ${av}
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-center mb-0.5">
+                        <h4 class="font-bold text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                        <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 truncate block">${window.escapeHTML(displayMsg)}</p>
+                </div>
+            </div>`;
+            }).join('');
+        } else {
+            container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+        }
+    });
 };
 
 // --- LOAD MESSAGES (With Profile Pics, Time, Swipe, Long Press) ---
@@ -113,7 +176,6 @@ window.loadMessages = (otherUid) => {
                 }
 
                 // Wrapper with touch events for Swipe & Long Press
-                // (Escaping text to pass to JS functions)
                 let rawText = m.text ? window.decryptMsg(m.text).replace(/'/g, "\\'") : (m.image ? "Photo" : "Voice Note");
 
                 html += `
@@ -338,7 +400,6 @@ window.startVoiceRecord = async () => {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-gray-500"></i>';
             btn.classList.remove('text-red-500', 'bg-red-100');
             
-            // Assuming your uploadMediaToCloudinary handles Files
             window.uploadMediaToCloudinary(audioFile).then(res => {
                 window.sendMsg(null, res.url); // text=null, image=null, audio=res.url
                 btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
@@ -364,7 +425,7 @@ window.stopVoiceRecord = () => {
     }
 };
 
-// Retain your handleChatImageSelect
+// --- IMAGE SELECTION LOGIC ---
 window.handleChatImageSelect = () => {
     const file = document.getElementById('chat-img-input').files[0];
     if (file) {
