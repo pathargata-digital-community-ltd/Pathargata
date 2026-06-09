@@ -3,24 +3,38 @@ import {
     ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// Global Variables for New Features
+// Global Variables
 window.currentReplyTo = null;
 window.selectedMsgForOptions = null;
+window.selectedChatListUid = null;
 let pressTimer;
 let mediaRecorder;
 let audioChunks = [];
 
 // Pagination & Listeners
 let currentChatUnsubscribe = null;
-let currentChatLimit = 20; // Initially load 20 messages
+let typingUnsubscribe = null;
+let currentChatLimit = 20;
 let isFetchingOlder = false;
 let lastScrollHeight = 0;
 
-// --- CHAT HELPER FUNCTIONS ---
+// Chat Helper Function
 window.getChatId = function(uid1, uid2) {
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
 };
 
+// Format Time
+window.formatMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12; 
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    return hours + ':' + minutes + ' ' + ampm;
+};
+
+// --- START & CLOSE CHAT ---
 window.startChat = async (uid, name) => {
     try {
         window.currentChatUser = { uid, name };
@@ -30,7 +44,6 @@ window.startChat = async (uid, name) => {
         currentChatLimit = 20; 
         isFetchingOlder = false;
 
-        // Fetch and store friend's profile pic for messages
         const friendData = await window.getUserData(uid);
         window.currentChatUser.profile_pic = friendData?.profile_pic || null;
 
@@ -38,19 +51,31 @@ window.startChat = async (uid, name) => {
         document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
         document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
         
-        // Header Pic Setup
         let headerImg = document.getElementById('chat-header-img');
         if (window.currentChatUser.profile_pic) {
             headerImg.innerHTML = `<img src="${window.currentChatUser.profile_pic}" class="w-full h-full object-cover">`;
-            headerImg.classList.remove('bg-green-100', 'text-green-700');
         } else {
             headerImg.innerHTML = window.escapeHTML(name).charAt(0);
-            headerImg.classList.add('bg-green-100', 'text-green-700');
         }
         
         history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
         window.loadMessages(uid);
         window.cancelReply(); 
+
+        // Listen for typing status
+        const typingRef = ref(window.db, `user_chats/${window.currentUser.uid}/${uid}/isTyping`);
+        typingUnsubscribe = onValue(typingRef, (snap) => {
+            const isTyping = snap.val();
+            const typingEl = document.getElementById('chat-header-typing');
+            if(isTyping) {
+                typingEl.classList.remove('hidden');
+                document.getElementById('chat-header-name').classList.add('text-sm');
+            } else {
+                typingEl.classList.add('hidden');
+                document.getElementById('chat-header-name').classList.remove('text-sm');
+            }
+        });
+
     } catch (error) {
         console.error("Error starting chat:", error);
         window.showToast("চ্যাট ওপেন করতে সমস্যা হয়েছে", "error");
@@ -63,23 +88,20 @@ window.closeChat = () => {
     window.currentChatUser = null;
     window.cancelReply();
     
-    // Unsubscribe from chat listener to save memory
-    if (currentChatUnsubscribe) {
-        currentChatUnsubscribe();
-        currentChatUnsubscribe = null;
-    }
+    if (currentChatUnsubscribe) { currentChatUnsubscribe(); currentChatUnsubscribe = null; }
+    if (typingUnsubscribe) { typingUnsubscribe(); typingUnsubscribe = null; }
 };
 
-window.formatMessageTime = (timestamp) => {
-    const date = new Date(timestamp);
-    let hours = date.getHours();
-    let minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; 
-    minutes = minutes < 10 ? '0' + minutes : minutes;
-    return hours + ':' + minutes + ' ' + ampm;
-};
+// Handle My Typing Event
+let typingTimer;
+document.getElementById('msg-input').addEventListener('input', function() {
+    if(!window.currentChatUser) return;
+    const dbRef = ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`);
+    update(dbRef, { isTyping: true });
+
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => { update(dbRef, { isTyping: false }); }, 1500);
+});
 
 // --- QUICK CHAT FRIENDS (Top Bar) ---
 window.loadQuickChatFriends = async () => {
@@ -92,215 +114,288 @@ window.loadQuickChatFriends = async () => {
         const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
         div.innerHTML = friendsData.filter(u => u).map(u => {
             let av = u.profile_pic ? 
-                `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
-                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
-            return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
+                `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover shadow-sm"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
+                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative shadow-sm">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
+            return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px] transition-transform active:scale-95">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
         }).join('');
     } catch (error) {
         console.error("Error loading quick friends:", error);
     }
 };
 
-// --- CHAT LIST (Recent Conversations) ---
-window.loadChatList = (uid) => {
+// --- CHAT LIST LOGIC (WITH ARCHIVE & DELETE) ---
+let listTouchStartX = 0;
+let listPressTimer;
+
+window.handleChatListTouchStart = (e, peerUid, name) => {
+    listTouchStartX = e.changedTouches ? e.changedTouches[0].screenX : e.screenX;
+    listPressTimer = setTimeout(() => {
+        window.openChatListOptions(peerUid, name);
+    }, 600);
+};
+
+window.handleChatListTouchMove = () => clearTimeout(listPressTimer);
+window.handleChatListTouchEnd = () => clearTimeout(listPressTimer);
+
+window.openChatListOptions = (peerUid, name) => {
+    window.selectedChatListUid = peerUid;
+    document.getElementById('chat-list-name-display').innerText = window.escapeHTML(name);
+    document.getElementById('chat-list-options-modal').classList.remove('hidden');
+    if(navigator.vibrate) navigator.vibrate(50);
+};
+
+window.closeChatListOptions = () => {
+    document.getElementById('chat-list-options-modal').classList.add('hidden');
+    window.selectedChatListUid = null;
+};
+
+window.archiveChat = () => {
+    if(!window.selectedChatListUid) return;
+    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.selectedChatListUid}`), { isArchived: true });
+    window.closeChatListOptions();
+    window.showToast("চ্যাট আর্কাইভ করা হয়েছে");
+};
+
+window.deleteChat = async () => {
+    if(!window.selectedChatListUid) return;
+    const chatId = window.getChatId(window.currentUser.uid, window.selectedChatListUid);
     try {
-        const container = document.getElementById('chat-list-container');
-        container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>';
+        await remove(ref(window.db, `user_chats/${window.currentUser.uid}/${window.selectedChatListUid}`));
+        await remove(ref(window.db, `chats/${chatId}`)); 
+        window.closeChatListOptions();
+        window.showToast("সকল ডাটা রিমুভ করা হয়েছে");
+    } catch(e) { window.showToast("ডিলিট করতে সমস্যা হয়েছে", "error"); }
+};
 
-        onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
-            const list = snap.val();
-            
-            // Error Handling: If no chats found
-            if (!list || Object.keys(list).length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
-                return;
-            }
+window.loadChatList = (uid) => {
+    const container = document.getElementById('chat-list-container');
+    container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>';
 
-            try {
-                const promises = Object.entries(list).sort((a, b) => b[1].timestamp - a[1].timestamp).map(async ([peerUid, info]) => {
+    onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
+        const list = snap.val();
+        if (!list || Object.keys(list).length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+            return;
+        }
+
+        try {
+            const promises = Object.entries(list)
+                .filter(([_, info]) => !info.isArchived) // Hide Archived
+                .sort((a, b) => b[1].timestamp - a[1].timestamp)
+                .map(async ([peerUid, info]) => {
                     const userData = await window.getUserData(peerUid);
-                    const profilePic = userData?.profile_pic;
-                    return { peerUid, info, profilePic };
+                    return { peerUid, info, profilePic: userData?.profile_pic };
                 });
 
-                const chatItems = await Promise.all(promises);
+            const chatItems = await Promise.all(promises);
 
-                container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
-                    let rawLastMsg = info.lastMessage || "";
-                    let displayMsg = rawLastMsg;
+            container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+                let rawLastMsg = info.lastMessage || "";
+                let prefix = rawLastMsg.startsWith("You: ") ? "You: " : "";
+                if(prefix) rawLastMsg = rawLastMsg.substring(5);
 
-                    let prefix = "";
-                    if (rawLastMsg.startsWith("You: ")) {
-                        prefix = "You: ";
-                        rawLastMsg = rawLastMsg.substring(5);
-                    }
+                if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
+                    try { rawLastMsg = window.decryptMsg(rawLastMsg); } catch(e) {}
+                }
+                
+                // Show Typing Status
+                let displayMsg = info.isTyping ? 
+                    `<span class="text-green-500 font-bold italic animate-pulse">Typing...</span>` : 
+                    `${prefix}${window.escapeHTML(rawLastMsg)}`;
 
-                    if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
-                        try { rawLastMsg = window.decryptMsg(rawLastMsg); } 
-                        catch(e) { rawLastMsg = "মেসেজটি পড়া যাচ্ছে না"; }
-                    }
-                    displayMsg = prefix + rawLastMsg;
+                let av = profilePic ?
+                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-100 shadow-sm">` :
+                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0 shadow-sm">${window.escapeHTML(info.name).charAt(0)}</div>`;
 
-                    let av = profilePic ?
-                        `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
-                        `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
-
-                    return `
-                <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+                return `
+                <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')" 
+                     ontouchstart="handleChatListTouchStart(event, '${peerUid}', '${window.escapeHTML(info.name)}')"
+                     ontouchmove="handleChatListTouchMove(event)"
+                     ontouchend="handleChatListTouchEnd(event)"
+                     class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors select-none">
                     ${av}
                     <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-center mb-0.5">
+                        <div class="flex justify-between items-center mb-1">
                             <h4 class="font-bold text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                            <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
+                            <span class="text-[10px] text-gray-400 shrink-0 font-medium">${window.timeAgo(info.timestamp)}</span>
                         </div>
-                        <p class="text-sm text-gray-500 truncate block">${window.escapeHTML(displayMsg)}</p>
+                        <p class="text-sm text-gray-500 truncate block">${displayMsg}</p>
                     </div>
                 </div>`;
-                }).join('');
-            } catch (err) {
-                container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটা লোড করতে সমস্যা হয়েছে</p>';
-                console.error("Error mapping chats:", err);
-            }
-        }, (error) => {
-            container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটাবেস কানেকশনে সমস্যা</p>';
-            console.error("Firebase Read Error:", error);
-        });
-    } catch (error) {
-        console.error("Error in loadChatList:", error);
+            }).join('');
+        } catch (err) {
+            console.error(err);
+        }
+    });
+};
+
+// --- CUSTOM AUDIO PLAYER UI LOGIC ---
+window.currentPlayingAudioId = null;
+
+window.toggleCustomAudio = (msgId) => {
+    const audioEl = document.getElementById(`audio-${msgId}`);
+    const iconEl = document.getElementById(`play-icon-${msgId}`);
+
+    if (window.currentPlayingAudioId && window.currentPlayingAudioId !== msgId) {
+        const prevAudio = document.getElementById(`audio-${window.currentPlayingAudioId}`);
+        const prevIcon = document.getElementById(`play-icon-${window.currentPlayingAudioId}`);
+        if(prevAudio) { prevAudio.pause(); prevIcon.className = "fa-solid fa-play text-xs ml-0.5"; }
+    }
+
+    if (audioEl.paused) {
+        audioEl.play();
+        iconEl.className = "fa-solid fa-pause text-xs";
+        window.currentPlayingAudioId = msgId;
+    } else {
+        audioEl.pause();
+        iconEl.className = "fa-solid fa-play text-xs ml-0.5";
+        window.currentPlayingAudioId = null;
     }
 };
 
-// --- LOAD MESSAGES (Lazy Load, Status, Time, Profile Pics) ---
+window.updateAudioProgress = (msgId) => {
+    const audioEl = document.getElementById(`audio-${msgId}`);
+    const progressEl = document.getElementById(`progress-${msgId}`);
+    if(audioEl.duration) {
+        const percentage = (audioEl.currentTime / audioEl.duration) * 100;
+        progressEl.style.width = percentage + '%';
+    }
+};
+
+window.audioEnded = (msgId) => {
+    document.getElementById(`play-icon-${msgId}`).className = "fa-solid fa-play text-xs ml-0.5";
+    document.getElementById(`progress-${msgId}`).style.width = '0%';
+    if (window.currentPlayingAudioId === msgId) window.currentPlayingAudioId = null;
+};
+
+
+// --- LOAD MESSAGES (WITH TIMESTAMPS OUTSIDE & CUSTOM AUDIO) ---
 window.loadMessages = (otherUid, isPagination = false) => {
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
     
-    if (!isPagination) {
-        div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
-    }
+    if (!isPagination) div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
 
-    // Handle Scroll for Lazy Loading
     div.onscroll = () => {
         if (div.scrollTop === 0 && !isFetchingOlder) {
             isFetchingOlder = true;
             lastScrollHeight = div.scrollHeight;
-            currentChatLimit += 20; // Load 20 more messages
+            currentChatLimit += 20; 
             window.loadMessages(otherUid, true);
         }
     };
 
-    if (currentChatUnsubscribe) {
-        currentChatUnsubscribe(); // Unsubscribe previous listener
-    }
+    if (currentChatUnsubscribe) currentChatUnsubscribe();
 
-    try {
-        currentChatUnsubscribe = onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(currentChatLimit)), (snap) => {
-            const msgs = snap.val() || {};
-            
-            if (Object.keys(msgs).length > 0) {
-                let html = '';
-                let updatesForSeen = {}; // To mark messages as seen
-                let unreadFound = false;
+    currentChatUnsubscribe = onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(currentChatLimit)), (snap) => {
+        const msgs = snap.val() || {};
+        if (Object.keys(msgs).length > 0) {
+            let html = '';
+            let updatesForSeen = {}; 
+            let unreadFound = false;
 
-                Object.entries(msgs).forEach(([msgId, m]) => {
-                    // Skip if removed for me
-                    if (m[`deletedFor_${window.currentUser.uid}`]) return;
+            Object.entries(msgs).forEach(([msgId, m]) => {
+                if (m[`deletedFor_${window.currentUser.uid}`]) return;
 
-                    const isMe = m.sender === window.currentUser.uid;
-                    let content = '';
+                const isMe = m.sender === window.currentUser.uid;
+                let content = '';
 
-                    // Mark as Seen logic
-                    if (!isMe && m.status !== 'seen') {
-                        updatesForSeen[`chats/${chatId}/${msgId}/status`] = 'seen';
-                        unreadFound = true;
-                    }
+                if (!isMe && m.status !== 'seen') {
+                    updatesForSeen[`chats/${chatId}/${msgId}/status`] = 'seen';
+                    unreadFound = true;
+                }
 
-                    // Reply Context
-                    if (m.replyToText) {
-                        content += `<div class="bg-black bg-opacity-10 p-2 rounded text-xs mb-1 border-l-4 border-green-500 opacity-70">${window.escapeHTML(m.replyToText)}</div>`;
-                    }
+                // Reply Context Block
+                if (m.replyToText) {
+                    content += `<div class="bg-black/10 p-2 rounded-lg text-xs mb-1.5 border-l-4 ${isMe?'border-white text-white':'border-green-500 text-gray-600'} opacity-90"><i class="fa-solid fa-reply mr-1"></i>${window.escapeHTML(m.replyToText)}</div>`;
+                }
 
-                    // Content types
-                    if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
-                    if (m.audio) content += `<audio controls class="max-w-[200px] h-8 mb-1"><source src="${m.audio}" type="audio/webm">Your browser does not support audio.</audio>`;
-                    if (m.text) {
-                        try {
-                            const decrypted = window.decryptMsg(m.text);
-                            content += `<span>${window.escapeHTML(decrypted)}</span>`;
-                        } catch(e) { content += `<span>[Error decrypting]</span>`; }
-                    }
-
-                    // Message Status Indicator (For my messages)
-                    let statusIcon = '';
-                    if (isMe) {
-                        if (m.status === 'seen') {
-                            statusIcon = window.currentChatUser.profile_pic ? 
-                                `<img src="${window.currentChatUser.profile_pic}" class="w-3 h-3 rounded-full ml-1 inline-block object-cover" title="Seen">` : 
-                                `<i class="fa-solid fa-circle-check text-green-500 text-[10px] ml-1" title="Seen"></i>`;
-                        } else if (m.status === 'delivered') {
-                            statusIcon = `<i class="fa-solid fa-circle-check text-gray-500 text-[10px] ml-1" title="Delivered"></i>`;
-                        } else {
-                            // Default to Sent
-                            statusIcon = `<i class="fa-regular fa-circle-check text-gray-400 text-[10px] ml-1" title="Sent"></i>`;
-                        }
-                    }
-
-                    // Time and Status String
-                    const timeStr = `<div class="text-[10px] text-gray-400 mt-1 flex items-center justify-end w-full">${window.formatMessageTime(m.timestamp)} ${statusIcon}</div>`;
-
-                    // Profile Pic for friend
-                    let profilePicHtml = '';
-                    if (!isMe) {
-                        let pPic = window.currentChatUser.profile_pic ? 
-                            `<img src="${window.currentChatUser.profile_pic}" class="w-6 h-6 rounded-full object-cover">` : 
-                            `<div class="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center text-xs font-bold text-green-800">${window.currentChatUser.name.charAt(0)}</div>`;
-                        profilePicHtml = `<div class="mr-2 self-end mb-1">${pPic}</div>`;
-                    }
-
-                    // Wrapper
-                    let rawText = m.text ? window.decryptMsg(m.text).replace(/'/g, "\\'") : (m.image ? "Photo" : "Voice Note");
-
-                    html += `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-3" 
-                         id="msg-wrap-${msgId}"
-                         ontouchstart="handleMsgTouchStart(event, '${msgId}', '${rawText}', ${isMe})" 
-                         ontouchend="handleMsgTouchEnd(event)" 
-                         ontouchmove="handleMsgTouchMove(event)">
-                         
-                        ${profilePicHtml}
-                        <div class="px-4 py-2 max-w-[75%] rounded-2xl shadow-sm text-sm flex flex-col ${isMe ? 'bg-green-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'}">
-                            ${content}
-                            ${timeStr}
+                // Image
+                if (m.image) content += `<img src="${m.image}" class="rounded-xl mb-1 max-w-[200px] h-auto cursor-pointer shadow-sm" onclick="window.open('${m.image}')">`;
+                
+                // Beautiful Custom Audio Player
+                if (m.audio) {
+                    content += `
+                    <div class="flex items-center gap-3 ${isMe ? 'bg-white/20' : 'bg-green-50'} rounded-full p-1.5 w-[200px] mb-1">
+                        <button onclick="toggleCustomAudio('${msgId}')" class="w-9 h-9 ${isMe ? 'bg-white text-green-600' : 'bg-green-500 text-white'} rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95">
+                            <i id="play-icon-${msgId}" class="fa-solid fa-play text-xs ml-0.5"></i>
+                        </button>
+                        <div class="flex-1 h-1.5 bg-black/10 rounded-full overflow-hidden relative">
+                            <div id="progress-${msgId}" class="absolute left-0 top-0 h-full ${isMe ? 'bg-white' : 'bg-green-500'} w-0 transition-all duration-75"></div>
                         </div>
+                        <audio id="audio-${msgId}" src="${m.audio}" class="hidden" ontimeupdate="updateAudioProgress('${msgId}')" onended="audioEnded('${msgId}')"></audio>
                     </div>`;
-                });
-
-                div.innerHTML = html;
-
-                // Update seen status in DB
-                if (unreadFound) {
-                    update(ref(window.db), updatesForSeen).catch(console.error);
                 }
 
-                // Adjust Scroll Position
-                if (isPagination) {
-                    div.scrollTop = div.scrollHeight - lastScrollHeight;
-                    isFetchingOlder = false;
-                } else {
-                    setTimeout(() => { div.scrollTop = div.scrollHeight; }, 50);
+                // Text Content
+                if (m.text) {
+                    try { content += `<span class="leading-relaxed block">${window.escapeHTML(window.decryptMsg(m.text))}</span>`; } 
+                    catch(e) { content += `<span>[Error]</span>`; }
                 }
 
+                // Status & Time indicator (Placed below the bubble)
+                let statusIcon = '';
+                if (isMe) {
+                    if (m.status === 'seen') {
+                        statusIcon = window.currentChatUser.profile_pic ? 
+                            `<img src="${window.currentChatUser.profile_pic}" class="w-3.5 h-3.5 rounded-full object-cover ml-1 shadow-sm">` : 
+                            `<i class="fa-solid fa-circle-check text-green-500 text-[11px] ml-1"></i>`;
+                    } else if (m.status === 'delivered') {
+                        statusIcon = `<i class="fa-solid fa-circle-check text-gray-500 text-[11px] ml-1"></i>`;
+                    } else {
+                        statusIcon = `<i class="fa-regular fa-circle-check text-gray-400 text-[11px] ml-1"></i>`;
+                    }
+                }
+                const timeStr = `<div class="text-[10px] text-gray-400 mt-1 flex items-center ${isMe ? 'justify-end' : 'justify-start'} w-full font-medium px-1">
+                    ${window.formatMessageTime(m.timestamp)} ${statusIcon}
+                </div>`;
+
+                // Profile Picture (Friend)
+                let profilePicHtml = '';
+                if (!isMe) {
+                    let pPic = window.currentChatUser.profile_pic ? 
+                        `<img src="${window.currentChatUser.profile_pic}" class="w-7 h-7 rounded-full object-cover shadow-sm">` : 
+                        `<div class="w-7 h-7 bg-green-200 rounded-full flex items-center justify-center text-xs font-bold text-green-800 shadow-sm">${window.currentChatUser.name.charAt(0)}</div>`;
+                    profilePicHtml = `<div class="mr-2 self-end mb-5">${pPic}</div>`;
+                }
+
+                let rawText = m.text ? window.decryptMsg(m.text).replace(/'/g, "\\'") : (m.image ? "Photo" : "Voice Note");
+
+                // Message Wrapper Construction
+                html += `
+                <div class="flex w-full ${isMe ? 'justify-end' : 'justify-start'} mb-3 group" 
+                     id="msg-row-${msgId}" data-raw-text="${rawText}">
+                    ${profilePicHtml}
+                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]" >
+                        <!-- Draggable Bubble Wrapper for Swipe to Reply -->
+                        <div id="bubble-wrap-${msgId}" 
+                             ontouchstart="handleMsgTouchStart(event, '${msgId}', '${rawText}', ${isMe})" 
+                             ontouchend="handleMsgTouchEnd(event)" 
+                             ontouchmove="handleMsgTouchMove(event)"
+                             class="px-4 py-2.5 shadow-sm text-[15px] break-words relative z-10
+                                    ${isMe ? 'bg-gradient-to-br from-green-400 to-green-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-bl-sm'}">
+                            ${content}
+                        </div>
+                        ${timeStr}
+                    </div>
+                </div>`;
+            });
+
+            div.innerHTML = html;
+            if (unreadFound) update(ref(window.db), updatesForSeen).catch(console.error);
+
+            if (isPagination) {
+                div.scrollTop = div.scrollHeight - lastScrollHeight;
+                isFetchingOlder = false;
             } else {
-                div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">কথপোকথন শুরু করুন</p>';
+                setTimeout(() => { div.scrollTop = div.scrollHeight; }, 50);
             }
-        }, (error) => {
-            console.error("Error fetching messages:", error);
-            div.innerHTML = '<p class="text-center text-red-400 mt-4">মেসেজ লোড করতে সমস্যা হয়েছে</p>';
-        });
-    } catch (error) {
-        console.error("Setup listener error:", error);
-    }
+        } else {
+            div.innerHTML = '<p class="text-center text-sm text-gray-400 mt-10"><i class="fa-solid fa-hand-wave text-2xl mb-2 block"></i>কথপোকথন শুরু করুন</p>';
+        }
+    });
 };
+
 
 // --- SEND MESSAGE & IMAGE UPLOAD ---
 window.sendMsg = async (imageUrl = null, audioUrl = null) => {
@@ -318,7 +413,7 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
         const msgData = { 
             sender: window.currentUser.uid, 
             timestamp: ts,
-            status: 'sent' // Initial status
+            status: 'sent'
         };
         
         if (text) msgData.text = encryptedText;
@@ -338,7 +433,7 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
         if (imageUrl) lastMsgText = text ? "📷 " + encryptedText : "📷 ছবি পাঠিয়েছেন";
         if (audioUrl) lastMsgText = "🎤 ভয়েস মেসেজ";
 
-        const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgText, timestamp: ts };
+        const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgText, timestamp: ts, isTyping: false };
         const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgText, timestamp: ts };
 
         update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
@@ -347,7 +442,7 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
         // Reset UI
         input.value = "";
         window.cancelReply(); 
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-0.5"></i>';
         btn.disabled = false;
         
         // Scroll to bottom
@@ -357,17 +452,19 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
     } catch (error) {
         console.error("Error sending message:", error);
         window.showToast("মেসেজ পাঠাতে সমস্যা হয়েছে", "error");
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-0.5"></i>';
         btn.disabled = false;
     }
 };
 
-// --- SWIPE TO REPLY & LONG PRESS LOGIC ---
-let touchStartX = 0;
-let touchEndX = 0;
+// --- SWIPE TO REPLY (WITH SMOOTH ANIMATION) & LONG PRESS ---
+let swipeTouchStartX = 0;
+let swipeEl = null;
 
 window.handleMsgTouchStart = (e, msgId, msgText, isMe) => {
-    touchStartX = e.changedTouches[0].screenX;
+    swipeTouchStartX = e.changedTouches[0].screenX;
+    swipeEl = document.getElementById(`bubble-wrap-${msgId}`);
+    if(swipeEl) swipeEl.style.transition = 'none'; // Disable transition for instant follow
     
     pressTimer = setTimeout(() => {
         window.openMsgOptions(msgId, msgText, isMe);
@@ -376,15 +473,31 @@ window.handleMsgTouchStart = (e, msgId, msgText, isMe) => {
 
 window.handleMsgTouchMove = (e) => {
     clearTimeout(pressTimer); 
+    if(!swipeEl) return;
+    
+    let diffX = e.changedTouches[0].screenX - swipeTouchStartX;
+    if (diffX > 0 && diffX < 80) { // Max swipe limit 80px
+        swipeEl.style.transform = `translateX(${diffX}px)`;
+    }
 };
 
 window.handleMsgTouchEnd = (e) => {
     clearTimeout(pressTimer); 
+    if(!swipeEl) return;
+
+    let diffX = e.changedTouches[0].screenX - swipeTouchStartX;
     
-    touchEndX = e.changedTouches[0].screenX;
-    if (touchEndX - touchStartX > 60) {
-        window.setupReply(e.currentTarget.innerText.split('\n')[0].substring(0, 30) + '...');
+    // Smooth Snap Back Animation
+    swipeEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
+    swipeEl.style.transform = 'translateX(0px)';
+
+    if (diffX > 50) {
+        if(navigator.vibrate) navigator.vibrate(50);
+        let row = e.target.closest('[id^="msg-row-"]');
+        let textToReply = row ? row.getAttribute('data-raw-text') : "Message";
+        window.setupReply(textToReply.substring(0, 40) + (textToReply.length > 40 ? '...' : ''));
     }
+    swipeEl = null;
 };
 
 window.setupReply = (text) => {
@@ -399,16 +512,16 @@ window.cancelReply = () => {
     document.getElementById('reply-context-view').classList.add('hidden');
 };
 
+
 // --- MESSAGE OPTIONS (UNSEND, REMOVE, FORWARD) ---
 window.openMsgOptions = (msgId, text, isMe) => {
+    if(navigator.vibrate) navigator.vibrate(50);
     window.selectedMsgForOptions = { msgId, text };
     document.getElementById('msg-options-modal').classList.remove('hidden');
     
     const unsendBtn = document.getElementById('btn-unsend');
     if(isMe) unsendBtn.style.display = 'flex';
     else unsendBtn.style.display = 'none';
-
-    if(navigator.vibrate) navigator.vibrate(50);
 };
 
 window.closeMsgOptions = () => {
@@ -564,7 +677,7 @@ window.handleChatImageSelect = () => {
                 document.getElementById('chat-img-input').value = "";
             }).catch(e => {
                 window.showToast("ছবি আপলোড হয়নি", 'error');
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-0.5"></i>';
                 btn.disabled = false;
             });
         }
