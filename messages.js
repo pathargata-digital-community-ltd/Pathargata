@@ -3,38 +3,24 @@ import {
     ref, push, set, onValue, get, update, remove, query, limitToLast
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// Global Variables
+// Global Variables for New Features
 window.currentReplyTo = null;
 window.selectedMsgForOptions = null;
-window.selectedChatListUid = null;
 let pressTimer;
 let mediaRecorder;
 let audioChunks = [];
 
 // Pagination & Listeners
 let currentChatUnsubscribe = null;
-let typingUnsubscribe = null;
-let currentChatLimit = 20;
+let currentChatLimit = 20; // Initially load 20 messages
 let isFetchingOlder = false;
 let lastScrollHeight = 0;
 
-// Chat Helper Function
+// --- CHAT HELPER FUNCTIONS ---
 window.getChatId = function(uid1, uid2) {
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
 };
 
-// Format Time
-window.formatMessageTime = (timestamp) => {
-    const date = new Date(timestamp);
-    let hours = date.getHours();
-    let minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12; 
-    minutes = minutes < 10 ? '0' + minutes : minutes;
-    return hours + ':' + minutes + ' ' + ampm;
-};
-
-// --- START & CLOSE CHAT ---
 window.startChat = async (uid, name) => {
     try {
         window.currentChatUser = { uid, name };
@@ -44,6 +30,7 @@ window.startChat = async (uid, name) => {
         currentChatLimit = 20; 
         isFetchingOlder = false;
 
+        // Fetch and store friend's profile pic for messages
         const friendData = await window.getUserData(uid);
         window.currentChatUser.profile_pic = friendData?.profile_pic || null;
 
@@ -51,31 +38,19 @@ window.startChat = async (uid, name) => {
         document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
         document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
         
+        // Header Pic Setup
         let headerImg = document.getElementById('chat-header-img');
         if (window.currentChatUser.profile_pic) {
             headerImg.innerHTML = `<img src="${window.currentChatUser.profile_pic}" class="w-full h-full object-cover">`;
+            headerImg.classList.remove('bg-green-100', 'text-green-700');
         } else {
             headerImg.innerHTML = window.escapeHTML(name).charAt(0);
+            headerImg.classList.add('bg-green-100', 'text-green-700');
         }
         
         history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
         window.loadMessages(uid);
         window.cancelReply(); 
-
-        // Listen for typing status
-        const typingRef = ref(window.db, `user_chats/${window.currentUser.uid}/${uid}/isTyping`);
-        typingUnsubscribe = onValue(typingRef, (snap) => {
-            const isTyping = snap.val();
-            const typingEl = document.getElementById('chat-header-typing');
-            if(isTyping) {
-                typingEl.classList.remove('hidden');
-                document.getElementById('chat-header-name').classList.add('text-sm');
-            } else {
-                typingEl.classList.add('hidden');
-                document.getElementById('chat-header-name').classList.remove('text-sm');
-            }
-        });
-
     } catch (error) {
         console.error("Error starting chat:", error);
         window.showToast("চ্যাট ওপেন করতে সমস্যা হয়েছে", "error");
@@ -88,20 +63,23 @@ window.closeChat = () => {
     window.currentChatUser = null;
     window.cancelReply();
     
-    if (currentChatUnsubscribe) { currentChatUnsubscribe(); currentChatUnsubscribe = null; }
-    if (typingUnsubscribe) { typingUnsubscribe(); typingUnsubscribe = null; }
+    // Unsubscribe from chat listener to save memory
+    if (currentChatUnsubscribe) {
+        currentChatUnsubscribe();
+        currentChatUnsubscribe = null;
+    }
 };
 
-// Handle My Typing Event
-let typingTimer;
-document.getElementById('msg-input').addEventListener('input', function() {
-    if(!window.currentChatUser) return;
-    const dbRef = ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`);
-    update(dbRef, { isTyping: true });
-
-    clearTimeout(typingTimer);
-    typingTimer = setTimeout(() => { update(dbRef, { isTyping: false }); }, 1500);
-});
+window.formatMessageTime = (timestamp) => {
+    const date = new Date(timestamp);
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    return hours + ':' + minutes + ' ' + ampm;
+};
 
 // --- QUICK CHAT FRIENDS (Top Bar) ---
 window.loadQuickChatFriends = async () => {
@@ -114,319 +92,215 @@ window.loadQuickChatFriends = async () => {
         const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
         div.innerHTML = friendsData.filter(u => u).map(u => {
             let av = u.profile_pic ? 
-                `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover shadow-sm"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
-                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative shadow-sm">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
-            return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px] transition-transform active:scale-95">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
+                `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
+                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
+            return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
         }).join('');
     } catch (error) {
         console.error("Error loading quick friends:", error);
     }
 };
 
-// --- CHAT LIST LOGIC (WITH ARCHIVE, DELETE & CACHING) ---
-let listTouchStartX = 0;
-let listPressTimer;
-
-window.handleChatListTouchStart = (e, peerUid, name) => {
-    listTouchStartX = e.changedTouches ? e.changedTouches[0].screenX : e.screenX;
-    listPressTimer = setTimeout(() => {
-        window.openChatListOptions(peerUid, name);
-    }, 600);
-};
-
-window.handleChatListTouchMove = () => clearTimeout(listPressTimer);
-window.handleChatListTouchEnd = () => clearTimeout(listPressTimer);
-
-window.openChatListOptions = (peerUid, name) => {
-    window.selectedChatListUid = peerUid;
-    document.getElementById('chat-list-name-display').innerText = window.escapeHTML(name);
-    document.getElementById('chat-list-options-modal').classList.remove('hidden');
-    if(navigator.vibrate) navigator.vibrate(50);
-};
-
-window.closeChatListOptions = () => {
-    document.getElementById('chat-list-options-modal').classList.add('hidden');
-    window.selectedChatListUid = null;
-};
-
-window.archiveChat = () => {
-    if(!window.selectedChatListUid) return;
-    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.selectedChatListUid}`), { isArchived: true });
-    window.closeChatListOptions();
-    window.showToast("চ্যাট আর্কাইভ করা হয়েছে");
-};
-
-window.deleteChat = async () => {
-    if(!window.selectedChatListUid) return;
-    const chatId = window.getChatId(window.currentUser.uid, window.selectedChatListUid);
-    try {
-        await remove(ref(window.db, `user_chats/${window.currentUser.uid}/${window.selectedChatListUid}`));
-        await remove(ref(window.db, `chats/${chatId}`)); 
-        window.closeChatListOptions();
-        window.showToast("সকল ডাটা রিমুভ করা হয়েছে");
-    } catch(e) { window.showToast("ডিলিট করতে সমস্যা হয়েছে", "error"); }
-};
-
+// --- CHAT LIST (Recent Conversations) ---
 window.loadChatList = (uid) => {
-    const container = document.getElementById('chat-list-container');
-    const cacheKey = `chatListCache_${uid}`;
-    
-    // 1. Load from Cache immediately (No loading screen if cache exists)
-    const cachedHTML = localStorage.getItem(cacheKey);
-    if (cachedHTML) {
-        container.innerHTML = cachedHTML;
-    } else {
+    try {
+        const container = document.getElementById('chat-list-container');
         container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>';
-    }
 
-    if (!window.db) return;
+        onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
+            const list = snap.val();
+            
+            // Error Handling: If no chats found
+            if (!list || Object.keys(list).length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+                return;
+            }
 
-    // 2. Fetch Latest Data in Background
-    onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
-        const list = snap.val();
-        if (!list || Object.keys(list).length === 0) {
-            const noDataHtml = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
-            container.innerHTML = noDataHtml;
-            localStorage.setItem(cacheKey, noDataHtml); // Save to cache
-            return;
-        }
-
-        try {
-            const promises = Object.entries(list)
-                .filter(([_, info]) => !info.isArchived) // Hide Archived
-                .sort((a, b) => b[1].timestamp - a[1].timestamp)
-                .map(async ([peerUid, info]) => {
-                    let profilePic = null;
-                    try {
-                        // Secure fetch: Won't break Promise.all if one fails
-                        const userData = await window.getUserData(peerUid);
-                        if(userData) profilePic = userData.profile_pic;
-                    } catch(e) { console.warn("Could not fetch user data for", peerUid); }
-                    
+            try {
+                const promises = Object.entries(list).sort((a, b) => b[1].timestamp - a[1].timestamp).map(async ([peerUid, info]) => {
+                    const userData = await window.getUserData(peerUid);
+                    const profilePic = userData?.profile_pic;
                     return { peerUid, info, profilePic };
                 });
 
-            const chatItems = await Promise.all(promises);
+                const chatItems = await Promise.all(promises);
 
-            const newHTML = chatItems.map(({ peerUid, info, profilePic }) => {
-                let rawLastMsg = info.lastMessage || "";
-                let prefix = rawLastMsg.startsWith("You: ") ? "You: " : "";
-                if(prefix) rawLastMsg = rawLastMsg.substring(5);
+                container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+                    let rawLastMsg = info.lastMessage || "";
+                    let displayMsg = rawLastMsg;
 
-                if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
-                    try { rawLastMsg = window.decryptMsg(rawLastMsg); } catch(e) {}
-                }
-                
-                // Show Typing Status
-                let displayMsg = info.isTyping ? 
-                    `<span class="text-green-500 font-bold italic animate-pulse">Typing...</span>` : 
-                    `${prefix}${window.escapeHTML(rawLastMsg)}`;
+                    let prefix = "";
+                    if (rawLastMsg.startsWith("You: ")) {
+                        prefix = "You: ";
+                        rawLastMsg = rawLastMsg.substring(5);
+                    }
 
-                let safeName = info.name ? window.escapeHTML(info.name) : "User";
-                let av = profilePic ?
-                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-100 shadow-sm">` :
-                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0 shadow-sm">${safeName.charAt(0)}</div>`;
+                    if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
+                        try { rawLastMsg = window.decryptMsg(rawLastMsg); } 
+                        catch(e) { rawLastMsg = "মেসেজটি পড়া যাচ্ছে না"; }
+                    }
+                    displayMsg = prefix + rawLastMsg;
 
-                return `
-                <div onclick="startChat('${peerUid}', '${safeName}')" 
-                     ontouchstart="handleChatListTouchStart(event, '${peerUid}', '${safeName}')"
-                     ontouchmove="handleChatListTouchMove(event)"
-                     ontouchend="handleChatListTouchEnd(event)"
-                     class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors select-none">
+                    let av = profilePic ?
+                        `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
+                        `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
+
+                    return `
+                <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
                     ${av}
                     <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-center mb-1">
-                            <h4 class="font-bold text-gray-800 text-base truncate pr-2">${safeName}</h4>
-                            <span class="text-[10px] text-gray-400 shrink-0 font-medium">${window.timeAgo(info.timestamp)}</span>
+                        <div class="flex justify-between items-center mb-0.5">
+                            <h4 class="font-bold text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                            <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
                         </div>
-                        <p class="text-sm text-gray-500 truncate block">${displayMsg}</p>
+                        <p class="text-sm text-gray-500 truncate block">${window.escapeHTML(displayMsg)}</p>
                     </div>
                 </div>`;
-            }).join('');
-
-            // 3. Update DOM and Cache only if changes happened
-            if (container.innerHTML !== newHTML) {
-                container.innerHTML = newHTML;
-                localStorage.setItem(cacheKey, newHTML); 
+                }).join('');
+            } catch (err) {
+                container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটা লোড করতে সমস্যা হয়েছে</p>';
+                console.error("Error mapping chats:", err);
             }
-
-        } catch (err) {
-            console.error("Chat list rendering error:", err);
-            if (!cachedHTML) container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটা লোড করতে সমস্যা হয়েছে</p>';
-        }
-    }, (error) => {
-        console.error("Firebase error:", error);
-        if (!cachedHTML) container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">সার্ভারের সাথে কানেকশন নেই</p>';
-    });
-};
-
-// --- CUSTOM AUDIO PLAYER UI LOGIC ---
-window.currentPlayingAudioId = null;
-
-window.toggleCustomAudio = (msgId) => {
-    const audioEl = document.getElementById(`audio-${msgId}`);
-    const iconEl = document.getElementById(`play-icon-${msgId}`);
-
-    if (window.currentPlayingAudioId && window.currentPlayingAudioId !== msgId) {
-        const prevAudio = document.getElementById(`audio-${window.currentPlayingAudioId}`);
-        const prevIcon = document.getElementById(`play-icon-${window.currentPlayingAudioId}`);
-        if(prevAudio) { prevAudio.pause(); prevIcon.className = "fa-solid fa-play text-xs ml-0.5"; }
-    }
-
-    if (audioEl.paused) {
-        audioEl.play();
-        iconEl.className = "fa-solid fa-pause text-xs";
-        window.currentPlayingAudioId = msgId;
-    } else {
-        audioEl.pause();
-        iconEl.className = "fa-solid fa-play text-xs ml-0.5";
-        window.currentPlayingAudioId = null;
+        }, (error) => {
+            container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটাবেস কানেকশনে সমস্যা</p>';
+            console.error("Firebase Read Error:", error);
+        });
+    } catch (error) {
+        console.error("Error in loadChatList:", error);
     }
 };
 
-window.updateAudioProgress = (msgId) => {
-    const audioEl = document.getElementById(`audio-${msgId}`);
-    const progressEl = document.getElementById(`progress-${msgId}`);
-    if(audioEl.duration) {
-        const percentage = (audioEl.currentTime / audioEl.duration) * 100;
-        progressEl.style.width = percentage + '%';
-    }
-};
-
-window.audioEnded = (msgId) => {
-    document.getElementById(`play-icon-${msgId}`).className = "fa-solid fa-play text-xs ml-0.5";
-    document.getElementById(`progress-${msgId}`).style.width = '0%';
-    if (window.currentPlayingAudioId === msgId) window.currentPlayingAudioId = null;
-};
-
-
-// --- LOAD MESSAGES (WITH TIMESTAMPS OUTSIDE & CUSTOM AUDIO) ---
+// --- LOAD MESSAGES (Lazy Load, Status, Time, Profile Pics) ---
 window.loadMessages = (otherUid, isPagination = false) => {
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
     
-    if (!isPagination) div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
+    if (!isPagination) {
+        div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
+    }
 
+    // Handle Scroll for Lazy Loading
     div.onscroll = () => {
         if (div.scrollTop === 0 && !isFetchingOlder) {
             isFetchingOlder = true;
             lastScrollHeight = div.scrollHeight;
-            currentChatLimit += 20; 
+            currentChatLimit += 20; // Load 20 more messages
             window.loadMessages(otherUid, true);
         }
     };
 
-    if (currentChatUnsubscribe) currentChatUnsubscribe();
+    if (currentChatUnsubscribe) {
+        currentChatUnsubscribe(); // Unsubscribe previous listener
+    }
 
-    currentChatUnsubscribe = onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(currentChatLimit)), (snap) => {
-        const msgs = snap.val() || {};
-        if (Object.keys(msgs).length > 0) {
-            let html = '';
-            let updatesForSeen = {}; 
-            let unreadFound = false;
+    try {
+        currentChatUnsubscribe = onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(currentChatLimit)), (snap) => {
+            const msgs = snap.val() || {};
+            
+            if (Object.keys(msgs).length > 0) {
+                let html = '';
+                let updatesForSeen = {}; // To mark messages as seen
+                let unreadFound = false;
 
-            Object.entries(msgs).forEach(([msgId, m]) => {
-                if (m[`deletedFor_${window.currentUser.uid}`]) return;
+                Object.entries(msgs).forEach(([msgId, m]) => {
+                    // Skip if removed for me
+                    if (m[`deletedFor_${window.currentUser.uid}`]) return;
 
-                const isMe = m.sender === window.currentUser.uid;
-                let content = '';
+                    const isMe = m.sender === window.currentUser.uid;
+                    let content = '';
 
-                if (!isMe && m.status !== 'seen') {
-                    updatesForSeen[`chats/${chatId}/${msgId}/status`] = 'seen';
-                    unreadFound = true;
-                }
-
-                // Reply Context Block
-                if (m.replyToText) {
-                    content += `<div class="bg-black/10 p-2 rounded-lg text-xs mb-1.5 border-l-4 ${isMe?'border-white text-white':'border-green-500 text-gray-600'} opacity-90"><i class="fa-solid fa-reply mr-1"></i>${window.escapeHTML(m.replyToText)}</div>`;
-                }
-
-                // Image
-                if (m.image) content += `<img src="${m.image}" class="rounded-xl mb-1 max-w-[200px] h-auto cursor-pointer shadow-sm" onclick="window.open('${m.image}')">`;
-                
-                // Beautiful Custom Audio Player
-                if (m.audio) {
-                    content += `
-                    <div class="flex items-center gap-3 ${isMe ? 'bg-white/20' : 'bg-green-50'} rounded-full p-1.5 w-[200px] mb-1">
-                        <button onclick="toggleCustomAudio('${msgId}')" class="w-9 h-9 ${isMe ? 'bg-white text-green-600' : 'bg-green-500 text-white'} rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform active:scale-95">
-                            <i id="play-icon-${msgId}" class="fa-solid fa-play text-xs ml-0.5"></i>
-                        </button>
-                        <div class="flex-1 h-1.5 bg-black/10 rounded-full overflow-hidden relative">
-                            <div id="progress-${msgId}" class="absolute left-0 top-0 h-full ${isMe ? 'bg-white' : 'bg-green-500'} w-0 transition-all duration-75"></div>
-                        </div>
-                        <audio id="audio-${msgId}" src="${m.audio}" class="hidden" ontimeupdate="updateAudioProgress('${msgId}')" onended="audioEnded('${msgId}')"></audio>
-                    </div>`;
-                }
-
-                // Text Content
-                if (m.text) {
-                    try { content += `<span class="leading-relaxed block">${window.escapeHTML(window.decryptMsg(m.text))}</span>`; } 
-                    catch(e) { content += `<span>[Error]</span>`; }
-                }
-
-                // Status & Time indicator
-                let statusIcon = '';
-                if (isMe) {
-                    if (m.status === 'seen') {
-                        statusIcon = window.currentChatUser.profile_pic ? 
-                            `<img src="${window.currentChatUser.profile_pic}" class="w-3.5 h-3.5 rounded-full object-cover ml-1 shadow-sm">` : 
-                            `<i class="fa-solid fa-circle-check text-green-500 text-[11px] ml-1"></i>`;
-                    } else if (m.status === 'delivered') {
-                        statusIcon = `<i class="fa-solid fa-circle-check text-gray-500 text-[11px] ml-1"></i>`;
-                    } else {
-                        statusIcon = `<i class="fa-regular fa-circle-check text-gray-400 text-[11px] ml-1"></i>`;
+                    // Mark as Seen logic
+                    if (!isMe && m.status !== 'seen') {
+                        updatesForSeen[`chats/${chatId}/${msgId}/status`] = 'seen';
+                        unreadFound = true;
                     }
-                }
-                const timeStr = `<div class="text-[10px] text-gray-400 mt-1 flex items-center ${isMe ? 'justify-end' : 'justify-start'} w-full font-medium px-1">
-                    ${window.formatMessageTime(m.timestamp)} ${statusIcon}
-                </div>`;
 
-                // Profile Picture (Friend)
-                let profilePicHtml = '';
-                if (!isMe) {
-                    let pPic = window.currentChatUser.profile_pic ? 
-                        `<img src="${window.currentChatUser.profile_pic}" class="w-7 h-7 rounded-full object-cover shadow-sm">` : 
-                        `<div class="w-7 h-7 bg-green-200 rounded-full flex items-center justify-center text-xs font-bold text-green-800 shadow-sm">${window.currentChatUser.name.charAt(0)}</div>`;
-                    profilePicHtml = `<div class="mr-2 self-end mb-5">${pPic}</div>`;
-                }
+                    // Reply Context
+                    if (m.replyToText) {
+                        content += `<div class="bg-black bg-opacity-10 p-2 rounded text-xs mb-1 border-l-4 border-green-500 opacity-70">${window.escapeHTML(m.replyToText)}</div>`;
+                    }
 
-                let rawText = m.text ? window.decryptMsg(m.text).replace(/'/g, "\\'") : (m.image ? "Photo" : "Voice Note");
+                    // Content types
+                    if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
+                    if (m.audio) content += `<audio controls class="max-w-[200px] h-8 mb-1"><source src="${m.audio}" type="audio/webm">Your browser does not support audio.</audio>`;
+                    if (m.text) {
+                        try {
+                            const decrypted = window.decryptMsg(m.text);
+                            content += `<span>${window.escapeHTML(decrypted)}</span>`;
+                        } catch(e) { content += `<span>[Error decrypting]</span>`; }
+                    }
 
-                // Message Wrapper Construction
-                html += `
-                <div class="flex w-full ${isMe ? 'justify-end' : 'justify-start'} mb-3 group" 
-                     id="msg-row-${msgId}" data-raw-text="${rawText}">
-                    ${profilePicHtml}
-                    <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]" >
-                        <!-- Draggable Bubble Wrapper for Swipe to Reply -->
-                        <div id="bubble-wrap-${msgId}" 
-                             ontouchstart="handleMsgTouchStart(event, '${msgId}', '${rawText}', ${isMe})" 
-                             ontouchend="handleMsgTouchEnd(event)" 
-                             ontouchmove="handleMsgTouchMove(event)"
-                             class="px-4 py-2.5 shadow-sm text-[15px] break-words relative z-10
-                                    ${isMe ? 'bg-gradient-to-br from-green-400 to-green-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 border border-gray-100 rounded-2xl rounded-bl-sm'}">
+                    // Message Status Indicator (For my messages)
+                    let statusIcon = '';
+                    if (isMe) {
+                        if (m.status === 'seen') {
+                            statusIcon = window.currentChatUser.profile_pic ? 
+                                `<img src="${window.currentChatUser.profile_pic}" class="w-3 h-3 rounded-full ml-1 inline-block object-cover" title="Seen">` : 
+                                `<i class="fa-solid fa-circle-check text-green-500 text-[10px] ml-1" title="Seen"></i>`;
+                        } else if (m.status === 'delivered') {
+                            statusIcon = `<i class="fa-solid fa-circle-check text-gray-500 text-[10px] ml-1" title="Delivered"></i>`;
+                        } else {
+                            // Default to Sent
+                            statusIcon = `<i class="fa-regular fa-circle-check text-gray-400 text-[10px] ml-1" title="Sent"></i>`;
+                        }
+                    }
+
+                    // Time and Status String
+                    const timeStr = `<div class="text-[10px] text-gray-400 mt-1 flex items-center justify-end w-full">${window.formatMessageTime(m.timestamp)} ${statusIcon}</div>`;
+
+                    // Profile Pic for friend
+                    let profilePicHtml = '';
+                    if (!isMe) {
+                        let pPic = window.currentChatUser.profile_pic ? 
+                            `<img src="${window.currentChatUser.profile_pic}" class="w-6 h-6 rounded-full object-cover">` : 
+                            `<div class="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center text-xs font-bold text-green-800">${window.currentChatUser.name.charAt(0)}</div>`;
+                        profilePicHtml = `<div class="mr-2 self-end mb-1">${pPic}</div>`;
+                    }
+
+                    // Wrapper
+                    let rawText = m.text ? window.decryptMsg(m.text).replace(/'/g, "\\'") : (m.image ? "Photo" : "Voice Note");
+
+                    html += `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-3" 
+                         id="msg-wrap-${msgId}"
+                         ontouchstart="handleMsgTouchStart(event, '${msgId}', '${rawText}', ${isMe})" 
+                         ontouchend="handleMsgTouchEnd(event)" 
+                         ontouchmove="handleMsgTouchMove(event)">
+                         
+                        ${profilePicHtml}
+                        <div class="px-4 py-2 max-w-[75%] rounded-2xl shadow-sm text-sm flex flex-col ${isMe ? 'bg-green-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'}">
                             ${content}
+                            ${timeStr}
                         </div>
-                        ${timeStr}
-                    </div>
-                </div>`;
-            });
+                    </div>`;
+                });
 
-            div.innerHTML = html;
-            if (unreadFound) update(ref(window.db), updatesForSeen).catch(console.error);
+                div.innerHTML = html;
 
-            if (isPagination) {
-                div.scrollTop = div.scrollHeight - lastScrollHeight;
-                isFetchingOlder = false;
+                // Update seen status in DB
+                if (unreadFound) {
+                    update(ref(window.db), updatesForSeen).catch(console.error);
+                }
+
+                // Adjust Scroll Position
+                if (isPagination) {
+                    div.scrollTop = div.scrollHeight - lastScrollHeight;
+                    isFetchingOlder = false;
+                } else {
+                    setTimeout(() => { div.scrollTop = div.scrollHeight; }, 50);
+                }
+
             } else {
-                setTimeout(() => { div.scrollTop = div.scrollHeight; }, 50);
+                div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">কথপোকথন শুরু করুন</p>';
             }
-        } else {
-            div.innerHTML = '<p class="text-center text-sm text-gray-400 mt-10"><i class="fa-solid fa-hand-wave text-2xl mb-2 block"></i>কথপোকথন শুরু করুন</p>';
-        }
-    });
+        }, (error) => {
+            console.error("Error fetching messages:", error);
+            div.innerHTML = '<p class="text-center text-red-400 mt-4">মেসেজ লোড করতে সমস্যা হয়েছে</p>';
+        });
+    } catch (error) {
+        console.error("Setup listener error:", error);
+    }
 };
-
 
 // --- SEND MESSAGE & IMAGE UPLOAD ---
 window.sendMsg = async (imageUrl = null, audioUrl = null) => {
@@ -444,7 +318,7 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
         const msgData = { 
             sender: window.currentUser.uid, 
             timestamp: ts,
-            status: 'sent'
+            status: 'sent' // Initial status
         };
         
         if (text) msgData.text = encryptedText;
@@ -464,7 +338,7 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
         if (imageUrl) lastMsgText = text ? "📷 " + encryptedText : "📷 ছবি পাঠিয়েছেন";
         if (audioUrl) lastMsgText = "🎤 ভয়েস মেসেজ";
 
-        const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgText, timestamp: ts, isTyping: false };
+        const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgText, timestamp: ts };
         const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgText, timestamp: ts };
 
         update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
@@ -473,7 +347,7 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
         // Reset UI
         input.value = "";
         window.cancelReply(); 
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-0.5"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
         btn.disabled = false;
         
         // Scroll to bottom
@@ -483,19 +357,17 @@ window.sendMsg = async (imageUrl = null, audioUrl = null) => {
     } catch (error) {
         console.error("Error sending message:", error);
         window.showToast("মেসেজ পাঠাতে সমস্যা হয়েছে", "error");
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-0.5"></i>';
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
         btn.disabled = false;
     }
 };
 
-// --- SWIPE TO REPLY (WITH SMOOTH ANIMATION) & LONG PRESS ---
-let swipeTouchStartX = 0;
-let swipeEl = null;
+// --- SWIPE TO REPLY & LONG PRESS LOGIC ---
+let touchStartX = 0;
+let touchEndX = 0;
 
 window.handleMsgTouchStart = (e, msgId, msgText, isMe) => {
-    swipeTouchStartX = e.changedTouches[0].screenX;
-    swipeEl = document.getElementById(`bubble-wrap-${msgId}`);
-    if(swipeEl) swipeEl.style.transition = 'none'; // Disable transition for instant follow
+    touchStartX = e.changedTouches[0].screenX;
     
     pressTimer = setTimeout(() => {
         window.openMsgOptions(msgId, msgText, isMe);
@@ -504,31 +376,15 @@ window.handleMsgTouchStart = (e, msgId, msgText, isMe) => {
 
 window.handleMsgTouchMove = (e) => {
     clearTimeout(pressTimer); 
-    if(!swipeEl) return;
-    
-    let diffX = e.changedTouches[0].screenX - swipeTouchStartX;
-    if (diffX > 0 && diffX < 80) { // Max swipe limit 80px
-        swipeEl.style.transform = `translateX(${diffX}px)`;
-    }
 };
 
 window.handleMsgTouchEnd = (e) => {
     clearTimeout(pressTimer); 
-    if(!swipeEl) return;
-
-    let diffX = e.changedTouches[0].screenX - swipeTouchStartX;
     
-    // Smooth Snap Back Animation
-    swipeEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)';
-    swipeEl.style.transform = 'translateX(0px)';
-
-    if (diffX > 50) {
-        if(navigator.vibrate) navigator.vibrate(50);
-        let row = e.target.closest('[id^="msg-row-"]');
-        let textToReply = row ? row.getAttribute('data-raw-text') : "Message";
-        window.setupReply(textToReply.substring(0, 40) + (textToReply.length > 40 ? '...' : ''));
+    touchEndX = e.changedTouches[0].screenX;
+    if (touchEndX - touchStartX > 60) {
+        window.setupReply(e.currentTarget.innerText.split('\n')[0].substring(0, 30) + '...');
     }
-    swipeEl = null;
 };
 
 window.setupReply = (text) => {
@@ -543,16 +399,16 @@ window.cancelReply = () => {
     document.getElementById('reply-context-view').classList.add('hidden');
 };
 
-
 // --- MESSAGE OPTIONS (UNSEND, REMOVE, FORWARD) ---
 window.openMsgOptions = (msgId, text, isMe) => {
-    if(navigator.vibrate) navigator.vibrate(50);
     window.selectedMsgForOptions = { msgId, text };
     document.getElementById('msg-options-modal').classList.remove('hidden');
     
     const unsendBtn = document.getElementById('btn-unsend');
     if(isMe) unsendBtn.style.display = 'flex';
     else unsendBtn.style.display = 'none';
+
+    if(navigator.vibrate) navigator.vibrate(50);
 };
 
 window.closeMsgOptions = () => {
@@ -708,7 +564,7 @@ window.handleChatImageSelect = () => {
                 document.getElementById('chat-img-input').value = "";
             }).catch(e => {
                 window.showToast("ছবি আপলোড হয়নি", 'error');
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-0.5"></i>';
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 btn.disabled = false;
             });
         }
