@@ -123,7 +123,7 @@ window.loadQuickChatFriends = async () => {
     }
 };
 
-// --- CHAT LIST LOGIC (WITH ARCHIVE & DELETE) ---
+// --- CHAT LIST LOGIC (WITH ARCHIVE, DELETE & CACHING) ---
 let listTouchStartX = 0;
 let listPressTimer;
 
@@ -167,115 +167,98 @@ window.deleteChat = async () => {
     } catch(e) { window.showToast("ডিলিট করতে সমস্যা হয়েছে", "error"); }
 };
 
-
-// --- UPDATED CHAT LIST LOGIC (CACHING + REALTIME SORTING) ---
-window.renderChatListHTML = (container, chatItems) => {
-    if (chatItems.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
-        return;
-    }
-
-    container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
-        let rawLastMsg = info.lastMessage || "";
-        let prefix = rawLastMsg.startsWith("You: ") ? "You: " : "";
-        if(prefix) rawLastMsg = rawLastMsg.substring(5);
-
-        if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
-            try { rawLastMsg = window.decryptMsg(rawLastMsg); } catch(e) {}
-        }
-        
-        // Show Typing Status
-        let displayMsg = info.isTyping ? 
-            `<span class="text-green-500 font-bold italic animate-pulse">Typing...</span>` : 
-            `${prefix}${window.escapeHTML(rawLastMsg)}`;
-
-        let safeName = info.name ? window.escapeHTML(info.name) : "Unknown";
-        let av = profilePic ?
-            `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-100 shadow-sm">` :
-            `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0 shadow-sm">${safeName.charAt(0)}</div>`;
-
-        return `
-        <div onclick="startChat('${peerUid}', '${safeName}')" 
-             ontouchstart="handleChatListTouchStart(event, '${peerUid}', '${safeName}')"
-             ontouchmove="handleChatListTouchMove(event)"
-             ontouchend="handleChatListTouchEnd(event)"
-             class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors select-none">
-            ${av}
-            <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-center mb-1">
-                    <h4 class="font-bold text-gray-800 text-base truncate pr-2">${safeName}</h4>
-                    <span class="text-[10px] text-gray-400 shrink-0 font-medium">${window.timeAgo(info.timestamp)}</span>
-                </div>
-                <p class="text-sm text-gray-500 truncate block">${displayMsg}</p>
-            </div>
-        </div>`;
-    }).join('');
-};
-
 window.loadChatList = (uid) => {
     const container = document.getElementById('chat-list-container');
-    const cacheKey = `chat_list_cache_${uid}`;
-
-    // 1. আগে লোকাল স্টোরেজ (Cache) থেকে সাথে সাথে লোড করবে
-    const cachedData = localStorage.getItem(cacheKey);
-    if (cachedData) {
-        try {
-            const parsedCache = JSON.parse(cachedData);
-            window.renderChatListHTML(container, parsedCache);
-        } catch (e) {
-            console.error("Cache parse error", e);
-        }
+    const cacheKey = `chatListCache_${uid}`;
+    
+    // 1. Load from Cache immediately (No loading screen if cache exists)
+    const cachedHTML = localStorage.getItem(cacheKey);
+    if (cachedHTML) {
+        container.innerHTML = cachedHTML;
     } else {
         container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>';
     }
 
-    if (!window.db || !uid) return;
+    if (!window.db) return;
 
-    // 2. ফায়ারবেস থেকে রিয়েল-টাইম আপডেট নিবে
+    // 2. Fetch Latest Data in Background
     onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
         const list = snap.val();
-        
         if (!list || Object.keys(list).length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
-            localStorage.removeItem(cacheKey); // ক্লিয়ার ক্যাশ
+            const noDataHtml = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+            container.innerHTML = noDataHtml;
+            localStorage.setItem(cacheKey, noDataHtml); // Save to cache
             return;
         }
 
         try {
             const promises = Object.entries(list)
                 .filter(([_, info]) => !info.isArchived) // Hide Archived
-                .sort((a, b) => b[1].timestamp - a[1].timestamp) // নতুন মেসেজ উপরে আসবে
+                .sort((a, b) => b[1].timestamp - a[1].timestamp)
                 .map(async ([peerUid, info]) => {
                     let profilePic = null;
                     try {
+                        // Secure fetch: Won't break Promise.all if one fails
                         const userData = await window.getUserData(peerUid);
-                        profilePic = userData?.profile_pic || null;
-                    } catch (userError) {
-                        console.warn(`Failed to load data for user: ${peerUid}`, userError);
-                    }
+                        if(userData) profilePic = userData.profile_pic;
+                    } catch(e) { console.warn("Could not fetch user data for", peerUid); }
+                    
                     return { peerUid, info, profilePic };
                 });
 
             const chatItems = await Promise.all(promises);
 
-            // 3. নতুন ডাটা দিয়ে HTML আপডেট ও ক্যাশ সেভ করবে
-            window.renderChatListHTML(container, chatItems);
-            localStorage.setItem(cacheKey, JSON.stringify(chatItems));
+            const newHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+                let rawLastMsg = info.lastMessage || "";
+                let prefix = rawLastMsg.startsWith("You: ") ? "You: " : "";
+                if(prefix) rawLastMsg = rawLastMsg.substring(5);
+
+                if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
+                    try { rawLastMsg = window.decryptMsg(rawLastMsg); } catch(e) {}
+                }
+                
+                // Show Typing Status
+                let displayMsg = info.isTyping ? 
+                    `<span class="text-green-500 font-bold italic animate-pulse">Typing...</span>` : 
+                    `${prefix}${window.escapeHTML(rawLastMsg)}`;
+
+                let safeName = info.name ? window.escapeHTML(info.name) : "User";
+                let av = profilePic ?
+                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-100 shadow-sm">` :
+                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0 shadow-sm">${safeName.charAt(0)}</div>`;
+
+                return `
+                <div onclick="startChat('${peerUid}', '${safeName}')" 
+                     ontouchstart="handleChatListTouchStart(event, '${peerUid}', '${safeName}')"
+                     ontouchmove="handleChatListTouchMove(event)"
+                     ontouchend="handleChatListTouchEnd(event)"
+                     class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors select-none">
+                    ${av}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="font-bold text-gray-800 text-base truncate pr-2">${safeName}</h4>
+                            <span class="text-[10px] text-gray-400 shrink-0 font-medium">${window.timeAgo(info.timestamp)}</span>
+                        </div>
+                        <p class="text-sm text-gray-500 truncate block">${displayMsg}</p>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // 3. Update DOM and Cache only if changes happened
+            if (container.innerHTML !== newHTML) {
+                container.innerHTML = newHTML;
+                localStorage.setItem(cacheKey, newHTML); 
+            }
 
         } catch (err) {
             console.error("Chat list rendering error:", err);
-            if (!localStorage.getItem(cacheKey)) {
-                container.innerHTML = '<p class="text-center text-red-500 mt-10 text-sm">ডাটা লোড করতে সমস্যা হয়েছে!</p>';
-            }
+            if (!cachedHTML) container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটা লোড করতে সমস্যা হয়েছে</p>';
         }
     }, (error) => {
         console.error("Firebase error:", error);
-        if (!localStorage.getItem(cacheKey)) {
-            container.innerHTML = '<p class="text-center text-red-500 mt-10 text-sm">সার্ভার সংযোগে সমস্যা বা পারমিশন নেই!</p>';
-        }
+        if (!cachedHTML) container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">সার্ভারের সাথে কানেকশন নেই</p>';
     });
 };
-
 
 // --- CUSTOM AUDIO PLAYER UI LOGIC ---
 window.currentPlayingAudioId = null;
@@ -381,7 +364,7 @@ window.loadMessages = (otherUid, isPagination = false) => {
                     catch(e) { content += `<span>[Error]</span>`; }
                 }
 
-                // Status & Time indicator (Placed below the bubble)
+                // Status & Time indicator
                 let statusIcon = '';
                 if (isMe) {
                     if (m.status === 'seen') {
