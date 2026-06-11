@@ -1,18 +1,19 @@
 <div class="px-4 pt-4 pb-20">
     
     <!-- ==========================
-         Live Video Player Section 
+         Live Video Player Section (Perfectly Cropped)
     =========================== -->
-    <div class="mb-5 bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 relative w-full aspect-video">
+    <div class="mb-5 bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 relative w-full h-[210px]">
+        
+        <!-- iframe টিকে উপরের দিকে ঠেলে হেডার লুকিয়ে ফেলা হয়েছে -->
         <iframe 
             src="https://famelack.com/tv/bd/J7BmdiABqVkDMa" 
-            class="absolute top-0 left-0 w-full h-full border-0" 
+            class="absolute left-0 w-full border-0" 
+            style="top: -135px; height: 450px;"
             allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
-            allowfullscreen="true" 
-            webkitallowfullscreen="true" 
-            mozallowfullscreen="true"
-            title="Live Match Stream">
+            allowfullscreen="true">
         </iframe>
+        
     </div>
 
     <!-- ==========================
