@@ -1,9 +1,27 @@
 <div class="px-4 pt-4 pb-20">
-    <!-- Banner -->
-    <div class="bg-gradient-to-r from-green-700 to-teal-800 rounded-2xl p-5 text-center text-white mb-6 shadow-lg relative overflow-hidden">
-        <i class="fa-solid fa-trophy absolute -right-4 -bottom-4 text-7xl opacity-20 transform -rotate-12"></i>
-        <h2 class="text-xl font-bold mb-1">ফিফা ওয়ার্ল্ড কাপ </h2>
-        <p class="text-xs text-green-100">লাইভ ও আপকামিং ম্যাচ আপডেট</p>
+    
+    <!-- ==========================
+         Live Video Player Section 
+    =========================== -->
+    <div class="mb-5 bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 relative w-full aspect-video">
+        <iframe 
+            src="https://famelack.com/tv/bd/J7BmdiABqVkDMa" 
+            class="absolute top-0 left-0 w-full h-full border-0" 
+            allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen="true" 
+            webkitallowfullscreen="true" 
+            mozallowfullscreen="true"
+            title="Live Match Stream">
+        </iframe>
+    </div>
+
+    <!-- ==========================
+         Banner Section
+    =========================== -->
+    <div class="bg-gradient-to-r from-green-700 to-teal-800 rounded-2xl p-4 text-center text-white mb-6 shadow-md relative overflow-hidden">
+        <i class="fa-solid fa-trophy absolute -right-4 -bottom-4 text-6xl opacity-20 transform -rotate-12"></i>
+        <h2 class="text-lg font-bold mb-1">ফিফা লাইভ আপডেট</h2>
+        <p class="text-[11px] text-green-100">অটোমেটিক স্কোর এবং সময়সূচি</p>
     </div>
 
     <!-- API Status -->
@@ -17,9 +35,8 @@
             <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span> লাইভ চলছে
         </h3>
         
-        <!-- Live Data Container -->
         <div id="fifa-live-container" class="space-y-3">
-            <div class="text-center py-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div class="text-center py-6 bg-white rounded-xl border border-gray-100 shadow-sm">
                 <i class="fa-solid fa-circle-notch fa-spin text-2xl text-green-600 mb-2"></i>
                 <p class="text-gray-500 font-bold text-xs">লাইভ স্কোর লোড হচ্ছে...</p>
             </div>
@@ -31,12 +48,11 @@
     =========================== -->
     <div>
         <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <i class="fa-regular fa-calendar-days text-blue-600"></i> আসন্ন ম্যাচগুলো (আগামী ৭ দিন)
+            <i class="fa-regular fa-calendar-days text-blue-600"></i> আসন্ন ম্যাচগুলো (ক্রমানুসারে)
         </h3>
         
-        <!-- Upcoming Data Container -->
         <div id="fifa-upcoming-container" class="space-y-3">
-            <div class="text-center py-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div class="text-center py-6 bg-white rounded-xl border border-gray-100 shadow-sm">
                 <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
                 <p class="text-gray-500 font-bold text-xs">ম্যাচের সময়সূচি লোড হচ্ছে...</p>
             </div>
