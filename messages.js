@@ -1,574 +1,614 @@
-// messages.js
 import {
-    ref, push, set, onValue, get, update, remove, query, limitToLast
+    ref, push, set, onValue, get, update, query, limitToLast, remove, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-// Global Variables for New Features
-window.currentReplyTo = null;
-window.selectedMsgForOptions = null;
-let pressTimer;
-let mediaRecorder;
-let audioChunks = [];
-
-// Pagination & Listeners
-let currentChatUnsubscribe = null;
-let currentChatLimit = 20; // Initially load 20 messages
-let isFetchingOlder = false;
-let lastScrollHeight = 0;
 
 // --- CHAT HELPER FUNCTIONS ---
 window.getChatId = function(uid1, uid2) {
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
 };
 
-window.startChat = async (uid, name) => {
-    try {
-        window.currentChatUser = { uid, name };
-        window.switchPage('messages');
-        
-        // Reset Pagination
-        currentChatLimit = 20; 
-        isFetchingOlder = false;
+let replyMessageData = null;
+let showArchived = false;
 
-        // Fetch and store friend's profile pic for messages
-        const friendData = await window.getUserData(uid);
-        window.currentChatUser.profile_pic = friendData?.profile_pic || null;
-
-        document.getElementById('chat-list-view').classList.add('hidden', 'hidden-custom');
-        document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
-        document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
-        
-        // Header Pic Setup
-        let headerImg = document.getElementById('chat-header-img');
-        if (window.currentChatUser.profile_pic) {
-            headerImg.innerHTML = `<img src="${window.currentChatUser.profile_pic}" class="w-full h-full object-cover">`;
-            headerImg.classList.remove('bg-green-100', 'text-green-700');
-        } else {
-            headerImg.innerHTML = window.escapeHTML(name).charAt(0);
-            headerImg.classList.add('bg-green-100', 'text-green-700');
+window.startChat = (uid, name) => {
+    window.currentChatUser = { uid, name };
+    window.switchPage('messages');
+    
+    document.getElementById('chat-list-view').classList.add('hidden', 'hidden-custom');
+    document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
+    document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
+    document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-green-100 flex items-center justify-center">${window.escapeHTML(name).charAt(0)}</div>`;
+    
+    // User image if available
+    window.getUserData(uid).then(u => {
+        if(u && u.profile_pic) {
+            document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover">`;
         }
-        
-        history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
-        window.loadMessages(uid);
-        window.cancelReply(); 
-    } catch (error) {
-        console.error("Error starting chat:", error);
-        window.showToast("চ্যাট ওপেন করতে সমস্যা হয়েছে", "error");
-    }
+    });
+
+    history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
+    window.loadMessages(uid);
+    window.listenToTyping(uid);
+    
+    // Mark messages as seen
+    const chatId = window.getChatId(window.currentUser.uid, uid);
+    update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 });
 };
 
 window.closeChat = () => {
     document.getElementById('chat-list-view').classList.remove('hidden', 'hidden-custom');
     document.getElementById('chat-conversation-view').classList.add('hidden', 'hidden-custom');
     window.currentChatUser = null;
-    window.cancelReply();
+    cancelReply();
     
-    // Unsubscribe from chat listener to save memory
-    if (currentChatUnsubscribe) {
-        currentChatUnsubscribe();
-        currentChatUnsubscribe = null;
+    // Stop typing
+    if(window.currentUser) {
+        set(ref(window.db, `chats_typing/${window.currentUser.uid}`), false);
     }
 };
 
-window.formatMessageTime = (timestamp) => {
-    const date = new Date(timestamp);
-    let hours = date.getHours();
-    let minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; 
-    minutes = minutes < 10 ? '0' + minutes : minutes;
-    return hours + ':' + minutes + ' ' + ampm;
-};
-
-// --- QUICK CHAT FRIENDS (Top Bar) ---
-window.loadQuickChatFriends = async () => {
-    try {
-        const div = document.getElementById('quick-chat-friends');
-        if (!window.myFriends || window.myFriends.length === 0) {
-            div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
-            return;
-        }
-        const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
-        div.innerHTML = friendsData.filter(u => u).map(u => {
+// --- SEARCH FRIENDS FOR CHAT ---
+window.searchChatFriends = async (val) => {
+    const q = val.toLowerCase().trim();
+    const container = document.getElementById('chat-list-container');
+    
+    if (!q) {
+        window.loadChatList(window.currentUser.uid); // Reset
+        return;
+    }
+    
+    const friendsData = await Promise.all(window.myFriends.map(uid => window.getUserData(uid)));
+    const matched = friendsData.filter(u => u && u.name.toLowerCase().includes(q));
+    
+    if (matched.length > 0) {
+        container.innerHTML = `<h4 class="px-4 py-2 text-xs font-bold text-gray-500">Search Results</h4>` + 
+        matched.map(u => {
             let av = u.profile_pic ? 
-                `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
-                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
-            return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
+                `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border border-gray-200">` : 
+                `<div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-700 text-xl">${window.escapeHTML(u.name).charAt(0)}</div>`;
+            
+            return `
+            <div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
+                ${av}
+                <div class="flex-1 font-bold text-gray-800">${window.escapeHTML(u.name)}</div>
+            </div>`;
         }).join('');
-    } catch (error) {
-        console.error("Error loading quick friends:", error);
+    } else {
+        container.innerHTML = '<p class="text-center text-gray-400 mt-5 text-sm">কাউকে পাওয়া যায়নি</p>';
     }
 };
 
-// --- CHAT LIST (Recent Conversations) ---
-window.loadChatList = (uid) => {
-    try {
-        const container = document.getElementById('chat-list-container');
-        container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>';
+// --- CHAT LIST WITH LONG PRESS (ARCHIVE/DELETE) ---
+window.toggleArchivedChats = () => {
+    showArchived = !showArchived;
+    window.loadChatList(window.currentUser.uid);
+};
 
-        onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
-            const list = snap.val();
+window.loadChatList = (uid) => {
+    onValue(ref(window.db, `user_chats/${uid}`), async (snap) => {
+        const list = snap.val() || {};
+        const container = document.getElementById('chat-list-container');
+        
+        // Fetch archive list
+        const archSnap = await get(ref(window.db, `user_archived_chats/${uid}`));
+        const archivedUids = archSnap.val() || {};
+
+        if (Object.keys(list).length > 0) {
+            const promises = Object.entries(list).map(async ([peerUid, info]) => {
+                const userData = await window.getUserData(peerUid);
+                return { peerUid, info, profilePic: userData?.profile_pic };
+            });
+
+            let chatItems = await Promise.all(promises);
+            chatItems.sort((a, b) => b.info.timestamp - a.info.timestamp);
             
-            // Error Handling: If no chats found
-            if (!list || Object.keys(list).length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+            // Filter based on Archive state
+            if(showArchived) {
+                chatItems = chatItems.filter(item => archivedUids[item.peerUid]);
+            } else {
+                chatItems = chatItems.filter(item => !archivedUids[item.peerUid]);
+            }
+
+            if(chatItems.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 mt-10 text-sm">${showArchived ? 'আর্কাইভে কোনো চ্যাট নেই' : 'কোনো কনভারসেশন নেই'}</p>`;
                 return;
             }
 
-            try {
-                const promises = Object.entries(list).sort((a, b) => b[1].timestamp - a[1].timestamp).map(async ([peerUid, info]) => {
-                    const userData = await window.getUserData(peerUid);
-                    const profilePic = userData?.profile_pic;
-                    return { peerUid, info, profilePic };
-                });
+            container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+                let rawLastMsg = info.lastMessage || "";
+                let displayMsg = rawLastMsg;
+                let isMe = false;
 
-                const chatItems = await Promise.all(promises);
+                if (rawLastMsg.startsWith("You: ")) {
+                    isMe = true;
+                    rawLastMsg = rawLastMsg.substring(5);
+                }
 
-                container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
-                    let rawLastMsg = info.lastMessage || "";
-                    let displayMsg = rawLastMsg;
-
-                    let prefix = "";
-                    if (rawLastMsg.startsWith("You: ")) {
-                        prefix = "You: ";
-                        rawLastMsg = rawLastMsg.substring(5);
-                    }
-
+                if (rawLastMsg.includes("[Unsent]")) {
+                    displayMsg = isMe ? "You unsent a message" : "Message unsent";
+                } else {
                     if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
-                        try { rawLastMsg = window.decryptMsg(rawLastMsg); } 
-                        catch(e) { rawLastMsg = "মেসেজটি পড়া যাচ্ছে না"; }
+                        rawLastMsg = window.decryptMsg(rawLastMsg);
                     }
-                    displayMsg = prefix + rawLastMsg;
+                    displayMsg = (isMe ? "You: " : "") + rawLastMsg;
+                }
+                
+                const fontWeight = (info.unread > 0 && !isMe) ? 'font-extrabold text-black' : 'font-normal text-gray-500';
 
-                    let av = profilePic ?
-                        `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
-                        `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
+                let av = profilePic ?
+                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
+                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
 
-                    return `
-                <div onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')" class="p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3">
-                    ${av}
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-center mb-0.5">
-                            <h4 class="font-bold text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                            <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
-                        </div>
-                        <p class="text-sm text-gray-500 truncate block">${window.escapeHTML(displayMsg)}</p>
+                return `
+            <div id="chat-item-${peerUid}" class="chat-list-item p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 select-none" 
+                 onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')"
+                 oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(info.name)}'); return false;">
+                ${av}
+                <div class="flex-1 min-w-0 pointer-events-none">
+                    <div class="flex justify-between items-center mb-0.5">
+                        <h4 class="${info.unread > 0 ? 'font-bold' : 'font-semibold'} text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                        <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
                     </div>
-                </div>`;
-                }).join('');
-            } catch (err) {
-                container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটা লোড করতে সমস্যা হয়েছে</p>';
-                console.error("Error mapping chats:", err);
-            }
-        }, (error) => {
-            container.innerHTML = '<p class="text-center text-red-400 mt-10 text-sm">ডাটাবেস কানেকশনে সমস্যা</p>';
-            console.error("Firebase Read Error:", error);
-        });
-    } catch (error) {
-        console.error("Error in loadChatList:", error);
-    }
+                    <p class="text-sm ${fontWeight} truncate block">${window.escapeHTML(displayMsg)}</p>
+                </div>
+            </div>`;
+            }).join('');
+            
+            // Add Touch Long Press Logic for Mobile
+            document.querySelectorAll('.chat-list-item').forEach(el => {
+                let timer;
+                el.addEventListener('touchstart', (e) => {
+                    const uid = el.id.split('-')[2];
+                    const name = el.querySelector('h4').innerText;
+                    timer = setTimeout(() => {
+                        openChatListOptions(e, uid, name);
+                    }, 600); // 600ms long press
+                });
+                el.addEventListener('touchend', () => clearTimeout(timer));
+                el.addEventListener('touchmove', () => clearTimeout(timer));
+            });
+
+        } else {
+            container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+        }
+    });
 };
 
-// --- LOAD MESSAGES (Lazy Load, Status, Time, Profile Pics) ---
-window.loadMessages = (otherUid, isPagination = false) => {
+// --- CHAT LIST OPTIONS (Archive/Delete) ---
+window.openChatListOptions = (e, uid, name) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('chat-options-uid').value = uid;
+    document.getElementById('chat-options-name').innerText = name;
+    
+    const modal = document.getElementById('chat-list-options-modal');
+    const sheet = document.getElementById('chat-list-sheet');
+    modal.classList.remove('hidden');
+    setTimeout(() => sheet.classList.remove('translate-y-full'), 10);
+    
+    // Vibrate
+    if(navigator.vibrate) navigator.vibrate(50);
+};
+
+window.closeChatListOptions = () => {
+    const sheet = document.getElementById('chat-list-sheet');
+    sheet.classList.add('translate-y-full');
+    setTimeout(() => document.getElementById('chat-list-options-modal').classList.add('hidden'), 300);
+};
+
+window.archiveChat = () => {
+    const uid = document.getElementById('chat-options-uid').value;
+    const isArchiving = !showArchived; 
+    
+    if(isArchiving) {
+        set(ref(window.db, `user_archived_chats/${window.currentUser.uid}/${uid}`), true);
+        window.showToast("চ্যাট আর্কাইভে পাঠানো হয়েছে");
+    } else {
+        remove(ref(window.db, `user_archived_chats/${window.currentUser.uid}/${uid}`));
+        window.showToast("আর্কাইভ থেকে সরানো হয়েছে");
+    }
+    closeChatListOptions();
+    window.loadChatList(window.currentUser.uid); // Refresh
+};
+
+window.deleteChatConversation = () => {
+    if(!confirm("পুরো কনভারসেশন ডিলিট করবেন? এটি আর ফিরে পাবেন না।")) return;
+    const uid = document.getElementById('chat-options-uid').value;
+    const chatId = window.getChatId(window.currentUser.uid, uid);
+    
+    // Delete for ME only (Remove from user_chats)
+    remove(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`)).then(() => {
+        window.showToast("কনভারসেশন ডিলিট হয়েছে");
+        closeChatListOptions();
+    });
+};
+
+// --- LOAD MESSAGES & SWIPE TO REPLY ---
+window.loadMessages = (otherUid) => {
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
+    div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
     
-    if (!isPagination) {
-        div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
-    }
-
-    // Handle Scroll for Lazy Loading
-    div.onscroll = () => {
-        if (div.scrollTop === 0 && !isFetchingOlder) {
-            isFetchingOlder = true;
-            lastScrollHeight = div.scrollHeight;
-            currentChatLimit += 20; // Load 20 more messages
-            window.loadMessages(otherUid, true);
-        }
-    };
-
-    if (currentChatUnsubscribe) {
-        currentChatUnsubscribe(); // Unsubscribe previous listener
-    }
-
-    try {
-        currentChatUnsubscribe = onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(currentChatLimit)), (snap) => {
-            const msgs = snap.val() || {};
+    onValue(query(ref(window.db, `chats/${chatId}`), limitToLast(50)), (snap) => {
+        const msgs = snap.val() || {};
+        if (Object.keys(msgs).length > 0) {
             
-            if (Object.keys(msgs).length > 0) {
-                let html = '';
-                let updatesForSeen = {}; // To mark messages as seen
-                let unreadFound = false;
-
-                Object.entries(msgs).forEach(([msgId, m]) => {
-                    // Skip if removed for me
-                    if (m[`deletedFor_${window.currentUser.uid}`]) return;
-
-                    const isMe = m.sender === window.currentUser.uid;
-                    let content = '';
-
-                    // Mark as Seen logic
-                    if (!isMe && m.status !== 'seen') {
-                        updatesForSeen[`chats/${chatId}/${msgId}/status`] = 'seen';
-                        unreadFound = true;
+            div.innerHTML = Object.entries(msgs).map(([msgId, m]) => {
+                const isMe = m.sender === window.currentUser.uid;
+                
+                // --- Message Status Icon ---
+                let statusIcon = '';
+                if(isMe) {
+                    if (m.status === 'seen') {
+                        statusIcon = `<img src="${document.getElementById('chat-header-img').querySelector('img')?.src || ''}" class="w-3 h-3 rounded-full ml-1 inline-block">`;
+                    } else {
+                        statusIcon = `<i class="fa-solid fa-circle-check text-[10px] text-gray-400 ml-1"></i>`; // Sent
                     }
+                }
 
-                    // Reply Context
-                    if (m.replyToText) {
-                        content += `<div class="bg-black bg-opacity-10 p-2 rounded text-xs mb-1 border-l-4 border-green-500 opacity-70">${window.escapeHTML(m.replyToText)}</div>`;
-                    }
-
-                    // Content types
-                    if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
-                    if (m.audio) content += `<audio controls class="max-w-[200px] h-8 mb-1"><source src="${m.audio}" type="audio/webm">Your browser does not support audio.</audio>`;
-                    if (m.text) {
-                        try {
-                            const decrypted = window.decryptMsg(m.text);
-                            content += `<span>${window.escapeHTML(decrypted)}</span>`;
-                        } catch(e) { content += `<span>[Error decrypting]</span>`; }
-                    }
-
-                    // Message Status Indicator (For my messages)
-                    let statusIcon = '';
-                    if (isMe) {
-                        if (m.status === 'seen') {
-                            statusIcon = window.currentChatUser.profile_pic ? 
-                                `<img src="${window.currentChatUser.profile_pic}" class="w-3 h-3 rounded-full ml-1 inline-block object-cover" title="Seen">` : 
-                                `<i class="fa-solid fa-circle-check text-green-500 text-[10px] ml-1" title="Seen"></i>`;
-                        } else if (m.status === 'delivered') {
-                            statusIcon = `<i class="fa-solid fa-circle-check text-gray-500 text-[10px] ml-1" title="Delivered"></i>`;
-                        } else {
-                            // Default to Sent
-                            statusIcon = `<i class="fa-regular fa-circle-check text-gray-400 text-[10px] ml-1" title="Sent"></i>`;
-                        }
-                    }
-
-                    // Time and Status String
-                    const timeStr = `<div class="text-[10px] text-gray-400 mt-1 flex items-center justify-end w-full">${window.formatMessageTime(m.timestamp)} ${statusIcon}</div>`;
-
-                    // Profile Pic for friend
-                    let profilePicHtml = '';
-                    if (!isMe) {
-                        let pPic = window.currentChatUser.profile_pic ? 
-                            `<img src="${window.currentChatUser.profile_pic}" class="w-6 h-6 rounded-full object-cover">` : 
-                            `<div class="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center text-xs font-bold text-green-800">${window.currentChatUser.name.charAt(0)}</div>`;
-                        profilePicHtml = `<div class="mr-2 self-end mb-1">${pPic}</div>`;
-                    }
-
-                    // Wrapper
-                    let rawText = m.text ? window.decryptMsg(m.text).replace(/'/g, "\\'") : (m.image ? "Photo" : "Voice Note");
-
-                    html += `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-3" 
-                         id="msg-wrap-${msgId}"
-                         ontouchstart="handleMsgTouchStart(event, '${msgId}', '${rawText}', ${isMe})" 
-                         ontouchend="handleMsgTouchEnd(event)" 
-                         ontouchmove="handleMsgTouchMove(event)">
-                         
-                        ${profilePicHtml}
-                        <div class="px-4 py-2 max-w-[75%] rounded-2xl shadow-sm text-sm flex flex-col ${isMe ? 'bg-green-500 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'}">
-                            ${content}
-                            ${timeStr}
+                // --- Unsent Logic ---
+                if (m.isUnsent) {
+                    return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2">
+                        <div class="px-4 py-2 max-w-[75%] text-sm bg-white border border-gray-200 text-gray-400 italic rounded-full shadow-sm">
+                            ${isMe ? 'You unsent a message' : 'Message unsent'}
                         </div>
                     </div>`;
-                });
-
-                div.innerHTML = html;
-
-                // Update seen status in DB
-                if (unreadFound) {
-                    update(ref(window.db), updatesForSeen).catch(console.error);
                 }
 
-                // Adjust Scroll Position
-                if (isPagination) {
-                    div.scrollTop = div.scrollHeight - lastScrollHeight;
-                    isFetchingOlder = false;
-                } else {
-                    setTimeout(() => { div.scrollTop = div.scrollHeight; }, 50);
+                let content = '';
+                
+                // Reply Block
+                if (m.replyTo) {
+                    let repText = m.replyTo.text.includes("📷") ? "Photo" : (m.replyTo.text.includes("🎤") ? "Voice" : window.escapeHTML(window.decryptMsg(m.replyTo.text)));
+                    content += `<div class="bg-black bg-opacity-10 border-l-2 border-green-700 pl-2 pr-2 py-1 mb-1 rounded text-[11px] opacity-80 truncate">
+                        <span class="font-bold">${m.replyTo.name}</span><br>${repText}
+                    </div>`;
                 }
 
-            } else {
-                div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">কথপোকথন শুরু করুন</p>';
+                if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
+                
+                if (m.voice) {
+                    content += `<audio controls src="${m.voice}" class="h-8 max-w-[200px]"></audio>`;
+                }
+
+                if (m.text) {
+                    const decrypted = window.decryptMsg(m.text);
+                    content += `<span>${window.escapeHTML(decrypted)}</span>`;
+                }
+
+                // Delete For Me Check (Don't render if hidden for me)
+                if (m.deletedFor && m.deletedFor[window.currentUser.uid]) return '';
+
+                return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 msg-bubble-wrap" id="msg-wrap-${msgId}">
+                    <div id="msg-${msgId}" 
+                         class="msg-bubble px-4 py-2 max-w-[75%] text-[15px] shadow-sm transform transition-transform ${isMe ? 'chat-bubble-me' : 'chat-bubble-other'}"
+                         data-id="${msgId}" data-text="${window.escapeHTML(m.text ? window.decryptMsg(m.text) : (m.image?'Photo':'Voice'))}" data-sender="${isMe ? 'me' : 'other'}">
+                        ${content}
+                    </div>
+                    <div class="flex items-end mb-1">${statusIcon}</div>
+                </div>`;
+            }).join('');
+
+            // Scroll to bottom
+            setTimeout(() => div.scrollTop = div.scrollHeight, 100);
+            
+            // --- Initialize Swipe & Long Press ---
+            initMessageInteractions();
+
+            // Mark as Seen logic
+            const lastMsgKey = Object.keys(msgs).pop();
+            const lastMsg = msgs[lastMsgKey];
+            if(lastMsg.sender !== window.currentUser.uid && lastMsg.status !== 'seen') {
+                update(ref(window.db, `chats/${chatId}/${lastMsgKey}`), { status: 'seen' });
             }
-        }, (error) => {
-            console.error("Error fetching messages:", error);
-            div.innerHTML = '<p class="text-center text-red-400 mt-4">মেসেজ লোড করতে সমস্যা হয়েছে</p>';
-        });
-    } catch (error) {
-        console.error("Setup listener error:", error);
-    }
-};
 
-// --- SEND MESSAGE & IMAGE UPLOAD ---
-window.sendMsg = async (imageUrl = null, audioUrl = null) => {
-    if (!window.currentChatUser) return;
-    const input = document.getElementById('msg-input');
-    const text = input.value.trim();
-    if (!text && !imageUrl && !audioUrl) return;
-    
-    const btn = document.getElementById('btn-chat-send');
-    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
-    const ts = Date.now();
-
-    try {
-        const encryptedText = text ? window.encryptMsg(text) : "";
-        const msgData = { 
-            sender: window.currentUser.uid, 
-            timestamp: ts,
-            status: 'sent' // Initial status
-        };
-        
-        if (text) msgData.text = encryptedText;
-        if (imageUrl) msgData.image = imageUrl;
-        if (audioUrl) msgData.audio = audioUrl;
-
-        // Attach reply info
-        if (window.currentReplyTo) {
-            msgData.replyToText = window.currentReplyTo;
-        }
-
-        // Push to Firebase
-        await push(ref(window.db, `chats/${chatId}`), msgData);
-
-        // Update Last Message
-        let lastMsgText = encryptedText;
-        if (imageUrl) lastMsgText = text ? "📷 " + encryptedText : "📷 ছবি পাঠিয়েছেন";
-        if (audioUrl) lastMsgText = "🎤 ভয়েস মেসেজ";
-
-        const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsgText, timestamp: ts };
-        const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsgText, timestamp: ts };
-
-        update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
-        update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
-
-        // Reset UI
-        input.value = "";
-        window.cancelReply(); 
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-        btn.disabled = false;
-        
-        // Scroll to bottom
-        const div = document.getElementById('messages-container');
-        setTimeout(() => { div.scrollTop = div.scrollHeight; }, 50);
-
-    } catch (error) {
-        console.error("Error sending message:", error);
-        window.showToast("মেসেজ পাঠাতে সমস্যা হয়েছে", "error");
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-        btn.disabled = false;
-    }
+        } else div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">কথপোকথন শুরু করুন</p>';
+    });
 };
 
 // --- SWIPE TO REPLY & LONG PRESS LOGIC ---
-let touchStartX = 0;
-let touchEndX = 0;
+function initMessageInteractions() {
+    const bubbles = document.querySelectorAll('.msg-bubble');
+    bubbles.forEach(bubble => {
+        let startX = 0;
+        let isSwiping = false;
+        let pressTimer;
 
-window.handleMsgTouchStart = (e, msgId, msgText, isMe) => {
-    touchStartX = e.changedTouches[0].screenX;
+        // Long Press
+        bubble.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isSwiping = false;
+            pressTimer = setTimeout(() => {
+                if(!isSwiping) openMsgOptions(bubble);
+            }, 600);
+        }, {passive: true});
+
+        // Swipe
+        bubble.addEventListener('touchmove', (e) => {
+            const currentX = e.touches[0].clientX;
+            const diffX = currentX - startX;
+            
+            if(Math.abs(diffX) > 10) {
+                isSwiping = true;
+                clearTimeout(pressTimer);
+            }
+
+            // Swipe right to reply (only allow positive X)
+            if (diffX > 0 && diffX < 80) {
+                bubble.style.transform = `translateX(${diffX}px)`;
+            }
+        }, {passive: true});
+
+        bubble.addEventListener('touchend', (e) => {
+            clearTimeout(pressTimer);
+            const style = window.getComputedStyle(bubble);
+            const matrix = new WebKitCSSMatrix(style.transform);
+            
+            if (matrix.m41 > 50) {
+                // Trigger Reply
+                const id = bubble.getAttribute('data-id');
+                const text = bubble.getAttribute('data-text');
+                const sender = bubble.getAttribute('data-sender');
+                const name = sender === 'me' ? 'You' : window.currentChatUser.name;
+                setReplyMode(id, text, name);
+                if(navigator.vibrate) navigator.vibrate(40);
+            }
+            
+            // Snap back
+            bubble.style.transform = 'translateX(0)';
+        });
+    });
+}
+
+// --- MESSAGE OPTIONS (UNSEND / DELETE) ---
+window.openMsgOptions = (element) => {
+    const id = element.getAttribute('data-id');
+    const text = element.getAttribute('data-text');
+    const isMe = element.getAttribute('data-sender') === 'me';
     
-    pressTimer = setTimeout(() => {
-        window.openMsgOptions(msgId, msgText, isMe);
-    }, 600);
-};
-
-window.handleMsgTouchMove = (e) => {
-    clearTimeout(pressTimer); 
-};
-
-window.handleMsgTouchEnd = (e) => {
-    clearTimeout(pressTimer); 
+    document.getElementById('msg-options-id').value = id;
+    document.getElementById('msg-options-text').value = text;
     
-    touchEndX = e.changedTouches[0].screenX;
-    if (touchEndX - touchStartX > 60) {
-        window.setupReply(e.currentTarget.innerText.split('\n')[0].substring(0, 30) + '...');
+    if(isMe) {
+        document.getElementById('msg-sender-options').classList.remove('hidden');
+    } else {
+        document.getElementById('msg-sender-options').classList.add('hidden');
     }
-};
 
-window.setupReply = (text) => {
-    window.currentReplyTo = text;
-    document.getElementById('reply-context-view').classList.remove('hidden');
-    document.getElementById('reply-to-msg').innerText = text;
-    document.getElementById('msg-input').focus();
-};
-
-window.cancelReply = () => {
-    window.currentReplyTo = null;
-    document.getElementById('reply-context-view').classList.add('hidden');
-};
-
-// --- MESSAGE OPTIONS (UNSEND, REMOVE, FORWARD) ---
-window.openMsgOptions = (msgId, text, isMe) => {
-    window.selectedMsgForOptions = { msgId, text };
     document.getElementById('msg-options-modal').classList.remove('hidden');
-    
-    const unsendBtn = document.getElementById('btn-unsend');
-    if(isMe) unsendBtn.style.display = 'flex';
-    else unsendBtn.style.display = 'none';
-
     if(navigator.vibrate) navigator.vibrate(50);
 };
 
 window.closeMsgOptions = () => {
     document.getElementById('msg-options-modal').classList.add('hidden');
-    window.selectedMsgForOptions = null;
 };
 
-window.unsendMessage = async () => {
-    if(!window.selectedMsgForOptions || !window.currentChatUser) return;
-    try {
-        const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
-        await remove(ref(window.db, `chats/${chatId}/${window.selectedMsgForOptions.msgId}`));
-        window.showToast("Message Unsent");
-        window.closeMsgOptions();
-    } catch (error) {
-        window.showToast("Unsend করতে সমস্যা হয়েছে", "error");
-    }
+window.replyToMsgFromOptions = () => {
+    const id = document.getElementById('msg-options-id').value;
+    const text = document.getElementById('msg-options-text').value;
+    // For options modal, we assume 'other' unless we parse, simplified to peer name
+    setReplyMode(id, text, window.currentChatUser.name);
+    closeMsgOptions();
 };
 
-window.removeMessageForMe = async () => {
-    if(!window.selectedMsgForOptions || !window.currentChatUser) return;
-    try {
-        const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
-        let updates = {};
-        updates[`deletedFor_${window.currentUser.uid}`] = true;
-        await update(ref(window.db, `chats/${chatId}/${window.selectedMsgForOptions.msgId}`), updates);
-        window.closeMsgOptions();
-    } catch (error) {
-        window.showToast("Remove করতে সমস্যা হয়েছে", "error");
-    }
+window.copyMsgText = () => {
+    const text = document.getElementById('msg-options-text').value;
+    navigator.clipboard.writeText(text).then(() => window.showToast("কপি হয়েছে"));
+    closeMsgOptions();
 };
 
-// --- FORWARD MESSAGE LOGIC ---
-window.forwardMessage = () => {
-    document.getElementById('msg-options-modal').classList.add('hidden');
-    document.getElementById('forward-modal').classList.remove('hidden');
+window.forwardMsg = () => {
+    window.showToast("ফরোয়ার্ড ফিচারটি আপডেটে আসবে", "error");
+    closeMsgOptions();
+};
+
+window.unsendMsg = () => {
+    const msgId = document.getElementById('msg-options-id').value;
+    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
     
-    const div = document.getElementById('forward-friends-list');
-    
-    if (!window.myFriends || window.myFriends.length === 0) {
-        div.innerHTML = '<p class="text-center text-gray-400 mt-4">কোনো বন্ধু নেই</p>';
-        return;
-    }
+    update(ref(window.db, `chats/${chatId}/${msgId}`), {
+        isUnsent: true,
+        text: null,
+        image: null,
+        voice: null
+    }).then(() => {
+        // Update last message in chat list
+        update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), { lastMessage: "You: [Unsent]" });
+        update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), { lastMessage: "[Unsent]" });
+    });
+    closeMsgOptions();
+};
 
-    Promise.all(window.myFriends.map(uid => window.getUserData(uid)))
-    .then(friendsData => {
-        div.innerHTML = friendsData.filter(u => u).map(u => {
-            return `
-            <div class="flex items-center justify-between p-3 border-b hover:bg-gray-50">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700">
-                        ${u.profile_pic ? `<img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover">` : u.name.charAt(0)}
-                    </div>
-                    <span class="font-bold text-gray-800">${window.escapeHTML(u.name)}</span>
-                </div>
-                <button onclick="doForward('${u.uid}')" class="bg-green-500 text-white px-4 py-1 rounded-full text-sm">Send</button>
-            </div>`;
-        }).join('');
-    }).catch(error => {
-        div.innerHTML = '<p class="text-center text-red-400 mt-4">বন্ধু তালিকা লোড হয়নি</p>';
+window.removeMsgForMe = () => {
+    const msgId = document.getElementById('msg-options-id').value;
+    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
+    
+    // Sets a flag that this user deleted it
+    update(ref(window.db, `chats/${chatId}/${msgId}/deletedFor`), {
+        [window.currentUser.uid]: true
+    });
+    closeMsgOptions();
+};
+
+// --- REPLY UI LOGIC ---
+function setReplyMode(id, text, name) {
+    replyMessageData = { id, text, name };
+    document.getElementById('reply-preview-name').innerText = name;
+    document.getElementById('reply-preview-text').innerText = text;
+    document.getElementById('reply-preview-box').classList.remove('hidden');
+    document.getElementById('msg-input').focus();
+}
+
+window.cancelReply = () => {
+    replyMessageData = null;
+    document.getElementById('reply-preview-box').classList.add('hidden');
+};
+
+// --- TYPING INDICATOR ---
+let typingTimeout;
+window.triggerTyping = () => {
+    if(!window.currentChatUser) return;
+    const typingRef = ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`);
+    
+    set(typingRef, true);
+    clearTimeout(typingTimeout);
+    
+    typingTimeout = setTimeout(() => {
+        set(typingRef, false);
+    }, 2000);
+};
+
+window.listenToTyping = (otherUid) => {
+    onValue(ref(window.db, `chats_typing/${window.currentUser.uid}/${otherUid}`), (snap) => {
+        const isTyping = snap.val();
+        const statusEl = document.getElementById('chat-typing-status');
+        if(isTyping) {
+            statusEl.classList.remove('hidden');
+        } else {
+            statusEl.classList.add('hidden');
+        }
     });
 };
 
-window.closeForwardModal = () => {
-    document.getElementById('forward-modal').classList.add('hidden');
-};
+// --- VOICE MESSAGE LOGIC ---
+let chatMediaRecorder;
+let chatAudioChunks = [];
+let chatRecordingTimer;
+let chatRecSeconds = 0;
 
-window.doForward = async (targetUid) => {
-    if(!window.selectedMsgForOptions) return;
-    try {
-        const chatId = window.getChatId(window.currentUser.uid, targetUid);
-        const ts = Date.now();
-        const encryptedText = window.encryptMsg(window.selectedMsgForOptions.text);
-
-        const msgData = { 
-            sender: window.currentUser.uid, 
-            timestamp: ts,
-            text: encryptedText,
-            status: 'sent'
-        };
-
-        await push(ref(window.db, `chats/${chatId}`), msgData);
-        window.showToast("Forwarded Successfully");
-        window.closeForwardModal();
-    } catch (error) {
-        window.showToast("Forward করতে সমস্যা হয়েছে", "error");
-    }
-};
-
-// --- VOICE RECORDING LOGIC ---
-window.startVoiceRecord = async () => {
-    const btn = document.getElementById('btn-voice-record');
-    btn.classList.add('text-red-500', 'bg-red-100'); 
-    btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
-
+window.startChatVoiceRecord = async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
+        chatMediaRecorder = new MediaRecorder(stream);
+        chatAudioChunks = [];
 
-        mediaRecorder.ondataavailable = e => {
-            audioChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = () => {
-            try {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const audioFile = new File([audioBlob], "voice_msg.webm", { type: 'audio/webm' });
-                
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-gray-500"></i>';
-                btn.classList.remove('text-red-500', 'bg-red-100');
-                
-                window.uploadMediaToCloudinary(audioFile).then(res => {
-                    window.sendMsg(null, res.url); 
-                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-                }).catch(e => {
-                    window.showToast("ভয়েস আপলোডে সমস্যা!", 'error');
-                    btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-                });
-            } catch (err) {
-                window.showToast("ভয়েস প্রসেসিং এ সমস্যা", "error");
-                btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-            }
-        };
-
-        mediaRecorder.start();
-    } catch (err) {
-        console.error(err);
-        window.showToast("মাইক্রোফোনের পারমিশন দিন!", "error");
-        btn.classList.remove('text-red-500', 'bg-red-100');
-        btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-    }
-};
-
-window.stopVoiceRecord = () => {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-        mediaRecorder.stop();
-        mediaRecorder.stream.getTracks().forEach(track => track.stop()); 
-    }
-};
-
-// --- IMAGE SELECTION LOGIC ---
-window.handleChatImageSelect = () => {
-    try {
-        const file = document.getElementById('chat-img-input').files[0];
-        if (file) {
+        chatMediaRecorder.ondataavailable = e => chatAudioChunks.push(e.data);
+        
+        chatMediaRecorder.onstop = async () => {
+            const blob = new Blob(chatAudioChunks, { type: 'audio/mp3' });
+            const file = new File([blob], "voice.mp3", { type: 'audio/mp3' });
+            
+            // Upload & Send
             const btn = document.getElementById('btn-chat-send');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
-            window.uploadMediaToCloudinary(file).then(res => {
-                window.sendMsg(res.url, null); 
-                document.getElementById('chat-img-input').value = "";
-            }).catch(e => {
-                window.showToast("ছবি আপলোড হয়নি", 'error');
+            try {
+                const res = await window.uploadMediaToCloudinary(file); // From your main code
+                window.sendMsg(null, res.url);
+            } catch(e) {
+                window.showToast("ভয়েস পাঠানো যায়নি", "error");
+            } finally {
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 btn.disabled = false;
-            });
-        }
-    } catch (error) {
-        window.showToast("ছবি সিলেক্ট করতে সমস্যা", "error");
+                window.cancelChatVoice();
+            }
+        };
+
+        chatMediaRecorder.start();
+        
+        // UI
+        document.getElementById('chat-input-ui').classList.add('hidden');
+        document.getElementById('chat-voice-ui').classList.remove('hidden');
+        document.getElementById('chat-voice-ui').classList.add('flex');
+        
+        // Timer
+        chatRecSeconds = 0;
+        chatRecordingTimer = setInterval(() => {
+            chatRecSeconds++;
+            const m = Math.floor(chatRecSeconds / 60).toString().padStart(2, '0');
+            const s = (chatRecSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('chat-voice-timer').innerText = `${m}:${s}`;
+        }, 1000);
+
+    } catch(err) {
+        window.showToast("মাইক্রোফোন পারমিশন দিন", "error");
     }
+};
+
+window.cancelChatVoice = () => {
+    if(chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
+        chatMediaRecorder.stop();
+        chatMediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+    clearInterval(chatRecordingTimer);
+    document.getElementById('chat-input-ui').classList.remove('hidden');
+    document.getElementById('chat-voice-ui').classList.add('hidden');
+    document.getElementById('chat-voice-ui').classList.remove('flex');
+};
+
+window.sendChatVoice = () => {
+    if(chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
+        chatMediaRecorder.stop(); // Triggers onstop which handles upload
+        clearInterval(chatRecordingTimer);
+    }
+};
+
+// --- SEND MESSAGE OVERRIDE ---
+window.handleChatImageSelect = () => {
+    const file = document.getElementById('chat-img-input').files[0];
+    if (file) {
+        const btn = document.getElementById('btn-chat-send');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        window.uploadMediaToCloudinary(file).then(res => {
+            window.sendMsg(res.url, null);
+            document.getElementById('chat-img-input').value = "";
+        }).catch(e => {
+            window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+            btn.disabled = false;
+        });
+    }
+};
+
+window.sendMsg = (imageUrl = null, voiceUrl = null) => {
+    if (!window.currentChatUser) return;
+    const input = document.getElementById('msg-input');
+    const text = input.value.trim();
+    if (!text && !imageUrl && !voiceUrl) return;
+    
+    const btn = document.getElementById('btn-chat-send');
+    const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
+    const ts = Date.now();
+
+    const encryptedText = text ? window.encryptMsg(text) : "";
+    const msgData = { 
+        sender: window.currentUser.uid, 
+        timestamp: ts,
+        status: 'sent' // Default status
+    };
+    
+    if (text) msgData.text = encryptedText;
+    if (imageUrl) msgData.image = imageUrl;
+    if (voiceUrl) msgData.voice = voiceUrl;
+    if (replyMessageData) msgData.replyTo = replyMessageData;
+
+    push(ref(window.db, `chats/${chatId}`), msgData);
+
+    let lastMsg = encryptedText;
+    if (imageUrl) lastMsg = text ? "📷 " + encryptedText : "📷 Photo";
+    if (voiceUrl) lastMsg = "🎤 Voice message";
+
+    const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsg, timestamp: ts };
+    const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsg, timestamp: ts };
+
+    // Update unread count for peer
+    get(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}/unread`)).then(snap => {
+        let count = snap.val() || 0;
+        peerUpdate.unread = count + 1;
+        update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), peerUpdate);
+    });
+
+    update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
+
+    // Reset UI
+    input.value = "";
+    cancelReply();
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    btn.disabled = false;
+    
+    // Stop typing indicator
+    set(ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`), false);
 };
