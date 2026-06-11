@@ -19,7 +19,6 @@ window.startChat = (uid, name) => {
     document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
     document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-green-100 flex items-center justify-center">${window.escapeHTML(name).charAt(0)}</div>`;
     
-    // User image if available
     window.getUserData(uid).then(u => {
         if(u && u.profile_pic) {
             document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover">`;
@@ -30,7 +29,6 @@ window.startChat = (uid, name) => {
     window.loadMessages(uid);
     window.listenToTyping(uid);
     
-    // Mark messages as seen
     const chatId = window.getChatId(window.currentUser.uid, uid);
     update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 });
 };
@@ -41,19 +39,22 @@ window.closeChat = () => {
     window.currentChatUser = null;
     cancelReply();
     
-    // Stop typing
+    if (window.currentPlayingAudio) {
+        window.currentPlayingAudio.pause();
+        window.currentPlayingAudio = null;
+    }
+    
     if(window.currentUser) {
         set(ref(window.db, `chats_typing/${window.currentUser.uid}`), false);
     }
 };
 
-// --- SEARCH FRIENDS FOR CHAT ---
 window.searchChatFriends = async (val) => {
     const q = val.toLowerCase().trim();
     const container = document.getElementById('chat-list-container');
     
     if (!q) {
-        window.loadChatList(window.currentUser.uid); // Reset
+        window.loadChatList(window.currentUser.uid); 
         return;
     }
     
@@ -78,7 +79,6 @@ window.searchChatFriends = async (val) => {
     }
 };
 
-// --- QUICK CHAT FRIENDS (Top Bar) ---
 window.loadQuickChatFriends = async () => {
     const div = document.getElementById('quick-chat-friends');
     if (!window.myFriends || window.myFriends.length === 0) {
@@ -94,7 +94,6 @@ window.loadQuickChatFriends = async () => {
     }).join('');
 };
 
-// --- CHAT LIST WITH LONG PRESS (ARCHIVE/DELETE) ---
 window.toggleArchivedChats = () => {
     showArchived = !showArchived;
     window.loadChatList(window.currentUser.uid);
@@ -106,7 +105,6 @@ window.loadChatList = (uid) => {
         const container = document.getElementById('chat-list-container');
         
         try {
-            // Fetch archive list
             const archSnap = await get(ref(window.db, `user_archived_chats/${uid}`));
             const archivedUids = archSnap.val() || {};
 
@@ -119,7 +117,6 @@ window.loadChatList = (uid) => {
                 let chatItems = await Promise.all(promises);
                 chatItems.sort((a, b) => b.info.timestamp - a.info.timestamp);
                 
-                // Filter based on Archive state
                 if(showArchived) {
                     chatItems = chatItems.filter(item => archivedUids[item.peerUid]);
                 } else {
@@ -171,7 +168,6 @@ window.loadChatList = (uid) => {
                 </div>`;
                 }).join('');
                 
-                // Add Touch Long Press Logic for Mobile
                 document.querySelectorAll('.chat-list-item').forEach(el => {
                     let timer;
                     el.addEventListener('touchstart', (e) => {
@@ -179,7 +175,7 @@ window.loadChatList = (uid) => {
                         const name = el.querySelector('h4').innerText;
                         timer = setTimeout(() => {
                             openChatListOptions(e, uid, name);
-                        }, 600); // 600ms long press
+                        }, 600);
                     });
                     el.addEventListener('touchend', () => clearTimeout(timer));
                     el.addEventListener('touchmove', () => clearTimeout(timer));
@@ -191,14 +187,9 @@ window.loadChatList = (uid) => {
         } catch (error) {
             console.error("Error processing chat list:", error);
         }
-    }, (error) => {
-        // Firebase Read Error
-        console.error("Firebase Read Error:", error);
-        document.getElementById('chat-list-container').innerHTML = `<p class="text-center text-red-500 mt-10 text-sm">ডাটাবেস লোড হতে সমস্যা হচ্ছে। (${error.message})</p>`;
     });
 };
 
-// --- CHAT LIST OPTIONS (Archive/Delete) ---
 window.openChatListOptions = (e, uid, name) => {
     e.preventDefault();
     e.stopPropagation();
@@ -209,8 +200,6 @@ window.openChatListOptions = (e, uid, name) => {
     const sheet = document.getElementById('chat-list-sheet');
     modal.classList.remove('hidden');
     setTimeout(() => sheet.classList.remove('translate-y-full'), 10);
-    
-    // Vibrate
     if(navigator.vibrate) navigator.vibrate(50);
 };
 
@@ -232,22 +221,104 @@ window.archiveChat = () => {
         window.showToast("আর্কাইভ থেকে সরানো হয়েছে");
     }
     closeChatListOptions();
-    window.loadChatList(window.currentUser.uid); // Refresh
+    window.loadChatList(window.currentUser.uid); 
 };
 
 window.deleteChatConversation = () => {
     if(!confirm("পুরো কনভারসেশন ডিলিট করবেন? এটি আর ফিরে পাবেন না।")) return;
     const uid = document.getElementById('chat-options-uid').value;
-    const chatId = window.getChatId(window.currentUser.uid, uid);
     
-    // Delete for ME only (Remove from user_chats)
     remove(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`)).then(() => {
         window.showToast("কনভারসেশন ডিলিট হয়েছে");
         closeChatListOptions();
     });
 };
 
-// --- LOAD MESSAGES & SWIPE TO REPLY ---
+// --- DATE FORMATTER ---
+function formatChatDate(timestamp) {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    
+    const options = { day: 'numeric', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options);
+}
+
+// --- CUSTOM AUDIO PLAYER LOGIC ---
+window.currentPlayingAudio = null;
+
+window.playCustomAudio = (audioId, btnElement) => {
+    const audio = document.getElementById(audioId);
+    const icon = btnElement.querySelector('i');
+
+    if (window.currentPlayingAudio && window.currentPlayingAudio !== audio) {
+        window.currentPlayingAudio.pause();
+        const prevBtnId = window.currentPlayingAudio.id.replace('audio-', 'btn-');
+        const prevIcon = document.getElementById(prevBtnId)?.querySelector('i');
+        if(prevIcon) {
+            prevIcon.classList.remove('fa-pause');
+            prevIcon.classList.add('fa-play');
+        }
+    }
+
+    if (audio.paused) {
+        audio.play();
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+        window.currentPlayingAudio = audio;
+    } else {
+        audio.pause();
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        window.currentPlayingAudio = null;
+    }
+};
+
+window.updateAudioProgress = (msgId) => {
+    const audio = document.getElementById(`audio-${msgId}`);
+    const progress = document.getElementById(`progress-${msgId}`);
+    const timeDisplay = document.getElementById(`time-${msgId}`);
+    
+    if (audio.duration) {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progress.style.width = `${percent}%`;
+        
+        const currentSecs = Math.floor(audio.currentTime);
+        const m = Math.floor(currentSecs / 60);
+        const s = (currentSecs % 60).toString().padStart(2, '0');
+        timeDisplay.innerText = `${m}:${s}`;
+    }
+};
+
+window.setAudioDuration = (msgId) => {
+    const audio = document.getElementById(`audio-${msgId}`);
+    const timeDisplay = document.getElementById(`time-${msgId}`);
+    if (audio.duration && audio.duration !== Infinity) {
+        const totalSecs = Math.floor(audio.duration);
+        const m = Math.floor(totalSecs / 60);
+        const s = (totalSecs % 60).toString().padStart(2, '0');
+        timeDisplay.innerText = `${m}:${s}`;
+    }
+};
+
+window.resetAudio = (msgId) => {
+    const btnIcon = document.getElementById(`btn-${msgId}`)?.querySelector('i');
+    const progress = document.getElementById(`progress-${msgId}`);
+    
+    if(btnIcon) {
+        btnIcon.classList.remove('fa-pause');
+        btnIcon.classList.add('fa-play');
+    }
+    if(progress) progress.style.width = '0%';
+    window.currentPlayingAudio = null;
+};
+
+
+// --- LOAD MESSAGES ---
 window.loadMessages = (otherUid) => {
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
@@ -257,31 +328,43 @@ window.loadMessages = (otherUid) => {
         const msgs = snap.val() || {};
         if (Object.keys(msgs).length > 0) {
             
-            div.innerHTML = Object.entries(msgs).map(([msgId, m]) => {
+            let html = "";
+            let lastDateStr = "";
+
+            Object.entries(msgs).forEach(([msgId, m]) => {
+                // Delete For Me Check (Don't render if hidden for me)
+                if (m.deletedFor && m.deletedFor[window.currentUser.uid]) return;
+
+                // --- Date Separator ---
+                const msgDateStr = formatChatDate(m.timestamp);
+                if (msgDateStr !== lastDateStr) {
+                    html += `<div class="text-center my-4"><span class="bg-gray-200 text-gray-600 text-[10px] font-bold px-3 py-1 rounded-full">${msgDateStr}</span></div>`;
+                    lastDateStr = msgDateStr;
+                }
+
                 const isMe = m.sender === window.currentUser.uid;
                 
-                // --- Message Status Icon ---
                 let statusIcon = '';
                 if(isMe) {
                     if (m.status === 'seen') {
                         statusIcon = `<img src="${document.getElementById('chat-header-img').querySelector('img')?.src || ''}" class="w-3 h-3 rounded-full ml-1 inline-block">`;
                     } else {
-                        statusIcon = `<i class="fa-solid fa-circle-check text-[10px] text-gray-400 ml-1"></i>`; // Sent
+                        statusIcon = `<i class="fa-solid fa-circle-check text-[10px] text-gray-400 ml-1"></i>`;
                     }
                 }
 
-                // --- Unsent Logic ---
                 if (m.isUnsent) {
-                    return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2">
-                        <div class="px-4 py-2 max-w-[75%] text-sm bg-white border border-gray-200 text-gray-400 italic rounded-full shadow-sm">
+                    html += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2">
+                        <div class="px-4 py-2 max-w-[75%] text-sm bg-white border border-gray-200 text-gray-400 italic rounded-full shadow-sm"
+                             data-id="${msgId}" data-sender="${isMe ? 'me' : 'other'}">
                             ${isMe ? 'You unsent a message' : 'Message unsent'}
                         </div>
                     </div>`;
+                    return;
                 }
 
                 let content = '';
                 
-                // Reply Block
                 if (m.replyTo) {
                     let repText = m.replyTo.text.includes("📷") ? "Photo" : (m.replyTo.text.includes("🎤") ? "Voice" : window.escapeHTML(window.decryptMsg(m.replyTo.text)));
                     content += `<div class="bg-black bg-opacity-10 border-l-2 border-green-700 pl-2 pr-2 py-1 mb-1 rounded text-[11px] opacity-80 truncate">
@@ -291,8 +374,26 @@ window.loadMessages = (otherUid) => {
 
                 if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
                 
+                // --- Custom Voice Player UI ---
                 if (m.voice) {
-                    content += `<audio controls src="${m.voice}" class="h-8 max-w-[200px]"></audio>`;
+                    const bgColor = isMe ? 'bg-green-700/20' : 'bg-gray-200';
+                    const textColor = isMe ? 'text-white' : 'text-gray-600';
+                    const progressColor = isMe ? 'bg-white' : 'bg-green-500';
+                    const playBtnColor = isMe ? 'bg-white text-green-600' : 'bg-green-500 text-white';
+
+                    content += `
+                    <div class="flex items-center gap-2 ${bgColor} p-2 rounded-full min-w-[200px] mt-1 mb-1">
+                        <button id="btn-${msgId}" onclick="playCustomAudio('audio-${msgId}', this)" class="w-8 h-8 ${playBtnColor} rounded-full flex items-center justify-center shrink-0 shadow-sm">
+                            <i class="fa-solid fa-play text-xs pl-0.5"></i>
+                        </button>
+                        <div class="flex-1">
+                            <div class="h-1.5 bg-black/10 rounded-full w-full relative overflow-hidden">
+                                <div id="progress-${msgId}" class="absolute top-0 left-0 h-1.5 ${progressColor} rounded-full w-0 transition-all duration-100"></div>
+                            </div>
+                        </div>
+                        <span id="time-${msgId}" class="text-[10px] ${textColor} font-bold w-8 text-center">0:00</span>
+                        <audio id="audio-${msgId}" src="${m.voice}" class="hidden" ontimeupdate="updateAudioProgress('${msgId}')" onended="resetAudio('${msgId}')" onloadedmetadata="setAudioDuration('${msgId}')"></audio>
+                    </div>`;
                 }
 
                 if (m.text) {
@@ -300,29 +401,23 @@ window.loadMessages = (otherUid) => {
                     content += `<span>${window.escapeHTML(decrypted)}</span>`;
                 }
 
-                // Delete For Me Check (Don't render if hidden for me)
-                if (m.deletedFor && m.deletedFor[window.currentUser.uid]) return '';
-
-                return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 msg-bubble-wrap" id="msg-wrap-${msgId}">
+                html += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 msg-bubble-wrap" id="msg-wrap-${msgId}">
                     <div id="msg-${msgId}" 
-                         class="msg-bubble px-4 py-2 max-w-[75%] text-[15px] shadow-sm transform transition-transform ${isMe ? 'chat-bubble-me' : 'chat-bubble-other'}"
+                         class="msg-bubble px-4 py-2 max-w-[75%] text-[15px] shadow-sm transform transition-transform ${isMe ? 'chat-bubble-me' : 'chat-bubble-other'} ${m.voice ? 'p-1' : ''}"
                          data-id="${msgId}" data-text="${window.escapeHTML(m.text ? window.decryptMsg(m.text) : (m.image?'Photo':'Voice'))}" data-sender="${isMe ? 'me' : 'other'}">
                         ${content}
                     </div>
                     <div class="flex items-end mb-1">${statusIcon}</div>
                 </div>`;
-            }).join('');
+            });
 
-            // Scroll to bottom
+            div.innerHTML = html;
             setTimeout(() => div.scrollTop = div.scrollHeight, 100);
-            
-            // --- Initialize Swipe & Long Press ---
             initMessageInteractions();
 
-            // Mark as Seen logic
             const lastMsgKey = Object.keys(msgs).pop();
             const lastMsg = msgs[lastMsgKey];
-            if(lastMsg.sender !== window.currentUser.uid && lastMsg.status !== 'seen') {
+            if(lastMsg && lastMsg.sender !== window.currentUser.uid && lastMsg.status !== 'seen') {
                 update(ref(window.db, `chats/${chatId}/${lastMsgKey}`), { status: 'seen' });
             }
 
@@ -338,7 +433,6 @@ function initMessageInteractions() {
         let isSwiping = false;
         let pressTimer;
 
-        // Long Press
         bubble.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
             isSwiping = false;
@@ -347,7 +441,6 @@ function initMessageInteractions() {
             }, 600);
         }, {passive: true});
 
-        // Swipe
         bubble.addEventListener('touchmove', (e) => {
             const currentX = e.touches[0].clientX;
             const diffX = currentX - startX;
@@ -357,7 +450,6 @@ function initMessageInteractions() {
                 clearTimeout(pressTimer);
             }
 
-            // Swipe right to reply (only allow positive X)
             if (diffX > 0 && diffX < 80) {
                 bubble.style.transform = `translateX(${diffX}px)`;
             }
@@ -369,7 +461,6 @@ function initMessageInteractions() {
             const matrix = new WebKitCSSMatrix(style.transform);
             
             if (matrix.m41 > 50) {
-                // Trigger Reply
                 const id = bubble.getAttribute('data-id');
                 const text = bubble.getAttribute('data-text');
                 const sender = bubble.getAttribute('data-sender');
@@ -377,8 +468,6 @@ function initMessageInteractions() {
                 setReplyMode(id, text, name);
                 if(navigator.vibrate) navigator.vibrate(40);
             }
-            
-            // Snap back
             bubble.style.transform = 'translateX(0)';
         });
     });
@@ -394,9 +483,9 @@ window.openMsgOptions = (element) => {
     document.getElementById('msg-options-text').value = text;
     
     if(isMe) {
-        document.getElementById('msg-sender-options').classList.remove('hidden');
+        document.getElementById('btn-unsend-msg').classList.remove('hidden');
     } else {
-        document.getElementById('msg-sender-options').classList.add('hidden');
+        document.getElementById('btn-unsend-msg').classList.add('hidden');
     }
 
     document.getElementById('msg-options-modal').classList.remove('hidden');
@@ -420,11 +509,6 @@ window.copyMsgText = () => {
     closeMsgOptions();
 };
 
-window.forwardMsg = () => {
-    window.showToast("ফরোয়ার্ড ফিচারটি আপডেটে আসবে", "error");
-    closeMsgOptions();
-};
-
 window.unsendMsg = () => {
     const msgId = document.getElementById('msg-options-id').value;
     const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
@@ -435,7 +519,6 @@ window.unsendMsg = () => {
         image: null,
         voice: null
     }).then(() => {
-        // Update last message in chat list
         update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), { lastMessage: "You: [Unsent]" });
         update(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}`), { lastMessage: "[Unsent]" });
     });
@@ -446,9 +529,12 @@ window.removeMsgForMe = () => {
     const msgId = document.getElementById('msg-options-id').value;
     const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
     
-    // Sets a flag that this user deleted it
     update(ref(window.db, `chats/${chatId}/${msgId}/deletedFor`), {
         [window.currentUser.uid]: true
+    }).then(() => {
+        // রিয়েল টাইমে UI থেকে সরানোর জন্য
+        const msgWrap = document.getElementById(`msg-wrap-${msgId}`);
+        if(msgWrap) msgWrap.remove();
     });
     closeMsgOptions();
 };
@@ -511,13 +597,12 @@ window.startChatVoiceRecord = async () => {
             const blob = new Blob(chatAudioChunks, { type: 'audio/mp3' });
             const file = new File([blob], "voice.mp3", { type: 'audio/mp3' });
             
-            // Upload & Send
             const btn = document.getElementById('btn-chat-send');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
             try {
-                const res = await window.uploadMediaToCloudinary(file); // From your main code
+                const res = await window.uploadMediaToCloudinary(file);
                 window.sendMsg(null, res.url);
             } catch(e) {
                 window.showToast("ভয়েস পাঠানো যায়নি", "error");
@@ -530,12 +615,10 @@ window.startChatVoiceRecord = async () => {
 
         chatMediaRecorder.start();
         
-        // UI
         document.getElementById('chat-input-ui').classList.add('hidden');
         document.getElementById('chat-voice-ui').classList.remove('hidden');
         document.getElementById('chat-voice-ui').classList.add('flex');
         
-        // Timer
         chatRecSeconds = 0;
         chatRecordingTimer = setInterval(() => {
             chatRecSeconds++;
@@ -562,7 +645,7 @@ window.cancelChatVoice = () => {
 
 window.sendChatVoice = () => {
     if(chatMediaRecorder && chatMediaRecorder.state !== 'inactive') {
-        chatMediaRecorder.stop(); // Triggers onstop which handles upload
+        chatMediaRecorder.stop(); 
         clearInterval(chatRecordingTimer);
     }
 };
@@ -600,7 +683,7 @@ window.sendMsg = (imageUrl = null, voiceUrl = null) => {
     const msgData = { 
         sender: window.currentUser.uid, 
         timestamp: ts,
-        status: 'sent' // Default status
+        status: 'sent' 
     };
     
     if (text) msgData.text = encryptedText;
@@ -617,7 +700,6 @@ window.sendMsg = (imageUrl = null, voiceUrl = null) => {
     const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsg, timestamp: ts };
     const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsg, timestamp: ts };
 
-    // Update unread count for peer
     get(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}/unread`)).then(snap => {
         let count = snap.val() || 0;
         peerUpdate.unread = count + 1;
@@ -626,13 +708,11 @@ window.sendMsg = (imageUrl = null, voiceUrl = null) => {
 
     update(ref(window.db, `user_chats/${window.currentUser.uid}/${window.currentChatUser.uid}`), myUpdate);
 
-    // Reset UI
     input.value = "";
     cancelReply();
     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     btn.disabled = false;
     
-    // Stop typing indicator
     set(ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`), false);
 };
 
