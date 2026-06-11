@@ -1,20 +1,18 @@
-<!-- fifa-ui.html -->
-<div class="p-4 bg-gray-100 min-h-screen pb-20">
-    <div class="bg-gradient-to-r from-green-800 to-green-600 rounded-2xl p-5 text-white shadow-lg mb-4 relative overflow-hidden">
-        <i class="fa-solid fa-futbol absolute -right-4 -bottom-4 text-7xl opacity-20 transform rotate-12"></i>
-        <h2 class="text-2xl font-bold mb-1">ফিফা ওয়ার্ল্ড কাপ</h2>
-        <p class="text-sm text-green-100">লাইভ স্কোর এবং আপডেট</p>
+<div class="px-4 pt-4">
+    <!-- Banner -->
+    <div class="bg-gradient-to-r from-green-700 to-teal-800 rounded-2xl p-5 text-center text-white mb-4 shadow-lg relative overflow-hidden">
+        <i class="fa-solid fa-trophy absolute -right-4 -bottom-4 text-7xl opacity-20 transform -rotate-12"></i>
+        <h2 class="text-xl font-bold mb-1">ফিফা লাইভ স্কোর</h2>
+        <p class="text-xs text-green-100">API এর মাধ্যমে অটোমেটিক আপডেট হচ্ছে</p>
     </div>
 
-    <!-- Live Match Card -->
-    <h3 class="font-bold text-gray-700 mb-3 border-l-4 border-red-500 pl-2 text-sm">লাইভ ম্যাচ</h3>
-    <div id="live-match-container" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
-        <p class="text-center text-gray-400 text-sm">লাইভ ডাটা লোড হচ্ছে...</p>
-    </div>
-
-    <!-- Upcoming Matches -->
-    <h3 class="font-bold text-gray-700 mb-3 border-l-4 border-blue-500 pl-2 text-sm">পরবর্তী ম্যাচসমূহ</h3>
-    <div id="upcoming-matches-container" class="space-y-3">
-        <p class="text-center text-gray-400 text-sm">ডাটা লোড হচ্ছে...</p>
+    <!-- API Status & Matches -->
+    <div id="fifa-api-status" class="text-center text-xs text-gray-500 mb-2"></div>
+    
+    <div id="fifa-matches-container" class="space-y-3">
+        <div class="text-center py-10">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-green-600 mb-3"></i>
+            <p class="text-gray-500 font-bold">স্কোর লোড হচ্ছে...</p>
+        </div>
     </div>
 </div>
