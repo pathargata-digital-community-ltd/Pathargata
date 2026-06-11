@@ -1,3 +1,4 @@
+// আপনার apifootball.com এর API Key এখানে দিন
 const API_KEY = "0d32ccd98a1644f14f9f2b7bca0e0617baf38ac668768eb60612cda46a029209"; 
 
 // আজকের এবং আগামী ৭ দিনের তারিখ বের করার ফাংশন
@@ -13,21 +14,20 @@ function getDates() {
 }
 
 const dates = getDates();
-// লাইভ এর বদলে আমরা এখন নির্দিষ্ট তারিখের (আজ থেকে আগামী ৭ দিন) ডাটা কল করছি
 const API_URL = `https://apiv3.apifootball.com/?action=get_events&from=${dates.from}&to=${dates.to}&APIkey=${API_KEY}`; 
 
 let fifaUpdateInterval = null;
 
 async function loadFifaUI() {
     try {
-        const response = await fetch('fifa-ui.html'); // আপনার দেওয়া HTML ফাইল
+        const response = await fetch('fifa-ui.html'); // আপনার HTML ফাইল
         if (!response.ok) throw new Error('Failed to load FIFA UI');
         
         const htmlText = await response.text();
         const container = document.getElementById('fifa-ui-container');
         if (container) {
             container.innerHTML = htmlText;
-            console.log("FIFA Design Loaded!");
+            console.log("FIFA Design with Video Player Loaded!");
             
             loadFifaApiData();
             
@@ -40,7 +40,6 @@ async function loadFifaUI() {
 }
 
 window.loadFifaApiData = async () => {
-    // এখানে আমরা দুটি আলাদা কন্টেইনার খুঁজবো (HTML এ এগুলো রাখতে হবে)
     const liveContainer = document.getElementById('fifa-live-container');
     const upcomingContainer = document.getElementById('fifa-upcoming-container');
     const statusText = document.getElementById('fifa-api-status');
@@ -54,16 +53,14 @@ window.loadFifaApiData = async () => {
         if (!response.ok) throw new Error(`API Error Status: ${response.status}`);
         const allMatches = await response.json(); 
 
-        if (statusText) statusText.innerHTML = `<span class="text-green-600"><i class="fa-solid fa-circle-check"></i> Data Synced</span>`;
+        if (statusText) statusText.innerHTML = `<span class="text-green-600"><i class="fa-solid fa-circle-check"></i> Data Synced Successfully</span>`;
 
         if (!allMatches || allMatches.error) {
             showEmptyState(liveContainer, upcomingContainer);
             return;
         }
 
-        // ==========================================
-        // ১. ফিফা ফিল্টার করা হচ্ছে
-        // ==========================================
+        // ফিফা বিশ্বকাপ এবং বাছাইপর্ব ফিল্টার করা হচ্ছে
         const fifaMatches = allMatches.filter(match => {
             if (!match.league_name) return false;
             const leagueName = match.league_name.toLowerCase();
@@ -75,31 +72,34 @@ window.loadFifaApiData = async () => {
             return;
         }
 
-        // ==========================================
-        // ২. ম্যাচগুলোকে Live এবং Upcoming এ ভাগ করা হচ্ছে
-        // ==========================================
         const liveMatches = [];
         const upcomingMatches = [];
 
+        // লাইভ এবং আপকামিং আলাদা করা
         fifaMatches.forEach(match => {
-            // apifootball এ আপকামিং ম্যাচের স্ট্যাটাস সাধারণত ফাঁকা থাকে অথবা ম্যাচের সময় (যেমন: 20:30) দেওয়া থাকে
             if (match.match_status === "" || match.match_status.includes(":")) {
                 upcomingMatches.push(match);
             } 
-            // যদি ম্যাচ শেষ না হয়ে থাকে, তবে সেটি লাইভ
             else if (match.match_status !== "Finished" && match.match_status !== "FT") {
                 liveMatches.push(match);
             }
         });
 
-        // ==========================================
-        // ৩. লাইভ ম্যাচগুলো HTML এ পাঠানো
-        // ==========================================
+        // ========================================================
+        // আপকামিং ম্যাচগুলোকে তারিখ ও সময় অনুযায়ী ক্রমানুসারে সাজানো (Sorting)
+        // ========================================================
+        upcomingMatches.sort((a, b) => {
+            const dateA = new Date(`${a.match_date}T${a.match_time || "00:00"}`);
+            const dateB = new Date(`${b.match_date}T${b.match_time || "00:00"}`);
+            return dateA - dateB; 
+        });
+
+        // লাইভ ম্যাচগুলো HTML এ পাঠানো
         if (liveContainer) {
             if (liveMatches.length > 0) {
                 let liveHtml = "";
                 liveMatches.forEach(match => {
-                    liveHtml += generateMatchCard(match, true); // true মানে এটি লাইভ ম্যাচ
+                    liveHtml += generateMatchCard(match, true); 
                 });
                 liveContainer.innerHTML = liveHtml;
             } else {
@@ -107,14 +107,12 @@ window.loadFifaApiData = async () => {
             }
         }
 
-        // ==========================================
-        // ৪. আপকামিং ম্যাচগুলো HTML এ পাঠানো
-        // ==========================================
+        // আপকামিং ম্যাচগুলো HTML এ পাঠানো
         if (upcomingContainer) {
             if (upcomingMatches.length > 0) {
                 let upcomingHtml = "";
                 upcomingMatches.forEach(match => {
-                    upcomingHtml += generateMatchCard(match, false); // false মানে এটি আপকামিং ম্যাচ
+                    upcomingHtml += generateMatchCard(match, false); 
                 });
                 upcomingContainer.innerHTML = upcomingHtml;
             } else {
@@ -128,7 +126,7 @@ window.loadFifaApiData = async () => {
     }
 };
 
-// কার্ড বানানোর ফাংশন (লাইভ এবং আপকামিং এর জন্য আলাদা স্টাইল)
+// কার্ড বানানোর ফাংশন 
 function generateMatchCard(match, isLive) {
     const leagueName = match.country_name + " - " + match.league_name; 
     const team1 = match.match_hometeam_name;
@@ -136,12 +134,10 @@ function generateMatchCard(match, isLive) {
     const team2 = match.match_awayteam_name;
     const logo2 = match.team_away_badge || "https://via.placeholder.com/50";
     
-    // লাইভ হলে স্কোর দেখাবে, আপকামিং হলে সময় দেখাবে
     const centerData = isLive 
         ? `<div class="text-xl font-black text-gray-800 tracking-wider">${match.match_hometeam_score} - ${match.match_awayteam_score}</div>` 
-        : `<div class="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">${match.match_date}<br>${match.match_time}</div>`;
+        : `<div class="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1.5 rounded-md border border-blue-100">${match.match_date}<br>${match.match_time}</div>`;
 
-    // লাইভ হলে লাল রঙের মিনিট দেখাবে, আপকামিং হলে "Upcoming" দেখাবে
     const statusBadge = isLive 
         ? `<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold animate-pulse flex items-center gap-1"><span class="w-1.5 h-1.5 bg-red-600 rounded-full"></span> ${match.match_status}'</span>`
         : `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold border border-gray-200"><i class="fa-regular fa-clock"></i> Upcoming</span>`;
@@ -175,7 +171,7 @@ function showEmptyState(liveContainer, upcomingContainer) {
             <p class="font-bold text-gray-600 text-sm">এই মুহূর্তে কোনো ম্যাচ ডাটা পাওয়া যায়নি</p>
         </div>`;
     if(liveContainer) liveContainer.innerHTML = emptyHtml;
-    if(upcomingContainer) upcomingContainer.innerHTML = ""; // আপকামিং ফাঁকা থাকবে
+    if(upcomingContainer) upcomingContainer.innerHTML = ""; 
 }
 
 document.addEventListener("DOMContentLoaded", () => {
