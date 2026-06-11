@@ -66,7 +66,7 @@
     </div>
 </div>
 
-<!-- ⭐️ নতুন: Chat List Options Modal (Long Press) -->
+<!-- ⭐️ আপডেট: Chat List Options Modal (Long Press) -->
 <div id="chat-list-options-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[300] hidden flex items-end justify-center pb-safe">
     <div class="bg-white w-full max-w-[480px] rounded-t-2xl p-4 transform transition-transform translate-y-full" id="chat-list-sheet">
         <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
@@ -74,6 +74,12 @@
         <input type="hidden" id="chat-options-uid">
         
         <div class="space-y-2">
+            <!-- ⭐️ নতুন: Mark as Read / Unread বাটন -->
+            <button id="btn-toggle-read" onclick="toggleReadStatus()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 font-bold text-gray-700">
+                <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600"><i class="fa-solid fa-envelope-open"></i></div>
+                <span id="text-toggle-read">মার্ক অ্যাজ রিড</span>
+            </button>
+
             <button onclick="archiveChat()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 font-bold text-gray-700">
                 <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"><i class="fa-solid fa-box-archive"></i></div>
                 আর্কাইভ করুন
