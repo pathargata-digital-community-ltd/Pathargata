@@ -87,7 +87,7 @@
     </div>
 </div>
 
-<!-- ⭐️ নতুন: Message Options Modal (Long Press on Message) -->
+<!-- ⭐️ আপডেট: Message Options Modal -->
 <div id="msg-options-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[300] hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl p-4 shadow-xl">
         <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">মেসেজ অপশন</h3>
@@ -97,10 +97,12 @@
         <div class="space-y-1">
             <button onclick="replyToMsgFromOptions()" class="w-full text-left p-3 hover:bg-gray-50 font-bold text-gray-700 rounded-lg"><i class="fa-solid fa-reply mr-2 text-gray-400"></i> রিপ্লে করুন</button>
             <button onclick="copyMsgText()" class="w-full text-left p-3 hover:bg-gray-50 font-bold text-gray-700 rounded-lg"><i class="fa-solid fa-copy mr-2 text-gray-400"></i> কপি করুন</button>
-            <button onclick="forwardMsg()" class="w-full text-left p-3 hover:bg-gray-50 font-bold text-gray-700 rounded-lg"><i class="fa-solid fa-share mr-2 text-gray-400"></i> ফরোয়ার্ড করুন</button>
             
-            <div id="msg-sender-options" class="hidden border-t mt-2 pt-2">
-                <button onclick="unsendMsg()" class="w-full text-left p-3 hover:bg-red-50 font-bold text-red-600 rounded-lg"><i class="fa-solid fa-rotate-left mr-2"></i> সবার কাছ থেকে মুছুন (Unsend)</button>
+            <div class="border-t mt-2 pt-2">
+                <!-- এই বাটনটি শুধু নিজের মেসেজের ক্ষেত্রে দেখাবে -->
+                <button id="btn-unsend-msg" onclick="unsendMsg()" class="hidden w-full text-left p-3 hover:bg-red-50 font-bold text-red-600 rounded-lg"><i class="fa-solid fa-rotate-left mr-2"></i> সবার কাছ থেকে মুছুন (Unsend)</button>
+                
+                <!-- এই বাটনটি নিজের এবং বন্ধুর, সবার মেসেজের ক্ষেত্রেই দেখাবে -->
                 <button onclick="removeMsgForMe()" class="w-full text-left p-3 hover:bg-gray-50 font-bold text-gray-700 rounded-lg"><i class="fa-solid fa-trash mr-2 text-gray-400"></i> আমার এখান থেকে মুছুন</button>
             </div>
         </div>
