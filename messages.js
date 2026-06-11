@@ -78,6 +78,22 @@ window.searchChatFriends = async (val) => {
     }
 };
 
+// --- QUICK CHAT FRIENDS (Top Bar) ---
+window.loadQuickChatFriends = async () => {
+    const div = document.getElementById('quick-chat-friends');
+    if (!window.myFriends || window.myFriends.length === 0) {
+        div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
+        return;
+    }
+    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
+    div.innerHTML = friendsData.filter(u => u).map(u => {
+        let av = u.profile_pic ? 
+            `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
+            `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
+        return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
+    }).join('');
+};
+
 // --- CHAT LIST WITH LONG PRESS (ARCHIVE/DELETE) ---
 window.toggleArchivedChats = () => {
     showArchived = !showArchived;
@@ -89,88 +105,96 @@ window.loadChatList = (uid) => {
         const list = snap.val() || {};
         const container = document.getElementById('chat-list-container');
         
-        // Fetch archive list
-        const archSnap = await get(ref(window.db, `user_archived_chats/${uid}`));
-        const archivedUids = archSnap.val() || {};
+        try {
+            // Fetch archive list
+            const archSnap = await get(ref(window.db, `user_archived_chats/${uid}`));
+            const archivedUids = archSnap.val() || {};
 
-        if (Object.keys(list).length > 0) {
-            const promises = Object.entries(list).map(async ([peerUid, info]) => {
-                const userData = await window.getUserData(peerUid);
-                return { peerUid, info, profilePic: userData?.profile_pic };
-            });
-
-            let chatItems = await Promise.all(promises);
-            chatItems.sort((a, b) => b.info.timestamp - a.info.timestamp);
-            
-            // Filter based on Archive state
-            if(showArchived) {
-                chatItems = chatItems.filter(item => archivedUids[item.peerUid]);
-            } else {
-                chatItems = chatItems.filter(item => !archivedUids[item.peerUid]);
-            }
-
-            if(chatItems.length === 0) {
-                container.innerHTML = `<p class="text-center text-gray-400 mt-10 text-sm">${showArchived ? 'আর্কাইভে কোনো চ্যাট নেই' : 'কোনো কনভারসেশন নেই'}</p>`;
-                return;
-            }
-
-            container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
-                let rawLastMsg = info.lastMessage || "";
-                let displayMsg = rawLastMsg;
-                let isMe = false;
-
-                if (rawLastMsg.startsWith("You: ")) {
-                    isMe = true;
-                    rawLastMsg = rawLastMsg.substring(5);
-                }
-
-                if (rawLastMsg.includes("[Unsent]")) {
-                    displayMsg = isMe ? "You unsent a message" : "Message unsent";
-                } else {
-                    if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
-                        rawLastMsg = window.decryptMsg(rawLastMsg);
-                    }
-                    displayMsg = (isMe ? "You: " : "") + rawLastMsg;
-                }
-                
-                const fontWeight = (info.unread > 0 && !isMe) ? 'font-extrabold text-black' : 'font-normal text-gray-500';
-
-                let av = profilePic ?
-                    `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
-                    `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
-
-                return `
-            <div id="chat-item-${peerUid}" class="chat-list-item p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 select-none" 
-                 onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')"
-                 oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(info.name)}'); return false;">
-                ${av}
-                <div class="flex-1 min-w-0 pointer-events-none">
-                    <div class="flex justify-between items-center mb-0.5">
-                        <h4 class="${info.unread > 0 ? 'font-bold' : 'font-semibold'} text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                        <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
-                    </div>
-                    <p class="text-sm ${fontWeight} truncate block">${window.escapeHTML(displayMsg)}</p>
-                </div>
-            </div>`;
-            }).join('');
-            
-            // Add Touch Long Press Logic for Mobile
-            document.querySelectorAll('.chat-list-item').forEach(el => {
-                let timer;
-                el.addEventListener('touchstart', (e) => {
-                    const uid = el.id.split('-')[2];
-                    const name = el.querySelector('h4').innerText;
-                    timer = setTimeout(() => {
-                        openChatListOptions(e, uid, name);
-                    }, 600); // 600ms long press
+            if (Object.keys(list).length > 0) {
+                const promises = Object.entries(list).map(async ([peerUid, info]) => {
+                    const userData = await window.getUserData(peerUid);
+                    return { peerUid, info, profilePic: userData?.profile_pic };
                 });
-                el.addEventListener('touchend', () => clearTimeout(timer));
-                el.addEventListener('touchmove', () => clearTimeout(timer));
-            });
 
-        } else {
-            container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+                let chatItems = await Promise.all(promises);
+                chatItems.sort((a, b) => b.info.timestamp - a.info.timestamp);
+                
+                // Filter based on Archive state
+                if(showArchived) {
+                    chatItems = chatItems.filter(item => archivedUids[item.peerUid]);
+                } else {
+                    chatItems = chatItems.filter(item => !archivedUids[item.peerUid]);
+                }
+
+                if(chatItems.length === 0) {
+                    container.innerHTML = `<p class="text-center text-gray-400 mt-10 text-sm">${showArchived ? 'আর্কাইভে কোনো চ্যাট নেই' : 'কোনো কনভারসেশন নেই'}</p>`;
+                    return;
+                }
+
+                container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+                    let rawLastMsg = info.lastMessage || "";
+                    let displayMsg = rawLastMsg;
+                    let isMe = false;
+
+                    if (rawLastMsg.startsWith("You: ")) {
+                        isMe = true;
+                        rawLastMsg = rawLastMsg.substring(5);
+                    }
+
+                    if (rawLastMsg.includes("[Unsent]")) {
+                        displayMsg = isMe ? "You unsent a message" : "Message unsent";
+                    } else {
+                        if (!rawLastMsg.includes("📷") && !rawLastMsg.includes("🎤")) {
+                            rawLastMsg = window.decryptMsg(rawLastMsg);
+                        }
+                        displayMsg = (isMe ? "You: " : "") + rawLastMsg;
+                    }
+                    
+                    const fontWeight = (info.unread > 0 && !isMe) ? 'font-extrabold text-black' : 'font-normal text-gray-500';
+
+                    let av = profilePic ?
+                        `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
+                        `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
+
+                    return `
+                <div id="chat-item-${peerUid}" class="chat-list-item p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 select-none" 
+                     onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')"
+                     oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(info.name)}'); return false;">
+                    ${av}
+                    <div class="flex-1 min-w-0 pointer-events-none">
+                        <div class="flex justify-between items-center mb-0.5">
+                            <h4 class="${info.unread > 0 ? 'font-bold' : 'font-semibold'} text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                            <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
+                        </div>
+                        <p class="text-sm ${fontWeight} truncate block">${window.escapeHTML(displayMsg)}</p>
+                    </div>
+                </div>`;
+                }).join('');
+                
+                // Add Touch Long Press Logic for Mobile
+                document.querySelectorAll('.chat-list-item').forEach(el => {
+                    let timer;
+                    el.addEventListener('touchstart', (e) => {
+                        const uid = el.id.split('-')[2];
+                        const name = el.querySelector('h4').innerText;
+                        timer = setTimeout(() => {
+                            openChatListOptions(e, uid, name);
+                        }, 600); // 600ms long press
+                    });
+                    el.addEventListener('touchend', () => clearTimeout(timer));
+                    el.addEventListener('touchmove', () => clearTimeout(timer));
+                });
+
+            } else {
+                container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">কোনো কনভারসেশন নেই</p>';
+            }
+        } catch (error) {
+            console.error("Error processing chat list:", error);
         }
+    }, (error) => {
+        // Firebase Read Error
+        console.error("Firebase Read Error:", error);
+        document.getElementById('chat-list-container').innerHTML = `<p class="text-center text-red-500 mt-10 text-sm">ডাটাবেস লোড হতে সমস্যা হচ্ছে। (${error.message})</p>`;
     });
 };
 
@@ -386,7 +410,6 @@ window.closeMsgOptions = () => {
 window.replyToMsgFromOptions = () => {
     const id = document.getElementById('msg-options-id').value;
     const text = document.getElementById('msg-options-text').value;
-    // For options modal, we assume 'other' unless we parse, simplified to peer name
     setReplyMode(id, text, window.currentChatUser.name);
     closeMsgOptions();
 };
@@ -612,3 +635,11 @@ window.sendMsg = (imageUrl = null, voiceUrl = null) => {
     // Stop typing indicator
     set(ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`), false);
 };
+
+// --- AUTO INITIALIZE CHAT DATA ---
+setTimeout(() => {
+    if (window.currentUser && document.getElementById('chat-list-container')) {
+        if(typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
+        if(typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
+    }
+}, 1500);
