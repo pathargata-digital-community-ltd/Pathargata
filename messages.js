@@ -147,26 +147,46 @@ window.loadChatList = (uid) => {
                         displayMsg = (isMe ? "You: " : "") + rawLastMsg;
                     }
                     
-                    const fontWeight = (info.unread > 0 && !isMe) ? 'font-extrabold text-black' : 'font-normal text-gray-500';
+                    // ⭐️ আপডেট: আনসিন হলে লেখা লাল এবং হাইলাইট হবে
+                    const isUnread = info.unread > 0 && !isMe;
+                    const textStyle = isUnread ? 'font-extrabold text-red-600' : 'font-normal text-gray-500';
+                    const nameStyle = isUnread ? 'font-extrabold text-black' : 'font-semibold text-gray-800';
 
                     let av = profilePic ?
                         `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
                         `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
 
                     return `
-                <div id="chat-item-${peerUid}" class="chat-list-item p-4 border-b bg-white hover:bg-gray-50 cursor-pointer flex items-center gap-3 select-none" 
+                <div id="chat-item-${peerUid}" class="chat-list-item p-4 border-b ${isUnread ? 'bg-red-50/30' : 'bg-white'} hover:bg-gray-50 cursor-pointer flex items-center gap-3 select-none" 
                      onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')"
-                     oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(info.name)}'); return false;">
+                     oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(info.name)}', ${isUnread}); return false;">
                     ${av}
                     <div class="flex-1 min-w-0 pointer-events-none">
                         <div class="flex justify-between items-center mb-0.5">
-                            <h4 class="${info.unread > 0 ? 'font-bold' : 'font-semibold'} text-gray-800 text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                            <span class="text-[10px] text-gray-400 shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
+                            <h4 class="${nameStyle} text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                            <span class="text-[10px] ${isUnread ? 'text-red-500 font-bold' : 'text-gray-400'} shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
                         </div>
-                        <p class="text-sm ${fontWeight} truncate block">${window.escapeHTML(displayMsg)}</p>
+                        <p class="text-sm ${textStyle} truncate block">${window.escapeHTML(displayMsg)}</p>
                     </div>
+                    ${isUnread ? '<div class="w-3 h-3 bg-red-600 rounded-full shrink-0 shadow-sm"></div>' : ''}
                 </div>`;
                 }).join('');
+                
+                // Add Touch Long Press Logic for Mobile
+                document.querySelectorAll('.chat-list-item').forEach(el => {
+                    let timer;
+                    el.addEventListener('touchstart', (e) => {
+                        const uid = el.id.split('-')[2];
+                        const name = el.querySelector('h4').innerText;
+                        // চেক করছি আনসিন কি না (লাল ডট আছে কিনা)
+                        const isUnread = el.querySelector('.bg-red-600') !== null;
+                        timer = setTimeout(() => {
+                            openChatListOptions(e, uid, name, isUnread);
+                        }, 600); // 600ms long press
+                    });
+                    el.addEventListener('touchend', () => clearTimeout(timer));
+                    el.addEventListener('touchmove', () => clearTimeout(timer));
+                });
                 
                 document.querySelectorAll('.chat-list-item').forEach(el => {
                     let timer;
@@ -190,16 +210,32 @@ window.loadChatList = (uid) => {
     });
 };
 
-window.openChatListOptions = (e, uid, name) => {
+// ⭐️ আপডেট: মডাল ওপেন করার সময় রিড/আনরিড স্ট্যাটাস চেক করা হবে
+window.openChatListOptions = (e, uid, name, isUnread = false) => {
     e.preventDefault();
     e.stopPropagation();
     document.getElementById('chat-options-uid').value = uid;
     document.getElementById('chat-options-name').innerText = name;
     
+    // বাটন টেক্সট ও আইকন সেট করা
+    const toggleBtnText = document.getElementById('text-toggle-read');
+    const toggleBtnIcon = document.getElementById('btn-toggle-read').querySelector('i');
+    
+    if (isUnread) {
+        toggleBtnText.innerText = "মার্ক অ্যাজ রিড (Mark as Read)";
+        toggleBtnIcon.className = "fa-solid fa-envelope-open";
+        document.getElementById('btn-toggle-read').setAttribute('data-action', 'read');
+    } else {
+        toggleBtnText.innerText = "মার্ক অ্যাজ আনরিড (Mark as Unread)";
+        toggleBtnIcon.className = "fa-solid fa-envelope";
+        document.getElementById('btn-toggle-read').setAttribute('data-action', 'unread');
+    }
+
     const modal = document.getElementById('chat-list-options-modal');
     const sheet = document.getElementById('chat-list-sheet');
     modal.classList.remove('hidden');
     setTimeout(() => sheet.classList.remove('translate-y-full'), 10);
+    
     if(navigator.vibrate) navigator.vibrate(50);
 };
 
@@ -207,6 +243,21 @@ window.closeChatListOptions = () => {
     const sheet = document.getElementById('chat-list-sheet');
     sheet.classList.add('translate-y-full');
     setTimeout(() => document.getElementById('chat-list-options-modal').classList.add('hidden'), 300);
+};
+
+// ⭐️ নতুন: ম্যানুয়ালি Read বা Unread করার ফাংশন
+window.toggleReadStatus = () => {
+    const uid = document.getElementById('chat-options-uid').value;
+    const action = document.getElementById('btn-toggle-read').getAttribute('data-action');
+    
+    const unreadCount = action === 'unread' ? 1 : 0; // 1 মানে আনসিন, 0 মানে সিন
+    
+    update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), {
+        unread: unreadCount
+    }).then(() => {
+        window.showToast(action === 'unread' ? "আনরিড করা হয়েছে" : "রিড করা হয়েছে");
+        closeChatListOptions();
+    });
 };
 
 window.archiveChat = () => {
