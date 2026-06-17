@@ -4,7 +4,6 @@
          Live Video Player Section 
     =========================== -->
     <div class="mb-5 bg-black rounded-xl overflow-hidden shadow-xl border border-gray-800 relative w-full h-[210px]">
-        
         <iframe 
             src="https://famelack.com/tv/bd/J7BmdiABqVkDMa" 
             class="absolute left-0 w-full border-0" 
@@ -12,7 +11,6 @@
             allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
             allowfullscreen="true">
         </iframe>
-        
     </div>
 
     <!-- ==========================
@@ -28,7 +26,7 @@
     <div id="fifa-api-status" class="text-center text-xs text-gray-500 mb-4"></div>
     
     <!-- ==========================
-         Live Matches Section 
+         Live Matches Section (সবসময় উপরে থাকবে)
     =========================== -->
     <div class="mb-6">
         <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
@@ -44,14 +42,33 @@
     </div>
 
     <!-- ==========================
-         Finished Matches (Results) Section 
+         Tab Buttons (আসন্ন ও ফলাফল)
     =========================== -->
-    <div class="mb-6">
-        <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-square-check text-green-600"></i> খেলা শেষের ফলাফল
-        </h3>
-        
-        <div id="fifa-finished-container" class="space-y-3">
+    <div class="flex justify-center bg-gray-200 rounded-lg p-1 mb-4">
+        <!-- Upcoming Tab Button -->
+        <button onclick="toggleFifaTab('upcoming')" id="tab-upcoming" class="w-1/2 py-2 text-xs font-bold rounded-md bg-white text-blue-600 shadow-sm transition-all flex justify-center items-center gap-2">
+            <i class="fa-regular fa-calendar-days"></i> আসন্ন ম্যাচ
+        </button>
+        <!-- Result Tab Button -->
+        <button onclick="toggleFifaTab('finished')" id="tab-finished" class="w-1/2 py-2 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all flex justify-center items-center gap-2">
+            <i class="fa-solid fa-square-check"></i> ফলাফল
+        </button>
+    </div>
+
+    <!-- ==========================
+         Tab Content Sections
+    =========================== -->
+    <div>
+        <!-- Upcoming Matches (ডিফল্টভাবে দেখা যাবে) -->
+        <div id="fifa-upcoming-container" class="space-y-3 block">
+            <div class="text-center py-6 bg-white rounded-xl border border-gray-100 shadow-sm">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
+                <p class="text-gray-500 font-bold text-xs">ম্যাচের সময়সূচি লোড হচ্ছে...</p>
+            </div>
+        </div>
+
+        <!-- Finished Matches / Results (ডিফল্টভাবে লুকানো থাকবে) -->
+        <div id="fifa-finished-container" class="space-y-3 hidden">
             <div class="text-center py-6 bg-white rounded-xl border border-gray-100 shadow-sm">
                 <i class="fa-solid fa-circle-notch fa-spin text-2xl text-green-600 mb-2"></i>
                 <p class="text-gray-500 font-bold text-xs">ফলাফল লোড হচ্ছে...</p>
@@ -59,19 +76,4 @@
         </div>
     </div>
 
-    <!-- ==========================
-         Upcoming Matches Section 
-    =========================== -->
-    <div>
-        <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <i class="fa-regular fa-calendar-days text-blue-600"></i> আসন্ন ম্যাচগুলো (ক্রমানুসারে)
-        </h3>
-        
-        <div id="fifa-upcoming-container" class="space-y-3">
-            <div class="text-center py-6 bg-white rounded-xl border border-gray-100 shadow-sm">
-                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-600 mb-2"></i>
-                <p class="text-gray-500 font-bold text-xs">ম্যাচের সময়সূচি লোড হচ্ছে...</p>
-            </div>
-        </div>
-    </div>
 </div>
