@@ -1,7 +1,7 @@
 // আপনার apifootball.com এর API Key এখানে দিন
 const API_KEY = "0d32ccd98a1644f14f9f2b7bca0e0617baf38ac668768eb60612cda46a029209"; 
 
-// বিগত ৭ দিন এবং আগামী ৭ দিনের তারিখ বের করার ফাংশন (ফলাফলের জন্য)
+// বিগত ৭ দিন এবং আগামী ৭ দিনের তারিখ বের করার ফাংশন
 function getDates() {
     const today = new Date();
     const nextWeek = new Date();
@@ -30,7 +30,7 @@ async function loadFifaUI() {
         const container = document.getElementById('fifa-ui-container');
         if (container) {
             container.innerHTML = htmlText;
-            console.log("FIFA Design with Video Player Loaded!");
+            console.log("FIFA Design with Tabs Loaded!");
             
             loadFifaApiData();
             
@@ -42,6 +42,37 @@ async function loadFifaUI() {
     }
 }
 
+// === ট্যাব পরিবর্তনের ফাংশন ===
+window.toggleFifaTab = (tabName) => {
+    const upcomingBtn = document.getElementById('tab-upcoming');
+    const finishedBtn = document.getElementById('tab-finished');
+    const upcomingContainer = document.getElementById('fifa-upcoming-container');
+    const finishedContainer = document.getElementById('fifa-finished-container');
+
+    if (tabName === 'upcoming') {
+        // আসন্ন ম্যাচ দেখাও
+        upcomingContainer.classList.remove('hidden');
+        upcomingContainer.classList.add('block');
+        finishedContainer.classList.remove('block');
+        finishedContainer.classList.add('hidden');
+        
+        // বাটন ডিজাইন পরিবর্তন
+        upcomingBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md bg-white text-blue-600 shadow-sm transition-all flex justify-center items-center gap-2";
+        finishedBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all flex justify-center items-center gap-2";
+    } else {
+        // ফলাফল দেখাও
+        finishedContainer.classList.remove('hidden');
+        finishedContainer.classList.add('block');
+        upcomingContainer.classList.remove('block');
+        upcomingContainer.classList.add('hidden');
+        
+        // বাটন ডিজাইন পরিবর্তন
+        finishedBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md bg-white text-green-600 shadow-sm transition-all flex justify-center items-center gap-2";
+        upcomingBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all flex justify-center items-center gap-2";
+    }
+};
+
+// API থেকে ডাটা আনার ফাংশন
 window.loadFifaApiData = async () => {
     const liveContainer = document.getElementById('fifa-live-container');
     const finishedContainer = document.getElementById('fifa-finished-container');
@@ -64,7 +95,6 @@ window.loadFifaApiData = async () => {
             return;
         }
 
-        // ফিফা বিশ্বকাপ এবং বাছাইপর্ব ফিল্টার করা হচ্ছে
         const fifaMatches = allMatches.filter(match => {
             if (!match.league_name) return false;
             const leagueName = match.league_name.toLowerCase();
@@ -80,7 +110,6 @@ window.loadFifaApiData = async () => {
         const finishedMatches = [];
         const upcomingMatches = [];
 
-        // লাইভ, আপকামিং এবং ফিনিশড (রেজাল্ট) আলাদা করা
         fifaMatches.forEach(match => {
             if (match.match_status === "Finished" || match.match_status === "FT") {
                 finishedMatches.push(match);
@@ -93,23 +122,17 @@ window.loadFifaApiData = async () => {
             }
         });
 
-        // আপকামিং ম্যাচগুলোকে ক্রমানুসারে সাজানো (কাছের সময় আগে)
         upcomingMatches.sort((a, b) => new Date(`${a.match_date}T${a.match_time || "00:00"}`) - new Date(`${b.match_date}T${b.match_time || "00:00"}`));
-        
-        // ফিনিশড ম্যাচগুলোকে ক্রমানুসারে সাজানো (সর্বশেষ ম্যাচ আগে)
         finishedMatches.sort((a, b) => new Date(`${b.match_date}T${b.match_time || "00:00"}`) - new Date(`${a.match_date}T${a.match_time || "00:00"}`));
 
-        // লাইভ ম্যাচগুলো HTML এ পাঠানো
         if (liveContainer) {
             liveContainer.innerHTML = liveMatches.length > 0 ? liveMatches.map(m => generateMatchCard(m, 'live')).join('') : `<p class="text-center text-gray-500 text-sm py-4">এই মুহূর্তে কোনো লাইভ ম্যাচ নেই</p>`;
         }
 
-        // শেষ হওয়া ম্যাচগুলো (রেজাল্ট) HTML এ পাঠানো
         if (finishedContainer) {
             finishedContainer.innerHTML = finishedMatches.length > 0 ? finishedMatches.map(m => generateMatchCard(m, 'finished')).join('') : `<p class="text-center text-gray-500 text-sm py-4">বিগত ৭ দিনে কোনো ম্যাচের ফলাফল নেই</p>`;
         }
 
-        // আপকামিং ম্যাচগুলো HTML এ পাঠানো
         if (upcomingContainer) {
             upcomingContainer.innerHTML = upcomingMatches.length > 0 ? upcomingMatches.map(m => generateMatchCard(m, 'upcoming')).join('') : `<p class="text-center text-gray-500 text-sm py-4">আগামী ৭ দিনে কোনো ম্যাচ নেই</p>`;
         }
@@ -120,7 +143,6 @@ window.loadFifaApiData = async () => {
     }
 };
 
-// কার্ড বানানোর ফাংশন (অবস্থা অনুযায়ী কার্ডের ডিজাইন চেঞ্জ হবে)
 function generateMatchCard(match, type) {
     const leagueName = match.country_name + " - " + match.league_name; 
     const team1 = match.match_hometeam_name;
