@@ -1,27 +1,30 @@
-// আপনার apifootball.com এর API Key এখানে দিন
+// আপনার apifootball.com এর API Key
 const API_KEY = "0d32ccd98a1644f14f9f2b7bca0e0617baf38ac668768eb60612cda46a029209"; 
 
-// বিগত ১ বছর এবং আগামী ১ বছরের তারিখ বের করার ফাংশন (যাতে সব রাউন্ডের ম্যাচ পাওয়া যায়)
-function getDates() {
+const CACHE_KEY = "fifa_matches_step_data";
+const CACHE_TIME_KEY = "fifa_step_update_time";
+let fifaUpdateInterval = null;
+
+// তারিখ বের করার ফাংশন (৩ মাস করে ভাগ করা হলো যাতে API ফেইল না করে)
+function getStepDates() {
     const today = new Date();
-    const nextYear = new Date();
-    const pastYear = new Date();
     
-    nextYear.setFullYear(today.getFullYear() + 1); // আগামী ১ বছরের ডাটা
-    pastYear.setFullYear(today.getFullYear() - 1); // বিগত ১ বছরের ডাটা
+    const future = new Date();
+    future.setDate(today.getDate() + 90); // আগামী ৩ মাস
+    
+    const past = new Date();
+    past.setDate(today.getDate() - 90); // বিগত ৩ মাস
+
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
 
     return {
-        from: pastYear.toISOString().split('T')[0],
-        to: nextYear.toISOString().split('T')[0]
+        todayStr: today.toISOString().split('T')[0],
+        futureStr: future.toISOString().split('T')[0],
+        pastStr: past.toISOString().split('T')[0],
+        yesterdayStr: yesterday.toISOString().split('T')[0]
     };
 }
-
-const dates = getDates();
-const API_URL = `https://apiv3.apifootball.com/?action=get_events&from=${dates.from}&to=${dates.to}&APIkey=${API_KEY}`; 
-
-let fifaUpdateInterval = null;
-const CACHE_KEY = "fifa_all_matches_data";
-const CACHE_TIME_KEY = "fifa_last_update_time";
 
 async function loadFifaUI() {
     try {
@@ -32,13 +35,13 @@ async function loadFifaUI() {
         const container = document.getElementById('fifa-ui-container');
         if (container) {
             container.innerHTML = htmlText;
-            console.log("FIFA Design with Tabs & Storage Loaded!");
+            console.log("FIFA UI Loaded! Starting Step-by-Step Data Fetch...");
             
             loadFifaApiData();
             
-            // প্রতি ১ মিনিট পর পর শুধু ব্যাকগ্রাউন্ডে ডাটা আপডেট হবে
+            // প্রতি ২ মিনিট পর পর লাইভ ডাটা চেক করবে
             if(fifaUpdateInterval) clearInterval(fifaUpdateInterval);
-            fifaUpdateInterval = setInterval(loadFifaApiData, 60000); 
+            fifaUpdateInterval = setInterval(loadFifaApiData, 120000); 
         }
     } catch (error) {
         console.error("Error loading FIFA UI:", error);
@@ -65,33 +68,34 @@ window.toggleFifaTab = (tabName) => {
     }
 };
 
-// ডাটা প্রসেস এবং রেন্ডার করার মূল ফাংশন
-function processAndRenderData(allMatches) {
-    const liveContainer = document.getElementById('fifa-live-container');
-    const finishedContainer = document.getElementById('fifa-finished-container');
-    const upcomingContainer = document.getElementById('fifa-upcoming-container');
+// API কল করার জন্য আলাদা ফাংশন
+async function fetchFifaData(fromDate, toDate) {
+    const url = `https://apiv3.apifootball.com/?action=get_events&from=${fromDate}&to=${toDate}&APIkey=${API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("API Limit or Network Issue");
+    
+    const data = await response.json();
+    if (data.error) return [];
 
-    if (!allMatches || allMatches.error) {
-        showEmptyState(liveContainer, finishedContainer, upcomingContainer);
-        return;
-    }
-
-    const fifaMatches = allMatches.filter(match => {
+    // শুধু ফিফার ডাটা ফিল্টার করা
+    return data.filter(match => {
         if (!match.league_name) return false;
         const leagueName = match.league_name.toLowerCase();
         return leagueName.includes("world cup") || leagueName.includes("wc qualification");
     });
+}
 
-    if (fifaMatches.length === 0) {
-        showEmptyState(liveContainer, finishedContainer, upcomingContainer);
-        return;
-    }
+// ডাটা স্ক্রিনে দেখানোর ফাংশন
+function renderData(matches) {
+    const liveContainer = document.getElementById('fifa-live-container');
+    const finishedContainer = document.getElementById('fifa-finished-container');
+    const upcomingContainer = document.getElementById('fifa-upcoming-container');
 
     const liveMatches = [];
     const finishedMatches = [];
     const upcomingMatches = [];
 
-    fifaMatches.forEach(match => {
+    matches.forEach(match => {
         if (match.match_status === "Finished" || match.match_status === "FT") {
             finishedMatches.push(match);
         } else if (match.match_status === "" || match.match_status.includes(":")) {
@@ -101,51 +105,66 @@ function processAndRenderData(allMatches) {
         }
     });
 
-    // ক্রমানুসারে সাজানো (Round 1, 2 সব অটোমেটিক ডেট অনুযায়ী সাজানো থাকবে)
     upcomingMatches.sort((a, b) => new Date(`${a.match_date}T${a.match_time || "00:00"}`) - new Date(`${b.match_date}T${b.match_time || "00:00"}`));
     finishedMatches.sort((a, b) => new Date(`${b.match_date}T${b.match_time || "00:00"}`) - new Date(`${a.match_date}T${a.match_time || "00:00"}`));
 
-    if (liveContainer) liveContainer.innerHTML = liveMatches.length > 0 ? liveMatches.map(m => generateMatchCard(m, 'live')).join('') : `<p class="text-center text-gray-500 text-sm py-4">এই মুহূর্তে কোনো লাইভ ম্যাচ নেই</p>`;
-    if (finishedContainer) finishedContainer.innerHTML = finishedMatches.length > 0 ? finishedMatches.map(m => generateMatchCard(m, 'finished')).join('') : `<p class="text-center text-gray-500 text-sm py-4">কোনো ম্যাচের ফলাফল পাওয়া যায়নি</p>`;
-    if (upcomingContainer) upcomingContainer.innerHTML = upcomingMatches.length > 0 ? upcomingMatches.map(m => generateMatchCard(m, 'upcoming')).join('') : `<p class="text-center text-gray-500 text-sm py-4">কোনো আসন্ন ম্যাচ নেই</p>`;
+    if (liveContainer && liveMatches.length > 0) liveContainer.innerHTML = liveMatches.map(m => generateMatchCard(m, 'live')).join('');
+    else if (liveContainer) liveContainer.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">এই মুহূর্তে কোনো লাইভ ম্যাচ নেই</p>`;
+
+    if (finishedContainer && finishedMatches.length > 0) finishedContainer.innerHTML = finishedMatches.map(m => generateMatchCard(m, 'finished')).join('');
+    else if (finishedContainer) finishedContainer.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">ফলাফল লোড হচ্ছে অথবা নেই...</p>`;
+
+    if (upcomingContainer && upcomingMatches.length > 0) upcomingContainer.innerHTML = upcomingMatches.map(m => generateMatchCard(m, 'upcoming')).join('');
+    else if (upcomingContainer) upcomingContainer.innerHTML = `<p class="text-center text-gray-500 text-sm py-4">আসন্ন ম্যাচ লোড হচ্ছে অথবা নেই...</p>`;
 }
 
-// API থেকে ডাটা আনার ফাংশন (Storage System সহ)
+// মূল ফাংশন (ধাপে ধাপে লোড করবে)
 window.loadFifaApiData = async () => {
     const statusText = document.getElementById('fifa-api-status');
     const cachedData = localStorage.getItem(CACHE_KEY);
     const lastUpdateTime = localStorage.getItem(CACHE_TIME_KEY);
     const now = Date.now();
 
-    // ১. যদি স্টোরেজে ডাটা থাকে, তাহলে সাথে সাথে দেখাও (যাতে লোডিং না দেখতে হয়)
+    let allFetchedMatches = [];
+
+    // ১. স্টোরেজে ডাটা থাকলে সাথে সাথে দেখাও
     if (cachedData) {
         try {
-            const parsedData = JSON.parse(cachedData);
-            processAndRenderData(parsedData);
+            allFetchedMatches = JSON.parse(cachedData);
+            renderData(allFetchedMatches);
         } catch (e) { console.error("Cache parsing error"); }
     }
 
-    // ২. যদি ডাটা না থাকে অথবা ১ মিনিটের বেশি পুরনো হয়, তাহলে API কল করো
+    // ২. ডাটা পুরনো হলে বা না থাকলে ধাপে ধাপে API থেকে আনো
     if (!cachedData || !lastUpdateTime || (now - parseInt(lastUpdateTime)) > 60000) {
-        if(statusText) statusText.innerText = "Syncing latest data...";
+        const dates = getStepDates();
         
         try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error(`API Error Status: ${response.status}`);
-            const allMatches = await response.json(); 
+            // --- ধাপ ১: লাইভ এবং আপকামিং ডাটা আনা (আজ থেকে আগামী ৩ মাস) ---
+            if(statusText) statusText.innerHTML = `<span class="text-blue-500"><i class="fa-solid fa-spinner fa-spin"></i> Step 1: Loading Live & Upcoming...</span>`;
+            
+            const futureMatches = await fetchFifaData(dates.todayStr, dates.futureStr);
+            renderData([...allFetchedMatches, ...futureMatches]); // যা পেয়েছে তা সাথে সাথে স্ক্রিনে দেখাও
 
-            // ডাটা লোকাল স্টোরেজে সেভ করা হচ্ছে
-            localStorage.setItem(CACHE_KEY, JSON.stringify(allMatches));
+            // --- ধাপ ২: ফলাফলের ডাটা আনা (বিগত ৩ মাস থেকে গতকাল পর্যন্ত) ---
+            if(statusText) statusText.innerHTML = `<span class="text-blue-500"><i class="fa-solid fa-spinner fa-spin"></i> Step 2: Loading Past Results...</span>`;
+            
+            const pastMatches = await fetchFifaData(dates.pastStr, dates.yesterdayStr);
+            
+            // দুটি ধাপের ডাটা একসাথে করা
+            allFetchedMatches = [...futureMatches, ...pastMatches];
+            
+            // ফাইনাল রেন্ডার এবং স্টোরেজে সেভ করা
+            renderData(allFetchedMatches);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(allFetchedMatches));
             localStorage.setItem(CACHE_TIME_KEY, now.toString());
 
-            // নতুন ডাটা দিয়ে UI আপডেট করা হচ্ছে
-            processAndRenderData(allMatches);
+            if (statusText) statusText.innerHTML = `<span class="text-green-600"><i class="fa-solid fa-circle-check"></i> All Data Synced!</span>`;
 
-            if (statusText) statusText.innerHTML = `<span class="text-green-600"><i class="fa-solid fa-circle-check"></i> Data Synced Successfully</span>`;
         } catch (error) {
             console.error("API Fetch Error:", error);
             if (!cachedData && statusText) {
-                statusText.innerHTML = `<span class="text-red-500">API কানেকশন ফেইল করেছে</span>`;
+                statusText.innerHTML = `<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation"></i> API Connection Failed. Retrying later.</span>`;
             }
         }
     }
@@ -153,7 +172,7 @@ window.loadFifaApiData = async () => {
 
 function generateMatchCard(match, type) {
     const leagueName = match.country_name + " - " + match.league_name; 
-    const roundName = match.match_round ? ` | ${match.match_round}` : ""; // রাউন্ডের নাম যুক্ত করা হলো
+    const roundName = match.match_round ? ` | ${match.match_round}` : ""; 
     const team1 = match.match_hometeam_name;
     const logo1 = match.team_home_badge || "https://via.placeholder.com/50";
     const team2 = match.match_awayteam_name;
@@ -195,17 +214,6 @@ function generateMatchCard(match, type) {
             </div>
         </div>
     </div>`;
-}
-
-function showEmptyState(liveContainer, finishedContainer, upcomingContainer) {
-    const emptyHtml = `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center mt-4">
-            <i class="fa-solid fa-futbol text-4xl text-gray-300 mb-3"></i>
-            <p class="font-bold text-gray-600 text-sm">এই মুহূর্তে কোনো ম্যাচ ডাটা পাওয়া যায়নি</p>
-        </div>`;
-    if(liveContainer) liveContainer.innerHTML = emptyHtml;
-    if(finishedContainer) finishedContainer.innerHTML = ""; 
-    if(upcomingContainer) upcomingContainer.innerHTML = ""; 
 }
 
 document.addEventListener("DOMContentLoaded", () => {
