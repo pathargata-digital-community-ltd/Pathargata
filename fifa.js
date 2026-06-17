@@ -10,10 +10,10 @@ function getStepDates() {
     const today = new Date();
     
     const future = new Date();
-    future.setDate(today.getDate() + 90); // আগামী ৩ মাস
+    future.setDate(today.getDate() + 40); // আগামী ৩ মাস
     
     const past = new Date();
-    past.setDate(today.getDate() - 90); // বিগত ৩ মাস
+    past.setDate(today.getDate() - 40); // বিগত ৩ মাস
 
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
