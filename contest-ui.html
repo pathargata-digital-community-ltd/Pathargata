@@ -1,45 +1,91 @@
 <!-- 3. Contest Container -->
 <div id="contest-container" class="hidden-custom pb-20">
-    <!-- Premium Banner -->
-    <div class="bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 p-6 text-center text-white relative overflow-hidden">
-        <i class="fa-solid fa-camera-retro absolute -right-4 -bottom-4 text-8xl opacity-20 transform -rotate-12"></i>
-        <h2 class="text-2xl font-extrabold mb-1 shadow-sm">সেরা ছবি প্রতিযোগিতা</h2>
-        <p class="text-xs text-purple-100 mb-2 opacity-90">আপনার তোলা সেরা ছবিটি আপলোড করুন এবং জিতে নিন আকর্ষণীয় পুরষ্কার!</p>
-        <button onclick="toggleContestModal(true)" class="bg-white text-purple-700 px-6 py-2.5 rounded-full font-bold shadow-lg transform active:scale-95 transition hover:bg-gray-50 text-sm mt-2">
-            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> ছবি আপলোড করুন
-        </button>
+    
+    <!-- ========================================== -->
+    <!-- 🟢 ACTIVE CONTEST VIEW (যখন প্রতিযোগিতা চলবে) -->
+    <!-- ========================================== -->
+    <div id="contest-active-view">
+        <!-- Premium Banner -->
+        <div class="bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600 p-6 text-center text-white relative overflow-hidden">
+            <i class="fa-solid fa-camera-retro absolute -right-4 -bottom-4 text-8xl opacity-20 transform -rotate-12"></i>
+            <h2 class="text-2xl font-extrabold mb-1 shadow-sm">সেরা ছবি প্রতিযোগিতা</h2>
+            <p class="text-xs text-purple-100 mb-2 opacity-90">আপনার তোলা সেরা ছবিটি আপলোড করুন এবং জিতে নিন আকর্ষণীয় পুরষ্কার!</p>
+            <button onclick="toggleContestModal(true)" class="bg-white text-purple-700 px-6 py-2.5 rounded-full font-bold shadow-lg transform active:scale-95 transition hover:bg-gray-50 text-sm mt-2">
+                <i class="fa-solid fa-cloud-arrow-up mr-1"></i> ছবি আপলোড করুন
+            </button>
+        </div>
+
+        <!-- Contest Details Bar (Sponsor, Date, Rules) -->
+        <div class="bg-white px-4 py-3 flex justify-between items-center shadow-sm border-b z-10 relative">
+            <div class="flex flex-col gap-1">
+                <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-handshake text-purple-500 w-4 text-center"></i> স্পন্সর: <span id="dyn-contest-sponsor" class="text-gray-800">লোড হচ্ছে...</span></span>
+                <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-clock text-pink-500 w-4 text-center"></i> শেষ সময়: <span id="dyn-contest-date" class="text-red-500">লোড হচ্ছে...</span></span>
+            </div>
+            <button onclick="toggleContestRulesModal(true)" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm border border-blue-100">
+                <i class="fa-solid fa-info text-lg"></i>
+            </button>
+        </div>
+        
+        <!-- Contest Prizes Section -->
+        <div id="dyn-contest-prizes-container" class="hidden-custom bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-3 border-b border-yellow-200 flex items-center gap-3 shadow-inner">
+            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-md">
+                <i class="fa-solid fa-gift text-lg animate-bounce"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-bold text-gray-800 text-sm">বিজয়ী পুরস্কার</h4>
+                <p id="dyn-contest-prizes" class="text-[11px] text-gray-700 font-bold mt-0.5 leading-tight">লোড হচ্ছে...</p>
+            </div>
+        </div>
+        
+        <div class="p-4 flex justify-between items-center bg-gray-50 shadow-sm border-b">
+            <h3 class="font-bold text-gray-700">অংশগ্রহণকারীদের ছবি</h3>
+            <span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-bold shadow-sm" id="contest-total-participants">0 জন</span>
+        </div>
+
+        <!-- Photos Grid -->
+        <div id="contest-photos-grid" class="p-3 grid grid-cols-2 gap-3 bg-gray-100 min-h-[300px]">
+            <p class="col-span-2 text-center text-gray-400 py-10">লোড হচ্ছে...</p>
+        </div>
     </div>
 
-    <!-- Contest Details Bar (Sponsor, Date, Rules) -->
-    <div class="bg-white px-4 py-3 flex justify-between items-center shadow-sm border-b z-10 relative">
-        <div class="flex flex-col gap-1">
-            <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-handshake text-purple-500 w-4 text-center"></i> স্পন্সর: <span id="dyn-contest-sponsor" class="text-gray-800">লোড হচ্ছে...</span></span>
-            <span class="text-[11px] text-gray-500 font-bold uppercase"><i class="fa-solid fa-clock text-pink-500 w-4 text-center"></i> শেষ সময়: <span id="dyn-contest-date" class="text-red-500">লোড হচ্ছে...</span></span>
-        </div>
-        <button onclick="toggleContestRulesModal(true)" class="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm border border-blue-100">
-            <i class="fa-solid fa-info text-lg"></i>
-        </button>
-    </div>
-    
-    <!-- Contest Prizes Section -->
-    <div id="dyn-contest-prizes-container" class="hidden-custom bg-gradient-to-r from-yellow-50 to-orange-50 px-4 py-3 border-b border-yellow-200 flex items-center gap-3 shadow-inner">
-        <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white shrink-0 shadow-md">
-            <i class="fa-solid fa-gift text-lg animate-bounce"></i>
-        </div>
-        <div class="flex-1">
-            <h4 class="font-bold text-gray-800 text-sm">বিজয়ী পুরস্কার</h4>
-            <p id="dyn-contest-prizes" class="text-[11px] text-gray-700 font-bold mt-0.5 leading-tight">লোড হচ্ছে...</p>
-        </div>
-    </div>
-    
-    <div class="p-4 flex justify-between items-center bg-gray-50 shadow-sm border-b">
-        <h3 class="font-bold text-gray-700">অংশগ্রহণকারীদের ছবি</h3>
-        <span class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-bold shadow-sm" id="contest-total-participants">0 জন</span>
-    </div>
 
-    <!-- Photos Grid -->
-    <div id="contest-photos-grid" class="p-3 grid grid-cols-2 gap-3 bg-gray-100 min-h-[300px]">
-        <p class="col-span-2 text-center text-gray-400 py-10">লোড হচ্ছে...</p>
+    <!-- ========================================== -->
+    <!-- 🔴 RESULT VIEW (যখন প্রতিযোগিতা শেষ হবে) -->
+    <!-- ========================================== -->
+    <div id="contest-result-view" class="hidden-custom bg-gray-50 min-h-screen">
+        <!-- Result Banner -->
+        <div class="bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 p-6 text-center text-white relative overflow-hidden shadow-md">
+            <i class="fa-solid fa-trophy absolute -left-4 -bottom-4 text-8xl opacity-20 transform rotate-12"></i>
+            <i class="fa-solid fa-medal absolute -right-4 top-2 text-6xl opacity-20 transform -rotate-12"></i>
+            <h2 class="text-2xl font-extrabold mb-1 drop-shadow-md">প্রতিযোগিতার ফলাফল</h2>
+            <p class="text-sm text-yellow-50 mb-2 font-medium">যারা বিজয়ী হয়েছেন তাদের অভিনন্দন!</p>
+        </div>
+
+        <!-- Winner Action Panel (Only Visible to Winners) -->
+        <div id="winner-action-panel" class="hidden-custom m-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 shadow-sm text-center">
+            <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-2 animate-bounce"><i class="fa-solid fa-gift"></i></div>
+            <h3 class="font-bold text-green-800 text-lg">অভিনন্দন! আপনি বিজয়ী হয়েছেন!</h3>
+            <p class="text-xs text-green-700 mt-1 mb-3">আপনার পুরস্কারটি সংগ্রহ করতে এডমিনের সাথে যোগাযোগ করুন।</p>
+            <button onclick="contactAdminForPrize()" class="bg-green-600 text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:bg-green-700 transition flex items-center justify-center gap-2 mx-auto active:scale-95">
+                <i class="fa-brands fa-whatsapp text-lg"></i> মেসেজ দিন
+            </button>
+        </div>
+
+        <!-- Top 3 Podium -->
+        <div class="p-4">
+            <h3 class="text-center font-extrabold text-gray-800 text-lg mb-4 border-b pb-2 border-gray-200"><i class="fa-solid fa-crown text-yellow-500"></i> সেরা বিজয়ীগণ</h3>
+            <div id="contest-podium-grid" class="space-y-4">
+                <!-- 1st, 2nd, 3rd will be injected here -->
+            </div>
+        </div>
+
+        <!-- Leaderboard (Others) -->
+        <div class="px-4 py-2">
+            <h3 class="font-bold text-gray-700 mb-3 border-l-4 border-orange-500 pl-3">অন্যান্য অংশগ্রহণকারী</h3>
+            <div id="contest-leaderboard-list" class="space-y-2 mb-6">
+                <!-- Other participants will be injected here -->
+            </div>
+        </div>
     </div>
 </div>
 
@@ -50,11 +96,9 @@
             <i class="fa-solid fa-xmark"></i>
         </button>
         <h3 class="font-bold text-xl text-purple-600 mb-4 border-b pb-2"><i class="fa-solid fa-scroll text-purple-500 mr-1"></i> নিয়ম ও শর্তাবলী</h3>
-        
         <ul id="dyn-contest-rules-list" class="text-sm text-gray-600 space-y-2.5 mb-6">
             <p class="text-center text-gray-400 text-xs py-4">লোড হচ্ছে...</p>
         </ul>
-        
         <button onclick="toggleContestRulesModal(false)" class="w-full bg-gray-100 text-gray-800 font-bold py-3 rounded-xl hover:bg-gray-200 transition">বুঝতে পেরেছি</button>
     </div>
 </div>
@@ -67,7 +111,6 @@
         </button>
         <h3 class="font-bold text-xl text-purple-600 mb-1">প্রতিযোগিতায় অংশ নিন</h3>
         <p class="text-xs text-gray-500 mb-4">একটি সুন্দর ক্যাপশন সহ আপনার সেরা ছবিটি দিন।</p>
-        
         <div class="space-y-4">
             <div class="flex flex-col items-center justify-center w-full">
                 <label for="contest-img-input" class="flex flex-col items-center justify-center w-full h-40 border-2 border-purple-300 border-dashed rounded-xl cursor-pointer bg-purple-50 hover:bg-purple-100 overflow-hidden relative">
@@ -81,7 +124,6 @@
             </div>
             <textarea id="contest-caption" rows="2" placeholder="ছবির ক্যাপশন বা বিবরণ লিখুন..." class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm focus:bg-white resize-none"></textarea>
         </div>
-        
         <button onclick="submitContestPhoto()" id="btn-contest-submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 mt-4 rounded-xl shadow-lg hover:opacity-90 transition flex justify-center items-center gap-2">
             সাবমিট করুন
         </button>
