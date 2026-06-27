@@ -30,7 +30,7 @@ window.listenForNotificationBadge = (uid) => {
 };
 
 // ২. টিকটক স্টাইল ভাসমান নোটিফিকেশন দেখানো (ইন-অ্যাপ)
-window.showTikTokStyleToast = (notif) => {
+window.showTikTokStyleToast = async (notif) => {
     const container = document.getElementById('in-app-toast-container');
     if (!container) return;
 
@@ -57,8 +57,20 @@ window.showTikTokStyleToast = (notif) => {
         colorClass = 'text-red-600 bg-red-100';
     }
 
-    // প্রোফাইল আইকন (ছবি না থাকলে নামের প্রথম অক্ষর)
+    // --- રિયલ-টাইম প্রোফাইল পিকচার ফেচ করা ---
     let imgHtml = `<div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0 ${colorClass}">${notif.fromName ? notif.fromName.charAt(0) : icon}</div>`;
+    
+    // ডাটাবেস থেকে ইউজারের তথ্য আনা (যদি fromUid থাকে)
+    if (notif.fromUid && window.getUserData) {
+        try {
+            const uData = await window.getUserData(notif.fromUid);
+            if (uData && uData.profile_pic) {
+                imgHtml = `<img src="${uData.profile_pic}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-100 shadow-sm">`;
+            }
+        } catch (error) {
+            console.error("Profile pic fetch error for floating notif", error);
+        }
+    }
 
     const toast = document.createElement('div');
     toast.className = 'in-app-toast bg-white/95 backdrop-blur-md border border-gray-100 rounded-full p-2 pr-4 flex items-center gap-3 w-full cursor-pointer';
@@ -78,14 +90,16 @@ window.showTikTokStyleToast = (notif) => {
         window.handleNotificationClick(notif.id, notif.postId, notif.type);
     };
 
-    // সোয়াইপ বা সময় শেষ হলে রিমুভ
+    // কন্টেইনারে অ্যাড করা
     container.appendChild(toast);
+    
+    // সময় শেষ হলে রিমুভ
     setTimeout(() => {
         if (toast.parentElement) {
             toast.classList.add('hide');
             setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300);
         }
-    }, 3500); // ৩.৫ সেকেন্ড পর চলে যাবে
+    }, 4000); // ৪ সেকেন্ড পর চলে যাবে (ফেচ করার কারণে একটু সময় বেশি দেওয়া হলো)
 };
 
 // ৩. নতুন আনরিড নোটিফিকেশনের জন্য লিসেনার (অ্যাপ ওপেন হলে লাস্ট নোটিফিকেশন দেখাবে)
