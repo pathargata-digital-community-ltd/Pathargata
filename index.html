@@ -2621,21 +2621,11 @@ loadMyComplaints();
             window.cancelRecording();
         }
 
-        // Start Recording (Median.co & Browser Compatible)
+        // Start Recording (Capacitor & Browser Compatible)
         window.startRecording = async () => {
 
-            // --- Median.co (GoNative) এর জন্য স্পেশাল পারমিশন রিকোয়েস্ট ---
-            if (navigator.userAgent.indexOf('wv') > -1 || navigator.userAgent.indexOf('Median') > -1) {
-                // এটি অ্যাপকে ফোর্স করবে পারমিশন পপ-আপ দেখাতে
-                window.location.href = 'median://permissions/request?permissions=android.permission.RECORD_AUDIO';
-            }
-            // -------------------------------------------------------------
-
-            // একটু সময় নেওয়া হচ্ছে যেন পপ-আপটি আসে
-            await new Promise(r => setTimeout(r, 500));
-
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                return showToast("অডিও রেকর্ড সাপোর্ট করছে না।", "error");
+                return showToast("আপনার ডিভাইসে অডিও রেকর্ড সাপোর্ট করছে না।", "error");
             }
 
             try {
