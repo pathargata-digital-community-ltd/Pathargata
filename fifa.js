@@ -1,5 +1,5 @@
 // আপনার apifootball.com এর API Key
-const API_KEY = "0d32ccd98a1644f14f9f2b7bca0e0617baf38ac668768eb60612cda46a029209"; 
+const API_KEY = "3c3c2e2cedfcea673c0202ea21fd4ae246eb835c79233578a4ed8d125aadf572"; 
 
 const CACHE_KEY = "fifa_matches_step_data";
 const CACHE_TIME_KEY = "fifa_step_update_time";
