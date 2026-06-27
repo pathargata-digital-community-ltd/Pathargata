@@ -2381,16 +2381,16 @@ if (refUid) {
             return "";
         }
 
-        // --- UPDATED CLOUDINARY UPLOAD (Supports Audio) ---
-        window.uploadMediaToCloudinary = async function(file) {
-            // ভিডিও ব্লক থাকবে, কিন্তু অডিও অ্যালাউ করা হবে
-            if (file.type.startsWith('video/')) {
+        // --- UPDATED CLOUDINARY UPLOAD (Video Compression Added) ---
+        window.uploadMediaToCloudinary = async function(file, isStory = false) {
+            // ভিডিও আপলোড শুধুমাত্র স্টোরির জন্য অ্যালাউড
+            if (file.type.startsWith('video/') && !isStory) {
                 alert("ভিডিও আপলোড বন্ধ। ভিডিওর জন্য এডমিনের সাথে যোগাযোগ করুন।");
                 throw new Error("Video upload not allowed for users");
             }
 
             let fileToUpload = file;
-            // শুধুমাত্র ছবির জন্য রিসাইজ হবে
+            // শুধুমাত্র ছবির জন্য ক্যানভাস রিসাইজ হবে
             if (file.type.startsWith('image/')) {
                 try {
                     fileToUpload = await resizeImage(file);
@@ -2403,8 +2403,13 @@ if (refUid) {
             formData.append('file', fileToUpload);
             formData.append('upload_preset', 'Pathargata digital');
 
-            // অডিও ফাইলের জন্য resource_type 'video' বা 'auto' হতে হয় ক্লাউডিনারিতে
-            const resourceType = file.type.startsWith('audio/') ? 'video' : 'auto';
+            // ভিডিওর জন্য 'video', অডিওর জন্যও 'video', ছবির জন্য 'auto'
+            const resourceType = (file.type.startsWith('audio/') || file.type.startsWith('video/')) ? 'video' : 'auto';
+
+            // ⭐️ ক্লাউডিনারিকে ভিডিও রিসাইজ করার ইনস্ট্রাকশন দেওয়া (Eager Transformation) ⭐️
+            if (file.type.startsWith('video/')) {
+                formData.append('eager', 'q_60,w_720,c_limit'); 
+            }
 
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/${resourceType}/upload`, {
@@ -2412,16 +2417,25 @@ if (refUid) {
                     body: formData
                 });
                 const data = await res.json();
+                
                 if (data.error) throw new Error(data.error.message);
+                
+                let finalUrl = data.secure_url;
+
+                // ⭐️ ভিডিও হলে, ক্লাউডিনারির কনভার্ট করা (রিসাইজড) লিংকটি নিব ⭐️
+                if (file.type.startsWith('video/') && data.eager && data.eager.length > 0) {
+                    finalUrl = data.eager[0].secure_url;
+                }
+
                 return {
-                    url: data.secure_url,
+                    url: finalUrl,
                     type: resourceType
-                }; // resource_type রিটার্ন করা হলো
+                }; 
             } catch (error) {
                 console.error("Cloudinary Upload Error:", error);
                 throw error;
             }
-        }
+        };
 
         // Helper: Resize Image using Canvas
         function resizeImage(file, maxWidth = 800) {
