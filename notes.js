@@ -128,9 +128,10 @@ window.loadNotes = () => {
         // গ্লোবাল ভেরিয়েবলে সেভ করে রাখা প্লেব্যাক এর জন্য
         allActiveStories = validStories;
 
-        // নিজের "Add Story" কার্ড তৈরি
-        let myProfilePic = window.userDetails.profile_pic || 'https://via.placeholder.com/150';
-        let myBg = window.userDetails.cover_pic || myProfilePic; // কভার থাকলে কভার দেখাবে
+        // নিজের "Add Story" কার্ড তৈরি (Safeguard added)
+        let safeUser = window.userDetails || {};
+        let myProfilePic = safeUser.profile_pic || 'https://via.placeholder.com/150';
+        let myBg = safeUser.cover_pic || myProfilePic;
 
         let html = `
         <div onclick="toggleNoteModal(true)" class="story-card group">
@@ -288,6 +289,13 @@ window.nextStory = () => {
         closeStoryViewer();
     }
 };
+
+// --- স্টোরি অটো লোডার (যাতে ফাইল লোড হতে দেরি হলেও স্টোরি মিস না হয়) ---
+setTimeout(() => {
+    if (window.currentUser && typeof window.loadNotes === 'function') {
+        window.loadNotes();
+    }
+}, 2000); // অ্যাপ ওপেন হওয়ার ২ সেকেন্ড পর স্টোরি কার্ড রেন্ডার করবে
 
 window.prevStory = () => {
     if (currentStoryIndex > 0) {
