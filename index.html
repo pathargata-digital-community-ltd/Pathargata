@@ -689,6 +689,24 @@
         .small-like-animate {
             animation: smallLikeBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        
+        /* --- In-App Floating Notification (TikTok Style) --- */
+        @keyframes slideDownIn {
+            0% { transform: translateY(-150%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideUpOut {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-150%); opacity: 0; }
+        }
+        .in-app-toast {
+            animation: slideDownIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            pointer-events: auto;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .in-app-toast.hide {
+            animation: slideUpOut 0.3s ease-in forwards;
+        }
     </style>
     <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
     <!-- Dark Mode Files (Hosted on GitHub) -->
@@ -700,6 +718,9 @@
 
     <!-- টোস্ট কন্টেইনার -->
     <div id="toast-container"></div>
+    
+    <!-- টিকটক স্টাইল ভাসমান নোটিফিকেশন কন্টেইনার -->
+    <div id="in-app-toast-container" class="fixed top-2 left-0 right-0 z-[350] flex flex-col items-center pt-safe pointer-events-none space-y-2 px-4 w-full max-w-[480px] mx-auto"></div>
 
     <!-- ১. অথেন্টিকেশন স্ক্রিন -->
     <div id="auth-screen" class="fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center p-6 overflow-y-auto">
@@ -2592,6 +2613,7 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
                 });
                 listenForFriendRequests(user.uid);
                 listenForNotificationBadge(user.uid);
+                listenForInAppPopups(user.uid); // নতুন ভাসমান নোটিফিকেশন লিসেনার
                 loadNotifications(true);
 if(window.loadChatList) window.loadChatList(user.uid);
 if(window.listenForGlobalMessages) window.listenForGlobalMessages(user.uid); // বাবল চালু করার লাইন
