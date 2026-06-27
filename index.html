@@ -258,6 +258,16 @@
             border-color: #ef4444;
         }
 
+        /* Header Scroll Hiding Animation */
+        .header-hidden {
+            transform: translateY(-100%);
+        }
+
+        /* Home Tabs sliding up animation */
+        .tabs-slide-up {
+            top: env(safe-area-inset-top, 0px) !important;
+        }
+
         /* FAB Scroll Hiding Animation */
         #fab-container {
             transition: transform 0.3s ease-in-out;
@@ -679,6 +689,109 @@
         .small-like-animate {
             animation: smallLikeBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        
+        /* --- In-App Floating Notification (TikTok Style) --- */
+        @keyframes slideDownIn {
+            0% { transform: translateY(-150%); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideUpOut {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-150%); opacity: 0; }
+        }
+        .in-app-toast {
+            animation: slideDownIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            pointer-events: auto;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        .in-app-toast.hide {
+            animation: slideUpOut 0.3s ease-in forwards;
+        }
+        
+        /* --- Facebook Style Story Cards --- */
+        .story-card {
+            width: 105px;
+            height: 160px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            background-color: #e5e7eb;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 1px solid #f3f4f6;
+        }
+        .story-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+        }
+        .story-avatar {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            border: 2px solid #2563eb;
+            z-index: 10;
+            object-fit: cover;
+            background: white;
+        }
+        .story-name {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            z-index: 10;
+            text-align: left;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        .story-add-btn {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 28px;
+            background: #2563eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            border: 2px solid white;
+            z-index: 10;
+        }
+        
+        /* Story Progress Bar */
+        .story-progress-container {
+            display: flex;
+            gap: 4px;
+            position: absolute;
+            top: env(safe-area-inset-top, 10px);
+            left: 10px;
+            right: 10px;
+            z-index: 60;
+        }
+        .story-progress-bar {
+            height: 3px;
+            background: rgba(255,255,255,0.3);
+            flex-grow: 1;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .story-progress-fill {
+            height: 100%;
+            background: white;
+            width: 0%;
+        }
     </style>
     <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
     <!-- Dark Mode Files (Hosted on GitHub) -->
@@ -690,6 +803,9 @@
 
     <!-- টোস্ট কন্টেইনার -->
     <div id="toast-container"></div>
+    
+    <!-- টিকটক স্টাইল ভাসমান নোটিফিকেশন কন্টেইনার -->
+    <div id="in-app-toast-container" class="fixed top-2 left-0 right-0 z-[350] flex flex-col items-center pt-safe pointer-events-none space-y-2 px-4 w-full max-w-[480px] mx-auto"></div>
 
     <!-- ১. অথেন্টিকেশন স্ক্রিন -->
     <div id="auth-screen" class="fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center p-6 overflow-y-auto">
@@ -699,6 +815,16 @@
             </div>
             <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">পাথরঘাটা ডিজিটাল</h1>
             <p class="text-gray-500 mt-1 font-medium">স্মার্ট উপজেলা সেবা</p>
+        </div>
+        <!-- Saved Accounts / Multi-Account View -->
+        <div id="saved-accounts-view" class="w-full max-w-sm hidden-custom mb-6 animate-fade">
+            <h2 class="text-xl font-bold mb-4 text-gray-800 text-center">একাউন্ট বেছে নিন</h2>
+            <div id="saved-accounts-list" class="grid grid-cols-2 gap-4 mb-4">
+                <!-- Saved accounts will be loaded here -->
+            </div>
+            <button onclick="showLoginForm()" class="w-full bg-blue-50 text-blue-700 font-bold py-3.5 rounded-xl hover:bg-blue-100 transition border border-blue-200 flex justify-center items-center gap-2">
+                <i class="fa-solid fa-plus"></i> অন্য একাউন্টে লগইন করুন
+            </button>
         </div>
         <div id="login-form" class="w-full max-w-sm">
             <h2 class="text-xl font-bold mb-6 text-green-700 border-l-4 border-green-600 pl-3">লগইন করুন</h2>
@@ -713,27 +839,42 @@
             <button onclick="handleLogin()" id="btn-login-action" class="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg">লগইন</button>
             <p class="mt-8 text-center text-sm text-gray-600">একাউন্ট নেই? <span onclick="toggleAuth('register')" class="text-green-600 font-bold cursor-pointer hover:underline">রেজিস্ট্রেশন করুন</span></p>
         </div>
-        <div id="register-form" class="w-full max-w-sm hidden-custom">
-            <h2 class="text-xl font-bold mb-6 text-green-700 border-l-4 border-green-600 pl-3">নতুন একাউন্ট খুলুন</h2>
-            <div class="space-y-4">
-                <div class="flex flex-col items-center mb-2">
-                    <label class="relative cursor-pointer w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center hover:bg-gray-50 overflow-hidden">
-                        <img id="reg-img-preview" class="w-full h-full object-cover hidden">
-                        <div id="reg-img-placeholder" class="text-center text-gray-400 text-xs">
-                            <i class="fa-solid fa-camera text-2xl mb-1"></i><br>ছবি দিন
-                        </div>
-                        <input type="file" id="reg-profile-pic" accept="image/*" class="hidden" onchange="previewRegImage(this)">
-                    </label>
-                    <p class="text-[10px] text-gray-500 mt-1">প্রোফাইল ছবি (ঐচ্ছিক)</p>
+        <div id="register-form" class="w-full max-w-sm hidden-custom relative">
+            <h2 class="text-xl font-bold mb-4 text-green-700 border-l-4 border-green-600 pl-3">নতুন একাউন্ট খুলুন</h2>
+            
+            <!-- Progress Bar -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex gap-1 flex-1">
+                    <div id="progress-1" class="h-1.5 flex-1 bg-green-600 rounded-full transition-all"></div>
+                    <div id="progress-2" class="h-1.5 flex-1 bg-gray-200 rounded-full transition-all"></div>
+                    <div id="progress-3" class="h-1.5 flex-1 bg-gray-200 rounded-full transition-all"></div>
+                    <div id="progress-4" class="h-1.5 flex-1 bg-gray-200 rounded-full transition-all"></div>
                 </div>
-                <input type="text" id="reg-name" placeholder="আপনার নাম (বাংলা/English)" maxlength="20" oninput="this.value = this.value.replace(/[^a-zA-Z\u0980-\u09FF\s]/g, '')" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base">
-                <p class="text-[10px] text-gray-500 ml-1">শুধুমাত্র অক্ষর ব্যবহার করুন (সর্বোচ্চ ২০ অক্ষর)</p>
+                <span id="step-indicator" class="text-xs font-bold text-gray-500 ml-3">ধাপ ১/৪</span>
+            </div>
 
-                <input type="email" id="reg-email" placeholder="ইমেইল" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base">
-                <input type="tel" id="reg-phone" placeholder="ফোন নাম্বার (১১ ডিজিট)" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base">
-                <div class="relative">
+            <!-- Step 1: Basic Info -->
+            <div id="reg-step-1" class="space-y-4 animate-fade">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 ml-1 block mb-1">আপনার নাম *</label>
+                    <input type="text" id="reg-name" placeholder="নাম (বাংলা বা English)" maxlength="20" oninput="this.value = this.value.replace(/[^a-zA-Z\u0980-\u09FF\s]/g, '')" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 ml-1 block mb-1">মোবাইল নাম্বার *</label>
+                    <input type="tel" id="reg-phone" placeholder="017XXXXXXXX" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base focus:bg-white transition-all">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 ml-1 block mb-1">ইমেইল *</label>
+                    <input type="email" id="reg-email" placeholder="example@gmail.com" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base focus:bg-white transition-all">
+                </div>
+                <button onclick="nextRegStep(2)" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 mt-4 shadow-md transition active:scale-95 text-lg">পরবর্তী ধাপ <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            </div>
+
+            <!-- Step 2: Location -->
+            <div id="reg-step-2" class="space-y-4 hidden-custom animate-fade">
+                <div>
                     <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">ইউনিয়ন নির্বাচন করুন *</label>
-                    <select id="reg-union" onchange="loadVillagesForUnion(this.value, 'reg-village')" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base">
+                    <select id="reg-union" onchange="loadVillagesForUnion(this.value, 'reg-village')" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base focus:bg-white transition-all">
                         <option value="">নির্বাচন করুন</option>
                         <option value="Patharghata Union Sadar">পাথরঘাটা ইউনিয়ন (সদর)</option>
                         <option value="Char Duani Union">চরদুয়ানী ইউনিয়ন</option>
@@ -746,38 +887,75 @@
                 </div>
                 <div>
                     <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">গ্রাম/মহল্লা *</label>
-                    <select id="reg-village" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base disabled:bg-gray-100" disabled>
+                    <select id="reg-village" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base disabled:bg-gray-200 focus:bg-white transition-all" disabled>
                         <option value="">আগে ইউনিয়ন নির্বাচন করুন</option>
                     </select>
                 </div>
-                <div class="flex gap-3">
-                    <div class="w-1/2"><label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">জন্ম তারিখ</label><input type="date" id="reg-dob" class="w-full bg-gray-50 border p-2.5 rounded-xl text-sm"></div>
-                    <div class="w-1/2"><label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">লিঙ্গ</label><select id="reg-gender" class="w-full bg-gray-50 border p-3 rounded-xl text-sm">
-                            <option value="Male">পুরুষ</option>
-                            <option value="Female">মহিলা</option>
-                        </select></div>
-                </div>
-                <div class="relative w-full">
-                    <input type="password" id="reg-pass" placeholder="পাসওয়ার্ড (কমপক্ষে ৬ সংখ্যা)" class="w-full bg-gray-50 border p-3.5 rounded-xl pr-10 text-base">
-                    <i onclick="togglePassword('reg-pass', this)" class="fa-regular fa-eye absolute right-3 top-4 text-gray-500 cursor-pointer"></i>
-                </div>
-                
-                <!-- রেফারেল কোড ইনপুট বক্স -->
-<div class="relative w-full">
-    <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">রেফার কোড (ঐচ্ছিক)</label>
-    <input type="text" id="reg-ref-code" placeholder="বন্ধুর রেফার কোড দিন" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base">
-    <p class="text-[10px] text-gray-400 mt-1 ml-1">আপনার যদি কোনো রেফার কোড থাকে তবে এখানে দিন।</p>
-</div>
-
-                <!-- Privacy Policy Checkbox -->
-                <div class="flex items-start gap-2 pt-1">
-                    <input type="checkbox" id="reg-privacy-agree" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500 mt-0.5">
-                    <label for="reg-privacy-agree" class="text-sm text-gray-600">
-                        আমি <a href="#" id="reg-privacy-link" target="_blank" class="text-green-600 font-bold hover:underline">গোপনীয়তা ও নীতিমালা (Privacy Policy)</a> এর সাথে একমত।
-                    </label>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="prevRegStep(1)" class="w-1/3 bg-gray-200 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-300 transition active:scale-95"><i class="fa-solid fa-arrow-left"></i> পেছনে</button>
+                    <button onclick="nextRegStep(3)" class="w-2/3 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 shadow-md transition active:scale-95 text-lg">পরবর্তী ধাপ <i class="fa-solid fa-arrow-right ml-1"></i></button>
                 </div>
             </div>
-            <button onclick="handleRegister()" id="btn-reg-action" class="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 mt-6 shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+
+            <!-- Step 3: Personal Details -->
+            <div id="reg-step-3" class="space-y-4 hidden-custom animate-fade">
+                <div class="flex flex-col items-center mb-2">
+                    <label class="relative cursor-pointer w-24 h-24 rounded-full bg-gray-50 border-2 border-dashed border-blue-300 flex items-center justify-center hover:bg-gray-100 overflow-hidden transition-all">
+                        <img id="reg-img-preview" class="w-full h-full object-cover hidden">
+                        <div id="reg-img-placeholder" class="text-center text-blue-500 text-xs font-bold">
+                            <i class="fa-solid fa-camera text-2xl mb-1"></i><br>ছবি দিন
+                        </div>
+                        <input type="file" id="reg-profile-pic" accept="image/*" class="hidden" onchange="previewRegImage(this)">
+                    </label>
+                    <p class="text-[10px] text-gray-500 mt-2">প্রোফাইল ছবি (ঐচ্ছিক)</p>
+                </div>
+                <div class="flex gap-3">
+                    <div class="w-1/2">
+                        <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">জন্ম তারিখ</label>
+                        <input type="date" id="reg-dob" class="w-full bg-gray-50 border p-3 rounded-xl text-sm focus:bg-white transition-all">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">লিঙ্গ</label>
+                        <select id="reg-gender" class="w-full bg-gray-50 border p-3.5 rounded-xl text-sm focus:bg-white transition-all">
+                            <option value="Male">পুরুষ</option>
+                            <option value="Female">মহিলা</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="prevRegStep(2)" class="w-1/3 bg-gray-200 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-300 transition active:scale-95"><i class="fa-solid fa-arrow-left"></i> পেছনে</button>
+                    <button onclick="nextRegStep(4)" class="w-2/3 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 shadow-md transition active:scale-95 text-lg">শেষ ধাপ <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                </div>
+            </div>
+
+            <!-- Step 4: Security & Finish -->
+            <div id="reg-step-4" class="space-y-4 hidden-custom animate-fade">
+                <div>
+                    <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">পাসওয়ার্ড সেট করুন *</label>
+                    <div class="relative w-full">
+                        <input type="password" id="reg-pass" placeholder="কমপক্ষে ৬ সংখ্যা" class="w-full bg-gray-50 border p-3.5 rounded-xl pr-10 text-base focus:bg-white transition-all">
+                        <i onclick="togglePassword('reg-pass', this)" class="fa-regular fa-eye absolute right-3 top-4 text-gray-500 cursor-pointer"></i>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="text-xs text-gray-500 ml-1 block mb-1 font-bold">রেফার কোড (ঐচ্ছিক)</label>
+                    <input type="text" id="reg-ref-code" placeholder="বন্ধুর রেফার কোড দিন" class="w-full bg-gray-50 border p-3.5 rounded-xl text-base focus:bg-white transition-all">
+                </div>
+
+                <div class="flex items-start gap-2 pt-2 bg-gray-50 p-3 rounded-lg border">
+                    <input type="checkbox" id="reg-privacy-agree" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500 mt-0.5">
+                    <label for="reg-privacy-agree" class="text-xs text-gray-600 font-medium">
+                        আমি <a href="#" id="reg-privacy-link" target="_blank" class="text-green-600 font-bold hover:underline">গোপনীয়তা ও নীতিমালা</a> এর সাথে একমত।
+                    </label>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button onclick="prevRegStep(3)" class="w-1/3 bg-gray-200 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-300 transition active:scale-95"><i class="fa-solid fa-arrow-left"></i></button>
+                    <button onclick="handleRegister()" id="btn-reg-action" class="w-2/3 bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg">সম্পন্ন করুন <i class="fa-solid fa-check"></i></button>
+                </div>
+            </div>
+
             <p class="mt-8 text-center text-sm text-gray-600">আগেই একাউন্ট আছে? <span onclick="toggleAuth('login')" class="text-green-600 font-bold cursor-pointer hover:underline">লগইন করুন</span></p>
         </div>
         <div id="forgot-form" class="w-full max-w-sm hidden-custom">
@@ -810,42 +988,47 @@
         </div>
         <div class="flex-1 overflow-y-auto py-4 bg-white">
             <ul class="space-y-2">
-                <li onclick="switchPage('profile'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-green-700 hover:bg-green-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('profile'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-green-700 hover:bg-green-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center text-green-600 text-lg"><i class="fa-solid fa-user"></i></div> <span class="font-bold text-base">প্রোফাইল</span>
                 </li>
-                <li onclick="switchPage('monetization'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('monetization'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 text-lg"><i class="fa-solid fa-sack-dollar"></i></div> <span class="font-bold text-base">মনিটাইজেশন</span>
                 </li>
-                <li onclick="openDynamicCategory('history_tourism', 'ইতিহাস ও পর্যটন'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-purple-700 hover:bg-purple-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>openDynamicCategory('history_tourism', 'ইতিহাস ও পর্যটন'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-purple-700 hover:bg-purple-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-lg"><i class="fa-solid fa-landmark"></i></div> <span class="font-bold text-base">ইতিহাস ও পর্যটন</span>
                 </li>
-                <li onclick="switchPage('directory'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('directory'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-address-book"></i></div> <span class="font-bold text-base">প্রশাসনিক ডিরেক্টরি</span>
                 </li>
-                <li onclick="switchPage('market'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-orange-700 hover:bg-orange-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('market'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-orange-700 hover:bg-orange-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 text-lg"><i class="fa-solid fa-store"></i></div> <span class="font-bold text-base">উপজেলা মার্কেট</span>
                 </li>
-                <li onclick="switchPage('complaints'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-red-700 hover:bg-red-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('complaints'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-red-700 hover:bg-red-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center text-red-600 text-lg"><i class="fa-solid fa-box-archive"></i></div> <span class="font-bold text-base">অভিযোগ বক্স</span>
                 </li>
 
                 <!-- New Features: Verification Updated -->
-                <li onclick="switchPage('verification'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-blue-500 hover:bg-blue-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('verification'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-blue-500 hover:bg-blue-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-certificate"></i></div> <span class="font-bold text-base">ভেরিফিকেশন</span>
                 </li>
-                <li onclick="switchPage('invite'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-pink-600 hover:bg-pink-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('invite'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-pink-600 hover:bg-pink-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-pink-50 flex items-center justify-center text-pink-600 text-lg"><i class="fa-solid fa-share-nodes"></i></div> <span class="font-bold text-base">বন্ধুদের আমন্ত্রণ</span>
                 </li>
-                <li onclick="openRules(); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>openRules(), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-teal-600 hover:bg-teal-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 text-lg"><i class="fa-solid fa-scale-balanced"></i></div> <span class="font-bold text-base">রুলস ও নীতিমালা</span>
                 </li>
 
-                <li onclick="switchPage('settings'); toggleSidebar(false)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('settings'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-lg"><i class="fa-solid fa-gear"></i></div> <span class="font-bold text-base">সেটিংস</span>
+                </li>
+                
+                <!-- Account Switch Button -->
+                <li onclick="toggleSidebar(false); setTimeout(()=>handleAccountSwitch(), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all duration-300">
+                    <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-users-gear"></i></div> <span class="font-bold text-base">একাউন্ট পরিবর্তন</span>
                 </li>
 
                 <div class="border-t mx-6 my-2 border-gray-100"></div>
-                <li id="sidebar-help" onclick="alert('যোগাযোগ: help@patharghata.com'); toggleSidebar(false)" class="sidebar-item px-6 py-3 cursor-pointer flex items-center gap-4 text-gray-500 hover:bg-gray-50 transition-all"><i class="fa-solid fa-circle-question w-6 text-center"></i> <span class="text-sm font-medium">Help & Support</span></li>
+                <li id="sidebar-help" onclick="toggleSidebar(false); setTimeout(()=>alert('যোগাযোগ: help@patharghata.com'), 50)" class="sidebar-item px-6 py-3 cursor-pointer flex items-center gap-4 text-gray-500 hover:bg-gray-50 transition-all"><i class="fa-solid fa-circle-question w-6 text-center"></i> <span class="text-sm font-medium">Help & Support</span></li>
             </ul>
         </div>
         <div class="p-5 border-t bg-gray-50 pb-safe">
@@ -877,31 +1060,47 @@
 
     <!-- Feeling Modal -->
     <div id="feeling-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
-        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+        <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
             <button onclick="closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
-            <h3 class="font-bold text-gray-800 text-lg">অনুভূতি / অ্যাক্টিভিটি</h3>
+            <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
         </div>
-        <div class="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 bg-gray-50 pb-20">
-            <div onclick="selectFeeling('Happy', '😄')" class="bg-white p-3 rounded-xl border flex items-center gap-3 cursor-pointer hover:bg-green-50"><span class="text-2xl">😄</span> <span class="font-bold text-gray-700">Happy</span></div>
-            <div onclick="selectFeeling('Sad', '😔')" class="bg-white p-3 rounded-xl border flex items-center gap-3 cursor-pointer hover:bg-red-50"><span class="text-2xl">😔</span> <span class="font-bold text-gray-700">Sad</span></div>
-            <div onclick="selectFeeling('Loved', '🥰')" class="bg-white p-3 rounded-xl border flex items-center gap-3 cursor-pointer hover:bg-pink-50"><span class="text-2xl">🥰</span> <span class="font-bold text-gray-700">Loved</span></div>
-            <div onclick="selectFeeling('Excited', '🤩')" class="bg-white p-3 rounded-xl border flex items-center gap-3 cursor-pointer hover:bg-yellow-50"><span class="text-2xl">🤩</span> <span class="font-bold text-gray-700">Excited</span></div>
-            <div onclick="selectFeeling('Angry', '😡')" class="bg-white p-3 rounded-xl border flex items-center gap-3 cursor-pointer hover:bg-red-50"><span class="text-2xl">😡</span> <span class="font-bold text-gray-700">Angry</span></div>
-            <div onclick="selectFeeling('Celebrating', '🎉')" class="bg-white p-3 rounded-xl border flex items-center gap-3 cursor-pointer hover:bg-blue-50"><span class="text-2xl">🎉</span> <span class="font-bold text-gray-700">Celebrating</span></div>
+        <div class="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-gray-50 pb-20">
+            <div onclick="selectFeeling('Happy', '😊')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😊</span> <span class="font-semibold text-sm text-gray-700">Happy</span></div>
+            <div onclick="selectFeeling('Loved', '🥰')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🥰</span> <span class="font-semibold text-sm text-gray-700">Loved</span></div>
+            <div onclick="selectFeeling('Sad', '😔')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😔</span> <span class="font-semibold text-sm text-gray-700">Sad</span></div>
+            <div onclick="selectFeeling('Excited', '🤩')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤩</span> <span class="font-semibold text-sm text-gray-700">Excited</span></div>
+            <div onclick="selectFeeling('Angry', '😠')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😠</span> <span class="font-semibold text-sm text-gray-700">Angry</span></div>
+            <div onclick="selectFeeling('Blessed', '😇')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😇</span> <span class="font-semibold text-sm text-gray-700">Blessed</span></div>
+            <div onclick="selectFeeling('Tired', '😫')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😫</span> <span class="font-semibold text-sm text-gray-700">Tired</span></div>
+            <div onclick="selectFeeling('Sleepy', '😴')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😴</span> <span class="font-semibold text-sm text-gray-700">Sleepy</span></div>
+            <div onclick="selectFeeling('Cool', '😎')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😎</span> <span class="font-semibold text-sm text-gray-700">Cool</span></div>
+            <div onclick="selectFeeling('Crazy', '🤪')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤪</span> <span class="font-semibold text-sm text-gray-700">Crazy</span></div>
+            <div onclick="selectFeeling('Sick', '🤒')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤒</span> <span class="font-semibold text-sm text-gray-700">Sick</span></div>
+            <div onclick="selectFeeling('Celebrating', '🎉')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🎉</span> <span class="font-semibold text-sm text-gray-700">Celebrating</span></div>
         </div>
     </div>
 
-    <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col">
-        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+    <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
             <button onclick="toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <div class="flex-1 relative">
-                <input type="text" id="global-search-input" onkeyup="debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
+                <input type="text" id="global-search-input" onkeyup="debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
                 <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg"></i>
             </div>
         </div>
-        <div id="global-search-results" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 pb-20">
-            <div class="text-center mt-20 text-gray-400"><i class="fa-solid fa-magnifying-glass text-4xl mb-3 opacity-30"></i>
-                <p>অনুসন্ধান করতে লিখুন</p>
+        
+        <div class="flex-1 overflow-y-auto bg-gray-50 pb-20 relative">
+            <!-- 1. Trending Explore View (Instagram Style) -->
+            <div id="trending-explore-view" class="w-full">
+                <!-- Grid Container -->
+                <div id="trending-explore-grid" class="grid grid-cols-3 gap-0.5 bg-white">
+                    <div class="col-span-3 text-center py-10"><i class="fa-solid fa-spinner fa-spin text-gray-400"></i></div>
+                </div>
+            </div>
+
+            <!-- 2. Search Results View (Hidden by default) -->
+            <div id="search-results-list" class="p-4 space-y-4 hidden-custom">
+                <!-- Search results will load here -->
             </div>
         </div>
     </div>
@@ -946,11 +1145,14 @@
             <div class="max-h-[80vh] overflow-y-auto">
                 <!-- User Info & Privacy -->
                 <div class="px-4 py-3 flex items-center gap-3">
-                    <div id="post-modal-user-img" class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100">
+                    <div id="post-modal-user-img" class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
                         <i class="fa-solid fa-user text-gray-400 text-xl"></i>
                     </div>
-                    <div>
-                        <h4 id="post-modal-user-name" class="font-bold text-gray-800 text-base leading-tight">User Name</h4>
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-1">
+                            <h4 id="post-modal-user-name" class="font-bold text-gray-800 text-base leading-tight inline">User Name</h4>
+                            <span id="post-modal-tagged-info" class="text-sm text-gray-600 hidden inline"></span>
+                        </div>
                         <select id="post-privacy" class="mt-1 bg-gray-100 text-xs font-semibold text-gray-600 px-2 py-1 rounded-md border-0 focus:ring-0 cursor-pointer">
                             <option value="public">🌍 Public</option>
                             <option value="friends">👥 Friends</option>
@@ -1236,7 +1438,7 @@
 
     <!-- ৫. মেইন অ্যাপ কন্টেইনার -->
     <div class="app-container hidden-custom" id="main-app">
-        <header class="bg-white text-gray-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm border-b pt-safe">
+        <header id="main-header" class="bg-white text-gray-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm border-b pt-safe transition-transform duration-300">
             <div class="flex items-center gap-3">
                 <button onclick="toggleSidebar(true)" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-200 transition"><i class="fa-solid fa-bars text-xl"></i></button>
                 <h1 id="app-header-title" class="text-xl font-bold text-green-600">পাথরঘাটা ডিজিটাল</h1>
@@ -1257,7 +1459,7 @@
                 <div id="live-notices"></div>
                 
                 <!-- 1. Tabs Section -->
-                <div class="bg-white border-b sticky top-[68px] z-30">
+                <div id="home-tabs" class="bg-white border-b sticky top-[68px] z-30 transition-all duration-300">
                     <div class="flex overflow-x-auto hide-scrollbar">
                         <div onclick="filterFeed('all')" id="tab-feed-all" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab active uppercase">উপজেলা</div>
                         <div onclick="filterFeed('union')" id="tab-feed-union" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase">ইউনিয়ন</div>
@@ -1275,15 +1477,7 @@
 
                 <!-- 2. Regular Feed Section (নোটস এবং সাধারণ পোস্ট) -->
                 <div id="regular-feed-section" class="bg-gray-100 pb-20">
-                    <!-- ২৪ ঘণ্টার নোটস / স্টোরি সেকশন -->
-                    <div class="bg-white pt-4 pb-4 mb-2 shadow-sm border-b">
-                        <div class="px-4 flex justify-between items-center mb-3">
-                            <h3 class="font-bold text-gray-800 text-sm">নোটস ও স্টোরি</h3>
-                        </div>
-                        <div id="notes-list-container" class="flex gap-3 px-4 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
-                            <!-- নোটস এখানে জাভাস্ক্রিপ্ট দিয়ে লোড হবে -->
-                        </div>
-                    </div>
+                    <div id="notes-ui-container"></div>
                     
                     <div id="news-feed" class="px-0 space-y-3 min-h-[300px] mt-2">
                         <!-- Initial Loader Skeleton -->
@@ -1306,7 +1500,7 @@
                 <div id="fifa-ui-container" class="hidden-custom bg-gray-100 min-h-screen pb-20"></div>
               </div>
             <div id="page-services" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
-                <div class="bg-white p-3 sticky top-20 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl">
+                <div class="bg-white p-3 sticky top-0 pt-safe z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl">
                     <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
                     <h2 class="font-bold text-lg text-gray-800">সকল সেবা</h2>
                 </div>
@@ -1464,18 +1658,10 @@
                 </div>
             </div>
 
-            <div id="page-notifications" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
-                <h2 class="text-xl font-bold text-gray-800 mb-4 border-l-4 border-yellow-500 pl-3">নোটিফিকেশন</h2>
-                <div id="notifications-list" class="space-y-3">
-                    <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
-                </div>
-                <div class="text-center mt-6">
-                    <button id="btn-load-more-notif" onclick="loadNotifications(false)" class="hidden bg-white border px-4 py-2 rounded-full text-sm font-bold text-gray-600 shadow-sm">আরো দেখুন</button>
-                </div>
-            </div>
+            <div id="notifications-ui-container"></div>
 
             <div id="page-people" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
-                <div class="bg-white p-4 sticky top-16 z-30 shadow-sm border-b">
+                <div class="bg-white p-4 sticky top-0 pt-safe z-30 shadow-sm border-b">
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xl font-bold text-gray-800">মানুষ খুজুন</h2>
                     </div>
@@ -1517,7 +1703,7 @@
             </div>
 
             <div id="page-market" class="hidden p-4 bg-gray-100 min-h-screen pb-20">
-                <div class="flex items-center mb-5 sticky top-20 z-30 bg-gray-100 py-2 gap-3">
+                <div class="flex items-center mb-5 sticky top-0 pt-safe z-30 bg-gray-100 py-2 gap-3">
                     <button onclick="switchPage('services')" class="text-gray-500 w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-lg"></i></button>
                     <h2 class="text-xl font-bold text-gray-800 border-l-4 border-orange-500 pl-3 flex-1">উপজেলা মার্কেট</h2>
                     <button onclick="toggleSellModal(true)" class="bg-orange-500 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow hover:bg-orange-600 flex items-center gap-2 transform active:scale-95 transition"><i class="fa-solid fa-plus"></i> বিক্রি করুন</button>
@@ -1531,7 +1717,7 @@
 <div id="profile-ui-container"></div>
 
             <div id="page-friends-list" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
-                <button onclick="window.history.back()" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
+                <button onclick="switchPage('people')" class="mb-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
                 <h2 class="text-xl font-bold mb-5 border-l-4 border-green-500 pl-3 text-gray-700">সকল বন্ধু</h2>
                 <div id="all-friends-container" class="grid grid-cols-1 gap-3">
                     <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
@@ -1759,6 +1945,27 @@
         <button onclick="changeFontSize('large')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-lg font-medium">বড়</button>
     </div>
 </div>
+
+                    <!-- নতুন ডেটা ও স্টোরেজ সেকশন -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                        <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">ডেটা ও স্টোরেজ</div>
+                        <div class="p-4 space-y-4">
+                            <div class="flex items-center justify-between p-2 border-b border-gray-50 pb-4">
+                                <div>
+                                    <span class="text-base text-gray-700 font-bold block">ডাটা সেভার মোড</span>
+                                    <span class="text-[10px] text-gray-500">ভিডিও অটো-প্লে বন্ধ থাকবে এবং ডাটা কম খরচ হবে</span>
+                                </div>
+                                <input type="checkbox" onchange="toggleDataSaver(this.checked)" id="setting-data-saver-toggle" class="w-6 h-6 text-green-600 rounded">
+                            </div>
+                            <div onclick="clearAppCache(event)" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition">
+                                <div>
+                                    <span class="text-base text-gray-700 font-bold block">মেমোরি ক্যাশ ক্লিয়ার</span>
+                                    <span class="text-[10px] text-gray-500">অ্যাপ ধীরগতির হলে এটি ব্যবহার করুন</span>
+                                </div>
+                                <i class="fa-solid fa-broom text-gray-400 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
                         <div class="p-3 bg-red-50 border-b font-bold text-red-700 text-sm">ডেঞ্জার জোন</div>
                         <div class="p-4"><button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button></div>
@@ -1884,22 +2091,7 @@
     
     <div id="contest-modals-container"></div>
     
-    <!-- Add Note Modal -->
-        <div id="note-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-            <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative transform transition-all">
-                <button onclick="toggleNoteModal(false)" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <h3 class="font-bold text-lg text-gray-800 mb-1">নতুন নোট লিখুন</h3>
-                <p class="text-[11px] text-gray-500 mb-4">আপনার নোটটি ২৪ ঘণ্টা পর অটোমেটিক মুছে যাবে।</p>
-                
-                <textarea id="note-input-text" maxlength="60" rows="3" placeholder="আপনার মনে কি আছে? (সর্বোচ্চ ৬০ অক্ষর)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm focus:bg-white resize-none font-medium text-center"></textarea>
-                
-                <button onclick="submitNote()" id="btn-note-submit" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-xl shadow hover:bg-blue-700 transition flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-paper-plane"></i> শেয়ার করুন
-                </button>
-            </div>
-        </div>
+    <div id="notes-modal-container"></div>
         
     <script type="module">
         import {
@@ -2099,11 +2291,7 @@ if (refUid) {
         let profilePostsFullList = [];
         let currentProfileRenderCount = 0;
         let isProfileRendering = false;
-        let currentProfileViewMode = '';
-
-        // Notification Pagination Variables
-        let lastNotifKey = null;
-        let hasMoreNotifs = true;
+        let currentProfileViewMode = '';        
 
         // Global variables for new features
         window.selectedImages = [];
@@ -2381,6 +2569,15 @@ if (refUid) {
                 authScreen.classList.add('hidden-custom');
                 mainApp.classList.remove('hidden-custom');
                 
+                // নতুন একাউন্টের ডাটা আসার আগে স্ক্রিন সম্পূর্ণ ক্লিয়ার করা হচ্ছে
+                document.getElementById('news-feed').innerHTML = '<div class="flex flex-col gap-3 p-4"><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div></div>';
+                
+                // গ্লোবাল ভেরিয়েবলগুলো নতুন একাউন্টের জন্য রিসেট করা
+                window.userDetails = {};
+                window.myFriends = [];
+                isFeedLoading = false;
+                hasMorePosts = true;
+                
                 // --- Presence System (Active/Inactive Status) START ---
 import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
     const { ref, onValue, onDisconnect, set, serverTimestamp } = module;
@@ -2412,6 +2609,11 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
                 const savedSize = localStorage.getItem('fontSize');
                 if (savedSize) changeFontSize(savedSize);
 
+                // ডাটা সেভার স্টেট সেট করা
+                const isDataSaver = localStorage.getItem('dataSaver') === 'true';
+                const dataSaverToggle = document.getElementById('setting-data-saver-toggle');
+                if (dataSaverToggle) dataSaverToggle.checked = isDataSaver;
+
                 if (!history.state) {
                     const currentHash = window.location.hash.replace('#', '');
                     if (currentHash && currentHash !== 'home') setTimeout(() => switchPage(currentHash), 500);
@@ -2429,6 +2631,7 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
                     if (data) {
                         userDetails = data;
 window.userDetails = userDetails;
+window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
                         if(data.status === 'pending' || data.status === 'pending_review') {
                             window.ADVANCED_FEATURES.showLockScreen(data); 
                             return; 
@@ -2472,6 +2675,7 @@ window.userDetails = userDetails;
                 });
                 listenForFriendRequests(user.uid);
                 listenForNotificationBadge(user.uid);
+                listenForInAppPopups(user.uid); // নতুন ভাসমান নোটিফিকেশন লিসেনার
                 loadNotifications(true);
 if(window.loadChatList) window.loadChatList(user.uid);
 if(window.listenForGlobalMessages) window.listenForGlobalMessages(user.uid); // বাবল চালু করার লাইন
@@ -2501,7 +2705,9 @@ loadMyComplaints();
                 window.currentUser = null;
                 authScreen.classList.remove('hidden-custom');
                 mainApp.classList.add('hidden-custom');
-                document.getElementById('login-form').classList.remove('hidden-custom');
+                
+                // লগআউট অবস্থায় থাকলে আগে চেক করবে সেভ করা একাউন্ট আছে কিনা
+                window.loadSavedAccounts();
             }
 
             // সবকিছু লোড হওয়ার পর স্প্ল্যাশ স্ক্রিন রিমুভ করার কোড
@@ -2515,15 +2721,23 @@ loadMyComplaints();
 
         // --- SCROLL HANDLER (UPDATED for Profile Infinite Scroll) ---
         window.onscroll = function() {
-            // FAB Logic
+            // FAB, Header & Tabs Scroll Logic (Only on Home Page)
             if (document.getElementById('page-home') && !document.getElementById('page-home').classList.contains('hidden')) {
                 let st = window.pageYOffset || document.documentElement.scrollTop;
                 const fabContainer = document.getElementById('fab-container');
+                const mainHeader = document.getElementById('main-header');
+                const homeTabs = document.getElementById('home-tabs'); // Tab bar ID
 
                 if (st > lastScrollTop && st > 50) {
-                    fabContainer.classList.add('scroll-hidden');
+                    // Scrolling Down (হেডার লুকাবে এবং ট্যাব উপরে উঠে যাবে)
+                    if (fabContainer) fabContainer.classList.add('scroll-hidden');
+                    if (mainHeader) mainHeader.classList.add('header-hidden');
+                    if (homeTabs) homeTabs.classList.add('tabs-slide-up');
                 } else {
-                    fabContainer.classList.remove('scroll-hidden');
+                    // Scrolling Up (সব আগের জায়গায় ফিরে আসবে)
+                    if (fabContainer) fabContainer.classList.remove('scroll-hidden');
+                    if (mainHeader) mainHeader.classList.remove('header-hidden');
+                    if (homeTabs) homeTabs.classList.remove('tabs-slide-up');
                 }
                 lastScrollTop = st <= 0 ? 0 : st;
             }
@@ -2544,7 +2758,11 @@ loadMyComplaints();
                 entries.forEach(entry => {
                     if (entry.target.tagName === 'VIDEO') {
                         if (entry.isIntersecting) {
-                            entry.target.play().catch(e => console.log('Autoplay blocked', e));
+                            // ডাটা সেভার চেক করা হচ্ছে
+                            const isDataSaver = localStorage.getItem('dataSaver') === 'true';
+                            if (!isDataSaver) {
+                                entry.target.play().catch(e => console.log('Autoplay blocked', e));
+                            }
                         } else {
                             entry.target.pause();
                         }
@@ -2754,6 +2972,7 @@ loadMyComplaints();
             // ৫. অন্যান্য অপশন ক্লিয়ার করা
             window.taggedUsers = [];
             window.selectedFeeling = null;
+            if(typeof window.updatePostHeaderUI === 'function') window.updatePostHeaderUI(); // UI ক্লিয়ার
             document.getElementById('post-mobile').value = "";
             document.getElementById('post-social-link').value = "";
             document.getElementById('post-privacy').value = "public";
@@ -3465,6 +3684,54 @@ loadMyComplaints();
                 r.readAsDataURL(input.files[0]);
             }
         }
+        
+        // --- MULTI-STEP REGISTRATION LOGIC ---
+        window.nextRegStep = (step) => {
+            // Validation before going to next step
+            if (step === 2) {
+                const name = document.getElementById('reg-name').value.trim();
+                const phone = document.getElementById('reg-phone').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                
+                if (!name || !phone || !email) return showToast("নাম, ইমেইল এবং মোবাইল নাম্বার দিন!", "error");
+                if (!/^01[3-9]\d{8}$/.test(phone)) return showToast("সঠিক মোবাইল নম্বর দিন", "error");
+            } 
+            else if (step === 3) {
+                const union = document.getElementById('reg-union').value;
+                const village = document.getElementById('reg-village').value;
+                if (!union || !village) return showToast("ইউনিয়ন এবং গ্রাম নির্বাচন করুন!", "error");
+            }
+
+            // Hide all steps
+            for(let i=1; i<=4; i++) {
+                document.getElementById(`reg-step-${i}`).classList.add('hidden-custom');
+                // Progress Bar Update
+                const pBar = document.getElementById(`progress-${i}`);
+                if (i <= step) {
+                    pBar.classList.replace('bg-gray-200', 'bg-green-600');
+                } else {
+                    pBar.classList.replace('bg-green-600', 'bg-gray-200');
+                }
+            }
+            // Show target step
+            document.getElementById(`reg-step-${step}`).classList.remove('hidden-custom');
+            document.getElementById('step-indicator').innerText = `ধাপ ${step}/৪`;
+        };
+
+        window.prevRegStep = (step) => {
+            for(let i=1; i<=4; i++) {
+                document.getElementById(`reg-step-${i}`).classList.add('hidden-custom');
+                const pBar = document.getElementById(`progress-${i}`);
+                if (i <= step) {
+                    pBar.classList.replace('bg-gray-200', 'bg-green-600');
+                } else {
+                    pBar.classList.replace('bg-green-600', 'bg-gray-200');
+                }
+            }
+            document.getElementById(`reg-step-${step}`).classList.remove('hidden-custom');
+            document.getElementById('step-indicator').innerText = `ধাপ ${step}/৪`;
+        };
+        // -------------------------------------
 
         window.handleRegister = async () => {
             const name = document.getElementById('reg-name').value.trim();
@@ -3580,7 +3847,14 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
     localStorage.removeItem('inviter_uid');
 }
                 showToast("রেজিস্ট্রেশন সফল হয়েছে!", "success");
-                // ফর্ম ক্লিয়ার বা লগইন পেজে পাঠানোর লজিক এখানে দিতে পারেন যদি চান
+                
+                // ফর্ম ক্লিয়ার এবং প্রথম ধাপে রিসেট করে দেওয়া
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-phone').value = '';
+                document.getElementById('reg-pass').value = '';
+                document.getElementById('reg-privacy-agree').checked = false;
+                window.prevRegStep(1); // আবার প্রথম ধাপে নিয়ে যাওয়া
 
             } catch (e) {
                 showToast(e.message, 'error');
@@ -3589,16 +3863,127 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 btn.disabled = false;
             }
         };
+        
+        // ==========================================
+        // MULTI-ACCOUNT SWITCH SYSTEM LOGIC
+        // ==========================================
+
+        window.showLoginForm = () => {
+            document.getElementById('saved-accounts-view').classList.add('hidden-custom');
+            document.getElementById('login-form').classList.remove('hidden-custom');
+            document.getElementById('login-email').value = "";
+            document.getElementById('login-pass').value = "";
+        };
+
+        window.loadSavedAccounts = () => {
+            const savedData = localStorage.getItem('saved_accounts');
+            const accountsList = document.getElementById('saved-accounts-list');
+            const savedView = document.getElementById('saved-accounts-view');
+            const loginForm = document.getElementById('login-form');
+
+            if (savedData) {
+                const accounts = JSON.parse(savedData);
+                if (accounts.length > 0) {
+                    // সেভ করা একাউন্ট থাকলে সেগুলো দেখাবে, লগইন ফর্ম লুকাবে
+                    savedView.classList.remove('hidden-custom');
+                    loginForm.classList.add('hidden-custom');
+                    
+                    accountsList.innerHTML = accounts.map(acc => `
+                        <div class="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm text-center relative hover:border-green-500 hover:shadow-md transition cursor-pointer group">
+                            <button onclick="removeSavedAccount('${acc.email}', event)" class="absolute top-2 right-2 w-6 h-6 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center hover:bg-red-100 hover:text-red-500 text-xs transition z-10"><i class="fa-solid fa-xmark"></i></button>
+                            <div onclick="quickLogin('${acc.email}', '${acc.pass}')">
+                                <img src="${acc.pic || 'https://via.placeholder.com/100'}" class="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-green-100 group-hover:scale-105 transition">
+                                <h4 class="font-bold text-gray-800 text-sm truncate">${escapeHTML(acc.name)}</h4>
+                                <p class="text-[10px] text-gray-400 truncate mt-0.5">${escapeHTML(acc.email)}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                    return true;
+                }
+            }
+            // সেভ করা একাউন্ট না থাকলে সরাসরি লগইন ফর্ম দেখাবে
+            savedView.classList.add('hidden-custom');
+            loginForm.classList.remove('hidden-custom');
+            return false;
+        };
+
+        window.saveAccountLocally = (email, plainPass, uid) => {
+            let accounts = JSON.parse(localStorage.getItem('saved_accounts') || '[]');
+            accounts = accounts.filter(a => a.email !== email); // Remove duplicate if exists
+            
+            accounts.push({
+                email: email,
+                pass: window.encryptMsg(plainPass), // Password Encrypted
+                uid: uid,
+                name: "অপেক্ষা করুন...", 
+                pic: "" 
+            });
+            localStorage.setItem('saved_accounts', JSON.stringify(accounts));
+        };
+
+        window.updateSavedAccountProfile = (email, name, pic) => {
+            let accounts = JSON.parse(localStorage.getItem('saved_accounts') || '[]');
+            let accIndex = accounts.findIndex(a => a.email === email);
+            if(accIndex > -1) {
+                accounts[accIndex].name = name;
+                accounts[accIndex].pic = pic;
+                localStorage.setItem('saved_accounts', JSON.stringify(accounts));
+            }
+        };
+
+        window.removeSavedAccount = (email, event) => {
+            event.stopPropagation();
+            if(!confirm("এই একাউন্টটি রিমুভ করতে চান?")) return;
+            let accounts = JSON.parse(localStorage.getItem('saved_accounts') || '[]');
+            accounts = accounts.filter(a => a.email !== email);
+            localStorage.setItem('saved_accounts', JSON.stringify(accounts));
+            loadSavedAccounts(); // UI Refresh
+        };
+
+        window.quickLogin = (email, encryptedPass) => {
+            if (!navigator.onLine) return showToast("ইন্টারনেট সংযোগ নেই!", 'error');
+            
+            // স্ক্রিনে একটি সুন্দর লোডিং স্পিনার দেখানো হবে যাতে ডাবল ক্লিক না পড়ে
+            const savedView = document.getElementById('saved-accounts-view');
+            savedView.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 animate-fade">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-green-600 mb-4"></div>
+                    <p class="font-bold text-gray-600 text-lg">একাউন্টে প্রবেশ করা হচ্ছে...</p>
+                    <p class="text-xs text-gray-400 mt-1">দয়া করে অপেক্ষা করুন</p>
+                </div>
+            `;
+            
+            const plainPass = window.decryptMsg(encryptedPass);
+            
+            signInWithEmailAndPassword(auth, email, plainPass).catch((e) => {
+                showToast("পাসওয়ার্ড বা একাউন্ট বাতিল হয়েছে। আবার লগইন করুন।", 'error');
+                showLoginForm();
+                window.loadSavedAccounts(); // ডাটা ভুল হলে আবার লিস্ট ফিরিয়ে আনবে
+            });
+        };
+
+        window.handleAccountSwitch = async () => {
+            await signOut(auth); // Sign out but keep local storage
+            window.location.reload(); // রিলোড করলে স্বয়ংক্রিয়ভাবে সেভ করা একাউন্ট পেজে চলে যাবে
+        };
+        // ==========================================
 
         window.handleLogin = () => {
             if (!navigator.onLine) {
                 showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
                 return;
             }
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
             const btn = document.getElementById('btn-login-action');
+            
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> যাচাই হচ্ছে...';
             btn.disabled = true;
-            signInWithEmailAndPassword(auth, document.getElementById('login-email').value.trim(), document.getElementById('login-pass').value).catch((e) => {
+            
+            signInWithEmailAndPassword(auth, email, pass).then((cred) => {
+                // লগইন সফল হলে ব্রাউজারে সেভ করে রাখা হচ্ছে
+                saveAccountLocally(email, pass, cred.user.uid);
+            }).catch((e) => {
                 showToast("ভুল ইমেইল বা পাসওয়ার্ড", 'error');
                 btn.innerText = "লগইন";
                 btn.disabled = false;
@@ -3621,8 +4006,22 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 btn.disabled = false;
             });
         };
-        window.handleLogout = () => {
-            if (confirm("লগআউট করবেন?")) signOut(auth);
+        window.handleLogout = async () => {
+            if (confirm("লগআউট করবেন?")) {
+                // আগের একাউন্টের ক্যাশ মুছে ফেলা হচ্ছে
+                localStorage.removeItem('feed_cache_all');
+                localStorage.removeItem('feed_cache_union');
+                await signOut(auth);
+                window.location.reload(); // পেজ রিলোড করে সম্পূর্ণ ফ্রেশ করা
+            }
+        };
+
+        window.handleAccountSwitch = async () => {
+            // অন্য একাউন্টে যাওয়ার আগে ক্যাশ ক্লিয়ার করা হচ্ছে
+            localStorage.removeItem('feed_cache_all');
+            localStorage.removeItem('feed_cache_union');
+            await signOut(auth); 
+            window.location.reload(); 
         };
 
         window.selectPostColor = (color) => {
@@ -4064,11 +4463,21 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             });
 
             const frPreviewDiv = document.getElementById('my-friends-preview-list');
-            const friendsList = allUsers.filter(u => myFriends.includes(u.uid)).slice(0, 10);
-            frPreviewDiv.innerHTML = friendsList.length > 0 ? friendsList.map(u => {
-                let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xs">${escapeHTML(u.name).charAt(0)}</div>`;
-                return `<div onclick="openUserProfile('${u.uid}')" class="bg-green-50 p-2 rounded-lg border border-green-100 flex items-center gap-2 cursor-pointer">${av}<span class="text-xs font-bold text-gray-700 truncate">${escapeHTML(u.name).split(' ')[0]}</span></div>`;
-            }).join('') : '<p class="col-span-2 text-center text-gray-400 text-xs py-2">এখনো ফ্রেন্ড নেই</p>';
+            if (window.myFriends && window.myFriends.length > 0) {
+                // সরাসরি ডাটাবেস/ক্যাশ থেকে বন্ধুদের ডাটা লোড করা হচ্ছে
+                Promise.all(window.myFriends.slice(0, 10).map(uid => getUserData(uid))).then(friendsData => {
+                    let html = '';
+                    friendsData.forEach(u => {
+                        if (u) {
+                            let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xs">${escapeHTML(u.name).charAt(0)}</div>`;
+                            html += `<div onclick="openUserProfile('${u.uid}')" class="bg-green-50 p-2 rounded-lg border border-green-100 flex items-center gap-2 cursor-pointer hover:bg-green-100 transition"><div class="shrink-0">${av}</div><span class="text-xs font-bold text-gray-700 truncate">${escapeHTML(u.name).split(' ')[0]}</span></div>`;
+                        }
+                    });
+                    frPreviewDiv.innerHTML = html || '<p class="col-span-2 text-center text-gray-400 text-xs py-2">ডেটা লোড করা যায়নি</p>';
+                });
+            } else {
+                frPreviewDiv.innerHTML = '<p class="col-span-2 text-center text-gray-400 text-xs py-2">এখনো ফ্রেন্ড নেই</p>';
+            }
         }
 
         // Debounced Search Handler for People
@@ -4133,8 +4542,39 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             get(ref(db, `users/${window.currentUser.uid}/friends`)).then(s => {
                 myFriends = Object.keys(s.val() || {});
                 updatePeopleTab();
+                // আনফ্রেন্ড করলে লিস্ট অটো রিফ্রেশ হবে
+                if(!document.getElementById('page-friends-list').classList.contains('hidden')) loadAllFriendsList();
             });
         });
+
+        // --- সকল বন্ধুর লিস্ট লোড করার ফাংশন ---
+        window.loadAllFriendsList = () => {
+            const container = document.getElementById('all-friends-container');
+            container.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
+            
+            if (window.myFriends && window.myFriends.length > 0) {
+                Promise.all(window.myFriends.map(uid => getUserData(uid))).then(friendsData => {
+                    let html = '';
+                    friendsData.forEach(u => {
+                        if (u) {
+                            let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover shadow-sm">` : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xl">${escapeHTML(u.name).charAt(0)}</div>`;
+                            html += `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
+                                <div onclick="openUserProfile('${u.uid}')" class="cursor-pointer shrink-0">${av}</div>
+                                <div onclick="openUserProfile('${u.uid}')" class="flex-1 cursor-pointer min-w-0">
+                                    <h4 class="font-bold text-gray-800 text-sm truncate">${escapeHTML(u.name)}${checkUserBadge(u)}</h4>
+                                    <p class="text-xs text-gray-500 truncate">${escapeHTML(u.profession || 'সদস্য')}</p>
+                                </div>
+                                <button onclick="startChat('${u.uid}', '${escapeHTML(u.name)}')" class="shrink-0 w-9 h-9 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition"><i class="fa-brands fa-facebook-messenger text-sm"></i></button>
+                                <button onclick="unfriend('${u.uid}')" class="shrink-0 w-9 h-9 bg-red-50 text-red-600 rounded-full flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-user-xmark text-sm"></i></button>
+                            </div>`;
+                        }
+                    });
+                    container.innerHTML = html;
+                });
+            } else {
+                container.innerHTML = '<p class="text-center text-gray-400 py-10">আপনার এখনো কোনো ফ্রেন্ড নেই</p>';
+            }
+        };
         
         // --- DIRECTORY ---
         window.openDirectoryCategory = (category, title) => {
@@ -4359,117 +4799,6 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             onValue(ref(db, `friend_requests/${uid}`), updatePeopleTab);
         }
 
-        // --- NOTIFICATIONS ---
-        window.listenForNotificationBadge = (uid) => {
-            onValue(query(ref(db, `notifications/${uid}`), orderByChild('read'), equalTo(false)), (snap) => {
-                const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-                const badge = document.getElementById('header-badge-notice');
-                badge.innerText = count;
-                badge.classList[count > 0 ? 'add' : 'remove']('active');
-            });
-        }
-
-                window.loadNotifications = (isInitial = false) => {
-            const list = document.getElementById('notifications-list');
-            const btn = document.getElementById('btn-load-more-notif');
-            
-            if (!window.currentUser) return; // ইউজার লগইন না থাকলে এটি রান হবে না
-
-            if (isInitial) {
-                list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
-                lastNotifKey = null;
-                hasMoreNotifs = true;
-            }
-            
-            if (!hasMoreNotifs) {
-                btn.classList.add('hidden');
-                return;
-            }
-
-            const pageSize = 10;
-            let notifQuery;
-            if (isInitial) notifQuery = query(ref(db, `notifications/${window.currentUser.uid}`), orderByKey(), limitToLast(pageSize));
-            else notifQuery = query(ref(db, `notifications/${window.currentUser.uid}`), orderByKey(), endAt(lastNotifKey), limitToLast(pageSize + 1));
-
-            get(notifQuery).then(snap => {
-                const data = snap.val();
-                if (isInitial) list.innerHTML = '';
-                
-                if (!data) {
-                    if (isInitial) list.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো নোটিফিকেশন নেই</p>';
-                    hasMoreNotifs = false;
-                    btn.classList.add('hidden');
-                    return;
-                }
-
-                let items = Object.entries(data)
-                    .filter(([key, val]) => typeof val === 'object' && val !== null) // সেফগার্ড
-                    .map(([key, val]) => ({
-                        id: key,
-                        ...val
-                    }))
-                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-                if (!isInitial && items.length > 0) items = items.filter(i => i.id !== lastNotifKey);
-                if (items.length < pageSize && !isInitial) hasMoreNotifs = false;
-
-                // --- নতুন ফিক্সড অংশ (সাদা পেজ রোধ করতে) ---
-                if (items.length === 0) {
-                    if (isInitial) {
-                        list.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো নোটিফিকেশন নেই</p>';
-                    }
-                    hasMoreNotifs = false;
-                    btn.classList.add('hidden');
-                    return;
-                }
-                // ---------------------------------------------
-
-                items.forEach(n => {
-                    const bgClass = n.read ? 'bg-white' : 'bg-blue-50';
-                    let html = '';
-                    
-                    if (n.type === 'blood_req') {
-                        html = `<div class="${bgClass} p-3 rounded-xl shadow-sm border-l-4 border-red-600 flex justify-between items-center mb-3"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold"><i class="fa-solid fa-droplet"></i></div><div><h4 class="font-bold text-red-800 text-sm">জরুরি রক্ত প্রয়োজন! (${escapeHTML(n.group)})</h4><p class="text-xs text-gray-600">যোগাযোগ: ${escapeHTML(n.contact)}</p><p class="text-[10px] text-gray-400">${timeAgo(n.timestamp)}</p></div></div><a href="tel:${n.contact}" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white"><i class="fa-solid fa-phone"></i></a></div>`;
-                    } else {
-                        let icon = 'fa-rss',
-                            color = 'text-blue-600',
-                            bg = 'bg-blue-100',
-                            text = 'একটি নতুন পোস্ট শেয়ার করেছেন';
-                        if (n.type === 'like') {
-                            icon = 'fa-thumbs-up';
-                            color = 'text-green-600';
-                            bg = 'bg-green-100';
-                            text = 'আপনার পোস্টে লাইক দিয়েছেন';
-                        }
-                        if (n.type === 'comment') {
-                            icon = 'fa-comment';
-                            color = 'text-purple-600';
-                            bg = 'bg-purple-100';
-                            text = 'আপনার পোস্টে কমেন্ট করেছেন';
-                        }
-                        html = `<div class="${bgClass} p-3 rounded-xl shadow-sm border-l-4 border-blue-400 flex justify-between items-center mb-3 cursor-pointer" onclick="handleNotificationClick('${n.id}', '${n.postId}', '${n.type}')"><div class="flex items-center gap-3"><div class="w-10 h-10 ${bg} rounded-full flex items-center justify-center ${color} font-bold"><i class="fa-solid ${icon}"></i></div><div><h4 class="font-bold text-gray-800 text-sm">${escapeHTML(n.fromName)}</h4><p class="text-xs text-gray-500">${text}</p><p class="text-[10px] text-gray-400">${timeAgo(n.timestamp)}</p></div></div></div>`;
-                    }
-                    list.insertAdjacentHTML('beforeend', html);
-                });
-
-                if (items.length > 0) {
-                    lastNotifKey = items[items.length - 1].id;
-                    btn.classList.remove('hidden');
-                } else {
-                    btn.classList.add('hidden');
-                }
-            }).catch(err => {
-                console.error("Load Notifications Error:", err);
-                if (isInitial) list.innerHTML = '<p class="text-center text-red-500 mt-10">নোটিফিকেশন লোড হতে সমস্যা হয়েছে!</p>';
-            });
-        }
-
-        window.handleNotificationClick = (notifId, postId, type) => {
-            update(ref(db, `notifications/${window.currentUser.uid}/${notifId}`), {
-                read: true
-            });
-            if (['new_post', 'like', 'comment'].includes(type)) openSinglePostModal(postId);
-        };
         window.openSinglePostModal = (postId) => {
             const c = document.getElementById('single-post-content');
             document.getElementById('single-post-modal').classList.remove('hidden-custom');
@@ -4918,6 +5247,55 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             if (size !== 'normal') body.classList.add('text-' + size);
             localStorage.setItem('fontSize', size);
         };
+
+        // --- Data Saver Logic ---
+        window.toggleDataSaver = (checked) => {
+            localStorage.setItem('dataSaver', checked);
+            showToast(checked ? "ডাটা সেভার চালু হয়েছে (অটো-প্লে বন্ধ)" : "ডাটা সেভার বন্ধ হয়েছে");
+            // সাথে সাথে ফিড রিফ্রেশ করতে পারেন, তবে রিলোড ছাড়াই ভিডিও প্লে/পজ কাজ করবে।
+        };
+
+        // --- Clear Cache Logic ---
+        window.clearAppCache = async (event) => {
+            if (confirm("আপনি কি অ্যাপের ক্যাশ মেমোরি ক্লিয়ার করতে চান? এতে সাময়িক ডাটা মুছে যাবে কিন্তু আপনার একাউন্ট লগআউট হবে না।")) {
+                const btnIcon = event.currentTarget.querySelector('i');
+                if(btnIcon) {
+                    btnIcon.classList.remove('fa-broom');
+                    btnIcon.classList.add('fa-spinner', 'fa-spin');
+                }
+
+                try {
+                    // ১. লোকাল স্টোরেজ থেকে ফিডের ক্যাশ ডিলিট করা (একাউন্ট ডিলিট হবে না)
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('feed_cache_')) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                    // ২. PWA বা ব্রাউজার ক্যাশ (স্ট্যাটিক ফাইল, ছবি) ক্লিয়ার করা
+                    if ('caches' in window) {
+                        const cacheNames = await caches.keys();
+                        await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    }
+
+                    showToast("ক্যাশ ক্লিয়ার সফল হয়েছে! অ্যাপ রিলোড হচ্ছে...", "success");
+                    
+                    setTimeout(() => {
+                        window.location.reload(true);
+                    }, 1500);
+
+                } catch (e) {
+                    showToast("ক্যাশ ক্লিয়ার করতে সমস্যা হয়েছে", "error");
+                    if(btnIcon) {
+                        btnIcon.classList.add('fa-broom');
+                        btnIcon.classList.remove('fa-spinner', 'fa-spin');
+                    }
+                }
+            }
+        };
         window.handleDeleteAccount = async () => {
     if (prompt("একাউন্ট ডিলিট করতে 'DELETE' লিখুন:") === 'DELETE') {
         const uid = window.currentUser.uid;
@@ -4955,56 +5333,141 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             if (open) {
                 m.classList.remove('hidden-custom');
                 setTimeout(() => m.classList.add('open'), 10);
+                
+                // সার্চ ইনপুট খালি করে ট্রেন্ডিং পেজ দেখানো
+                document.getElementById('global-search-input').value = '';
+                document.getElementById('trending-explore-view').classList.remove('hidden-custom');
+                document.getElementById('search-results-list').classList.add('hidden-custom');
+                
+                // ট্রেন্ডিং ছবি লোড করা
+                loadTrendingPhotos();
+                
                 document.getElementById('global-search-input').focus();
             } else {
                 m.classList.remove('open');
                 setTimeout(() => m.classList.add('hidden-custom'), 300);
             }
         }
+        
+        window.loadTrendingPhotos = () => {
+            const grid = document.getElementById('trending-explore-grid');
+            
+            get(ref(db, 'posts')).then(snap => {
+                if (!snap.exists()) {
+                    grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-10">কোনো ট্রেন্ডিং ছবি নেই</p>';
+                    return;
+                }
+
+                let trendingPosts = [];
+                snap.forEach(child => {
+                    const p = child.val();
+                    // শুধুমাত্র ছবি বা ভিডিও থাকা পোস্টগুলো ফিল্টার করা
+                    if (p.image || (p.images && p.images.length > 0)) {
+                        const likes = p.likeCount || (p.likes ? Object.keys(p.likes).length : 0);
+                        const comments = p.comments ? Object.keys(p.comments).length : 0;
+                        const score = likes + comments; // ট্রেন্ডিং স্কোর (লাইক + কমেন্ট)
+                        
+                        trendingPosts.push({ id: child.key, score: score, ...p });
+                    }
+                });
+
+                // সবচেয়ে বেশি স্কোর পাওয়া পোস্টগুলো আগে আসবে
+                trendingPosts.sort((a, b) => b.score - a.score);
+                
+                // শুধুমাত্র সেরা ১৮ টি পোস্ট নেওয়া
+                trendingPosts = trendingPosts.slice(0, 18);
+
+                if (trendingPosts.length === 0) {
+                    grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-10">কোনো ছবি নেই</p>';
+                    return;
+                }
+
+                // গ্রিড এইচটিএমএল তৈরি করা
+                grid.innerHTML = trendingPosts.map(p => {
+                    const imgUrl = p.images && p.images.length > 0 ? p.images[0] : p.image;
+                    const isVideo = p.mediaType === 'video' || imgUrl.includes('.mp4');
+                    const videoIcon = isVideo ? '<i class="fa-solid fa-play absolute top-2 right-2 text-white drop-shadow-md text-lg"></i>' : '';
+                    const multiIcon = p.images && p.images.length > 1 ? '<i class="fa-solid fa-images absolute top-2 right-2 text-white drop-shadow-md text-sm"></i>' : '';
+                    
+                    return `
+                    <div onclick="openSinglePostModal('${p.id}'); toggleGlobalSearch(false)" class="relative aspect-square cursor-pointer group bg-gray-100 overflow-hidden">
+                        <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        ${videoIcon || multiIcon}
+                    </div>`;
+                }).join('');
+            });
+        };
 
         window.debouncedGlobalSearch = debounce((q) => {
             q = q.toLowerCase().trim();
-            const container = document.getElementById('global-search-results');
+            const trendingView = document.getElementById('trending-explore-view');
+            const searchResultsView = document.getElementById('search-results-list');
+            
+            // যদি ইনপুট খালি থাকে, তবে আবার ট্রেন্ডিং দেখাবে
             if (q.length < 1) {
-                container.innerHTML = '<div class="text-center mt-20 text-gray-400"><i class="fa-solid fa-magnifying-glass text-4xl mb-3 opacity-30"></i><p>অনুসন্ধান করতে লিখুন</p></div>';
+                trendingView.classList.remove('hidden-custom');
+                searchResultsView.classList.add('hidden-custom');
                 return;
             }
+            
+            // টাইপ করা শুরু করলে ট্রেন্ডিং লুকিয়ে সার্চ রেজাল্ট দেখাবে
+            trendingView.classList.add('hidden-custom');
+            searchResultsView.classList.remove('hidden-custom');
+            searchResultsView.innerHTML = '<div class="text-center mt-10 text-gray-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p>খোঁজা হচ্ছে...</p></div>';
+
             let html = '';
+            
+            // মানুষ খোঁজা
             const matchedUsers = allUsers.filter(u => u.name.toLowerCase().includes(q));
             if (matchedUsers.length > 0) html += `<h4 class="font-bold text-xs text-gray-500 mb-2 mt-2">মানুষ</h4>` + matchedUsers.slice(0, 3).map(u => `<div onclick="openUserProfile('${u.uid}'); toggleGlobalSearch(false)" class="bg-white p-3 rounded-lg shadow-sm flex items-center gap-3 cursor-pointer"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">${u.name.charAt(0)}</div><span class="text-sm font-bold text-gray-800">${u.name}${checkUserBadge(u)}</span></div>`).join('');
+            
+            // মার্কেট খোঁজা
             const matchedMarket = globalMarketItems.filter(i => i.title.toLowerCase().includes(q));
             if (matchedMarket.length > 0) html += `<h4 class="font-bold text-xs text-gray-500 mb-2 mt-4">হাট / বাজার</h4>` + matchedMarket.slice(0, 3).map(i => `<div onclick="switchPage('market'); toggleGlobalSearch(false)" class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center cursor-pointer"><span class="text-sm font-bold text-gray-800">${i.title}</span><span class="text-xs text-orange-600 font-bold">৳ ${i.price}</span></div>`).join('');
+            
+            // ডিরেক্টরি খোঁজা
             let dirMatches = [];
             Object.values(globalDirectory || {}).forEach(catItems => Object.values(catItems).forEach(item => {
                 if (item.name.toLowerCase().includes(q)) dirMatches.push(item);
             }));
             if (dirMatches.length > 0) html += `<h4 class="font-bold text-xs text-gray-500 mb-2 mt-4">ডিরেক্টরি</h4>` + dirMatches.slice(0, 3).map(i => `<div class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center"><span class="text-sm font-bold text-gray-800">${i.name}</span><a href="tel:${i.phone}" class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs"><i class="fa-solid fa-phone"></i></a></div>`).join('');
-            container.innerHTML = html || '<div class="text-center mt-10 text-gray-400"><p>কিছু পাওয়া যায়নি</p></div>';
+            
+            searchResultsView.innerHTML = html || '<div class="text-center mt-10 text-gray-400"><p>কিছু পাওয়া যায়নি</p></div>';
         }, 500);
 
         // --- New Features Logic ---
         window.openTagModal = () => {
             openModalWithHistory('tag-friends-modal', "#tag-friends");
+            // মডালটি স্ক্রিনের নিচ থেকে স্লাইড করে উপরে আসার অ্যানিমেশন
+            document.getElementById('tag-friends-modal').classList.remove('hidden-custom');
+            setTimeout(() => document.getElementById('tag-friends-modal').classList.add('open'), 10);
+            
             const list = document.getElementById('tag-friends-list');
-            list.innerHTML = '';
+            list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
 
-            if (myFriends.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-400">কোনো বন্ধু নেই</p>';
+            if (!window.myFriends || window.myFriends.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-400 mt-10">আপনার কোনো বন্ধু নেই</p>';
                 return;
             }
 
-            const promises = myFriends.map(uid => getUserData(uid));
+            const promises = window.myFriends.map(uid => getUserData(uid));
             Promise.all(promises).then(friendsData => {
                 let html = '';
                 friendsData.forEach(u => {
                     if (u) {
                         const isTagged = window.taggedUsers.some(t => t.uid === u.uid);
-                        html += `<div onclick="toggleTagUser('${u.uid}', '${escapeHTML(u.name)}')" class="bg-white p-3 rounded-lg flex justify-between items-center cursor-pointer border ${isTagged ? 'border-green-500 bg-green-50' : 'border-gray-100'} tag-item-${u.uid}">
+                        // প্রোফাইল ছবি থাকলে সেটি দেখাবে, না থাকলে নামের প্রথম অক্ষর
+                        let avatar = u.profile_pic ? `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold shadow-sm">${u.name.charAt(0)}</div>`;
+                        
+                        html += `<div onclick="toggleTagUser('${u.uid}', '${escapeHTML(u.name)}')" class="bg-white p-3 mb-3 rounded-xl flex justify-between items-center cursor-pointer transition-all border-2 ${isTagged ? 'border-green-500 bg-green-50 shadow-md' : 'border-transparent shadow-sm'} tag-item-${u.uid}">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold">${u.name.charAt(0)}</div>
-                            <span class="font-bold text-sm text-gray-800">${escapeHTML(u.name)}</span>
+                            ${avatar}
+                            <div>
+                                <span class="font-bold text-sm text-gray-800 block">${escapeHTML(u.name)}</span>
+                                <span class="text-[10px] text-gray-500">${escapeHTML(u.village || 'পাথরঘাটা')}</span>
+                            </div>
                         </div>
-                        <i class="fa-solid fa-check-circle ${isTagged ? 'text-green-600' : 'text-gray-300'} tag-icon-${u.uid}"></i>
+                        <i class="fa-solid fa-check-circle text-2xl ${isTagged ? 'text-green-600' : 'text-gray-200'} tag-icon-${u.uid}"></i>
                     </div>`;
                     }
                 });
@@ -5012,9 +5475,12 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             });
         };
 
-        window.closeTagModal = () => {
-            document.getElementById('tag-friends-modal').classList.add('hidden-custom');
-            if (history.state?.modal === 'tag-friends-modal') history.back();
+        window.closeTagModal = (fromHistory = false) => {
+            document.getElementById('tag-friends-modal').classList.remove('open');
+            setTimeout(() => {
+                document.getElementById('tag-friends-modal').classList.add('hidden-custom');
+                if (!fromHistory && history.state?.modal === 'tag-friends-modal') history.back();
+            }, 300);
         };
 
         window.toggleTagUser = (uid, name) => {
@@ -5024,25 +5490,54 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
 
             if (index > -1) {
                 window.taggedUsers.splice(index, 1);
-                item.classList.remove('border-green-500', 'bg-green-50');
-                item.classList.add('border-gray-100');
+                item.classList.remove('border-green-500', 'bg-green-50', 'shadow-md');
+                item.classList.add('border-transparent', 'shadow-sm');
                 icon.classList.remove('text-green-600');
-                icon.classList.add('text-gray-300');
+                icon.classList.add('text-gray-200');
             } else {
-                window.taggedUsers.push({
-                    uid,
-                    name
-                });
-                item.classList.add('border-green-500', 'bg-green-50');
-                item.classList.remove('border-gray-100');
+                window.taggedUsers.push({ uid, name });
+                item.classList.add('border-green-500', 'bg-green-50', 'shadow-md');
+                item.classList.remove('border-transparent', 'shadow-sm');
                 icon.classList.add('text-green-600');
-                icon.classList.remove('text-gray-300');
+                icon.classList.remove('text-gray-200');
             }
         };
 
         window.saveTags = () => {
             closeTagModal();
-            showToast(`${window.taggedUsers.length} জন বন্ধু ট্যাগ করা হয়েছে`);
+            updatePostHeaderUI();
+            if (window.taggedUsers.length > 0) {
+                showToast(`${window.taggedUsers.length} জনকে ট্যাগ করা হয়েছে`);
+            }
+        };
+
+        window.updatePostHeaderUI = () => {
+            const tagInfo = document.getElementById('post-modal-tagged-info');
+            if (!tagInfo) return;
+
+            let html = '';
+            
+            // ইমোজি/ফিলিংস থাকলে যোগ করা
+            if (window.selectedFeeling) {
+                html += ` <span class="text-gray-600 font-normal">is feeling ${window.selectedFeeling.emoji} <b class="text-gray-800">${window.selectedFeeling.text}</b></span>`;
+            }
+            
+            // ট্যাগ থাকলে যোগ করা
+            if (window.taggedUsers && window.taggedUsers.length > 0) {
+                html += ` <span class="text-gray-600 font-normal">with <b class="text-gray-800">${escapeHTML(window.taggedUsers[0].name)}</b>`;
+                if (window.taggedUsers.length > 1) {
+                    html += ` and <b class="text-gray-800">আরও ${window.taggedUsers.length - 1} জন</b>`;
+                }
+                html += `</span>`;
+            }
+
+            if (html !== '') {
+                tagInfo.innerHTML = html;
+                tagInfo.classList.remove('hidden');
+            } else {
+                tagInfo.innerHTML = '';
+                tagInfo.classList.add('hidden');
+            }
         };
 
         window.openFeelingModal = () => {
@@ -5051,20 +5546,18 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             setTimeout(() => document.getElementById('feeling-modal').classList.add('open'), 10);
         };
 
-        window.closeFeelingModal = () => {
+        window.closeFeelingModal = (fromHistory = false) => {
             document.getElementById('feeling-modal').classList.remove('open');
             setTimeout(() => {
                 document.getElementById('feeling-modal').classList.add('hidden-custom');
-                if (history.state?.modal === 'feeling-modal') history.back();
+                if (!fromHistory && history.state?.modal === 'feeling-modal') history.back();
             }, 300);
         };
 
         window.selectFeeling = (text, emoji) => {
-            window.selectedFeeling = {
-                text,
-                emoji
-            };
+            window.selectedFeeling = { text, emoji };
             closeFeelingModal();
+            updatePostHeaderUI();
             showToast(`Feeling ${text} যুক্ত করা হয়েছে`);
         };
 
@@ -5451,109 +5944,7 @@ peoplePage.addEventListener('touchend', (e) => {
         ptrIndicator.style.height = '0px';
     }
 });
-// --- 24 HOURS NOTES LOGIC ---
 
-        // মডাল ওপেন/ক্লোজ
-        window.toggleNoteModal = (show) => {
-            const modal = document.getElementById('note-modal');
-            if (show) {
-                document.getElementById('note-input-text').value = '';
-                modal.classList.remove('hidden-custom');
-            } else {
-                modal.classList.add('hidden-custom');
-            }
-        };
-
-        // নোট সাবমিট করা
-        window.submitNote = () => {
-            const text = document.getElementById('note-input-text').value.trim();
-            if (!text) return showToast("নোট খালি রাখা যাবে না", "error");
-
-            const btn = document.getElementById('btn-note-submit');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> শেয়ার হচ্ছে...';
-            btn.disabled = true;
-
-            // ডাটাবেসে সেভ (প্রতি ইউজারের একটাই নোট থাকবে, নতুন দিলে আগেরটা রিপ্লেস হবে)
-            set(ref(db, `notes/${window.currentUser.uid}`), {
-                uid: window.currentUser.uid,
-                author: userDetails.name,
-                authorPic: userDetails.profile_pic || "",
-                text: text,
-                timestamp: Date.now()
-            }).then(() => {
-                showToast("নোট শেয়ার করা হয়েছে!");
-                toggleNoteModal(false);
-            }).catch(e => {
-                showToast("ত্রুটি: " + e.message, "error");
-            }).finally(() => {
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> শেয়ার করুন';
-                btn.disabled = false;
-            });
-        };
-
-        // নোট লোড করা এবং ২৪ ঘণ্টা পার হলে অটো ডিলিট করা
-        window.loadNotes = () => {
-            const container = document.getElementById('notes-list-container');
-            if(!container) return;
-
-            onValue(ref(db, 'notes'), (snap) => {
-                const notesData = snap.val() || {};
-                const now = Date.now();
-                const validNotes = [];
-
-                // ২৪ ঘণ্টা = 24 * 60 * 60 * 1000 = 86400000 মিলি সেকেন্ড
-                const ONE_DAY = 86400000; 
-
-                Object.values(notesData).forEach(note => {
-                    // সময় চেক করা হচ্ছে
-                    if (now - note.timestamp > ONE_DAY) {
-                        // ২৪ ঘণ্টা পার হলে ডাটাবেস থেকে সরাসরি রিমুভ করে দেওয়া হবে
-                        remove(ref(db, `notes/${note.uid}`));
-                    } else {
-                        // ২৪ ঘণ্টা পার না হলে লিস্টে এড করবে
-                        validNotes.push(note);
-                    }
-                });
-
-                // নতুন নোট আগে দেখানোর জন্য সর্ট করা
-                validNotes.sort((a, b) => b.timestamp - a.timestamp);
-
-                // নিজের প্রোফাইল ছবি দিয়ে "Add Note" বাটন তৈরি
-                let myAv = userDetails.profile_pic ? 
-                    `<img src="${userDetails.profile_pic}" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">` : 
-                    `<div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500 border-2 border-gray-300"><i class="fa-solid fa-user"></i></div>`;
-
-                let html = `
-                <div onclick="toggleNoteModal(true)" class="flex flex-col items-center min-w-[70px] max-w-[70px] cursor-pointer shrink-0 mt-2">
-                    <div class="relative">
-                        ${myAv}
-                        <div class="absolute bottom-0 right-0 w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center text-white border-2 border-white">
-                            <i class="fa-solid fa-plus text-[8px]"></i>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-bold text-gray-600 mt-1 truncate w-full text-center">Add Note</span>
-                </div>`;
-
-                // অন্য ইউজারদের নোট রেন্ডার করা
-                validNotes.forEach(n => {
-                    let av = n.authorPic ? 
-                        `<img src="${n.authorPic}" class="w-12 h-12 rounded-full object-cover border-2 border-blue-100 shadow-sm">` : 
-                        `<div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center font-bold text-blue-600 border-2 border-blue-100">${escapeHTML(n.author).charAt(0)}</div>`;
-
-                    html += `
-                    <div onclick="openUserProfile('${n.uid}')" class="flex flex-col items-center min-w-[75px] max-w-[75px] cursor-pointer shrink-0">
-                        <div class="w-full mb-1">
-                            <div class="note-bubble text-gray-800 font-medium leading-tight">${escapeHTML(n.text)}</div>
-                        </div>
-                        ${av}
-                        <span class="text-[10px] font-bold text-gray-600 mt-1 truncate w-full text-center">${escapeHTML(n.author).split(' ')[0]}</span>
-                    </div>`;
-                });
-
-                container.innerHTML = html;
-            });
-        };
-        
 // ১. অ্যাডমিনের হোয়াটসঅ্যাপ লিংক ডাটাবেস থেকে আনা
 window.addEventListener('fetchWhatsAppLink', () => {
     get(ref(db, 'admin_settings/whatsapp_link')).then((snap) => {
@@ -5738,6 +6129,9 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         }
 
         window.switchPage = function(id, addHistory = true) {
+            // পেজ পরিবর্তন হওয়ার সাথে সাথেই সাইডবারটি ফোর্স ক্লোজ করে দেবে
+            if(typeof toggleSidebar === 'function') toggleSidebar(false);
+            
             document.querySelectorAll('.post-menu-dropdown').forEach(el => el.classList.add('hidden'));
 
             // Hide all pages & reset nav buttons
@@ -5759,10 +6153,21 @@ window.addEventListener('uploadNIDEvent', async (e) => {
 
             window.scrollTo(0, 0);
 
+            // Header Visibility Logic (Only show on Home page)
+            const mainHeader = document.getElementById('main-header');
+            if (mainHeader) {
+                if (id === 'home') {
+                    mainHeader.classList.remove('hidden-custom');
+                } else {
+                    mainHeader.classList.add('hidden-custom'); // অন্য পেজে হেডার লুকানো থাকবে
+                }
+            }
+
             // Specific Page Logic
             if (id === 'profile' && window.currentUser) window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
             if (id === 'monetization' && window.currentUser) window.checkMonetizationStatus();
             if (id === 'verification' && window.currentUser) window.checkVerificationStatus();
+            if (id === 'friends-list' && window.currentUser) window.loadAllFriendsList(); // নতুন যোগ করা হলো
             // ⭐️ মেসেজ পেজে গেলে ডাটা লোড করার লজিক ⭐️
             if (id === 'messages' && window.currentUser) {
                 if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
@@ -5819,7 +6224,26 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         }
 
         window.onpopstate = function(event) {
-            // Close Modals on Back Button
+            // ব্যাক বাটনে ক্লিক করলে সাইডবার ওপেন থাকলে আগে সেটা বন্ধ হবে
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('open')) {
+                toggleSidebar(false);
+                return; // এখানেই থেমে যাবে, পেজ ব্যাকে যাবে না
+            }
+
+            // Close Modals on Back Button (Topmost Modals First)
+            if (document.getElementById('image-viewer-modal').classList.contains('open')) {
+                closeImageViewer();
+                return;
+            }
+            if (!document.getElementById('tag-friends-modal').classList.contains('hidden-custom')) {
+                closeTagModal(true); // Prevent history loop
+                return;
+            }
+            if (!document.getElementById('feeling-modal').classList.contains('hidden-custom')) {
+                closeFeelingModal(true); // Prevent history loop
+                return;
+            }
             if (!document.getElementById('post-modal').classList.contains('hidden-custom')) {
                 document.getElementById('post-modal').classList.add('hidden-custom');
                 return;
@@ -5985,12 +6409,59 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Messages UI:", error);
             }
         }
+        
+        // Notifications HTML Fetcher
+        async function loadNotificationsUI() {
+            try {
+                const response = await fetch('notifications-ui.html');
+                if (!response.ok) throw new Error('Failed to load Notifications UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('notifications-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Notifications Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Notifications UI:", error);
+            }
+        }
+        
+        // Notes HTML Fetcher
+        async function loadNotesUI() {
+            try {
+                const response = await fetch('notes-ui.html');
+                if (!response.ok) throw new Error('Failed to load Notes UI');
+                
+                const htmlText = await response.text();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = htmlText;
+                
+                // ফিড সেকশন এবং মডাল আলাদা করে বসানো
+                const feedUI = tempDiv.querySelector('#temp-notes-feed').innerHTML;
+                const modalUI = tempDiv.querySelector('#temp-notes-modal').innerHTML;
+                
+                document.getElementById('notes-ui-container').innerHTML = feedUI;
+                document.getElementById('notes-modal-container').innerHTML = modalUI;
+                
+                console.log("Notes Design Loaded Successfully!");
+
+                // লোড হওয়ার পর ডাটা কল করা (যদি ইউজার লগইন থাকে)
+                if (window.currentUser && typeof window.loadNotes === 'function') {
+                    window.loadNotes();
+                }
+            } catch (error) {
+                console.error("Error loading Notes UI:", error);
+            }
+        }
 
         // Load the UI as soon as the main DOM is ready
         document.addEventListener("DOMContentLoaded", () => {
             loadProfileUI();
             loadContestUI();
             loadMessagesUI();
+            loadNotificationsUI();
+            loadNotesUI();
         });
     </script>
     
@@ -5998,6 +6469,8 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="contest.js"></script>
     <script type="module" src="messages.js"></script>
     <script type="module" src="fifa.js"></script>
+    <script type="module" src="notifications.js"></script>
+    <script type="module" src="notes.js"></script>
 </body>
 
 </html>
