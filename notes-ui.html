@@ -1,0 +1,72 @@
+<div id="temp-notes-feed">
+    <!-- স্টোরি সেকশন (Facebook Style) -->
+    <div class="bg-white pt-3 pb-4 mb-2 shadow-sm border-b">
+        <div class="px-4 flex justify-between items-center mb-3">
+            <h3 class="font-bold text-gray-800 text-sm">স্টোরি</h3>
+        </div>
+        <div id="notes-list-container" class="flex gap-2 px-4 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+            <!-- স্টোরি কার্ডগুলো এখানে লোড হবে -->
+            <p class="text-xs text-gray-400">স্টোরি লোড হচ্ছে...</p>
+        </div>
+    </div>
+</div>
+
+<div id="temp-notes-modal">
+    <!-- Add Story Modal -->
+    <div id="note-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative transform transition-all">
+            <button onclick="toggleNoteModal(false)" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="font-bold text-lg text-gray-800 mb-1">স্টোরি দিন</h3>
+            <p class="text-[11px] text-gray-500 mb-4">ছবি বা ভিডিও (সর্বোচ্চ ৫MB এবং ১৫ সেকেন্ড)। ২৪ ঘণ্টা পর মুছে যাবে।</p>
+            
+            <textarea id="note-input-text" maxlength="80" rows="2" placeholder="ক্যাপশন লিখুন (ঐচ্ছিক)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm focus:bg-white resize-none font-medium text-center mb-3"></textarea>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-600 mb-2">ছবি বা ভিডিও নির্বাচন করুন *</label>
+                <input type="file" id="story-file-input" accept="image/*,video/mp4" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700">
+            </div>
+            
+            <button onclick="submitStory()" id="btn-note-submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition flex justify-center items-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i> স্টোরি শেয়ার করুন
+            </button>
+        </div>
+    </div>
+
+    <!-- Fullscreen Story Viewer -->
+    <div id="story-viewer-modal" class="fixed inset-0 bg-black z-[300] hidden-custom flex flex-col">
+        <!-- Progress Bar -->
+        <div class="story-progress-container" id="story-progress-container"></div>
+        
+        <!-- Header -->
+        <div class="absolute top-4 left-4 right-4 z-50 flex justify-between items-center mt-3">
+            <div class="flex items-center gap-2">
+                <div id="story-viewer-avatar" class="w-10 h-10 rounded-full bg-gray-300 border border-white overflow-hidden"></div>
+                <div>
+                    <h4 id="story-viewer-name" class="text-white font-bold text-sm shadow-black drop-shadow-md">Name</h4>
+                    <p id="story-viewer-time" class="text-white text-[10px] opacity-80 shadow-black drop-shadow-md">Time</p>
+                </div>
+            </div>
+            <button onclick="closeStoryViewer()" class="w-8 h-8 text-white rounded-full flex items-center justify-center bg-black/50 hover:bg-black/80 backdrop-blur-md">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Media Container -->
+        <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black mt-10 mb-16" id="story-media-container">
+            <!-- Image or Video will be injected here -->
+        </div>
+
+        <!-- Caption Area -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent z-50 pb-8 text-center">
+            <p id="story-viewer-caption" class="text-white text-sm font-medium shadow-black drop-shadow-md whitespace-pre-line"></p>
+        </div>
+
+        <!-- Touch Controls (Left for Prev, Right for Next) -->
+        <div class="absolute inset-0 z-40 flex mt-12 mb-20">
+            <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
+            <div class="w-2/3 h-full cursor-pointer" onclick="nextStory()"></div>
+        </div>
+    </div>
+</div>
