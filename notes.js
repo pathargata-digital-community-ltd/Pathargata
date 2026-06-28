@@ -24,7 +24,7 @@ window.toggleNoteModal = (show) => {
     }
 };
 
-// স্টোরি সাবমিট করা (আনলিমিটেড সাপোর্ট)
+// স্টোরি সাবমিট করা (ভিডিও/ছবি সহ - ১০ এমবি ও ৩০ সেকেন্ড লিমিট)
 window.submitStory = async () => {
     const text = document.getElementById('note-input-text').value.trim();
     const fileInput = document.getElementById('story-file-input');
@@ -41,9 +41,12 @@ window.submitStory = async () => {
         let mediaType = "text";
 
         if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                throw new Error("ফাইল ৫ এমবির বেশি হতে পারবে না");
+            // ১. ফাইল সাইজ চেক (সর্বোচ্চ ১০ MB করা হলো)
+            if (file.size > 10 * 1024 * 1024) {
+                throw new Error("ফাইল ১০ এমবির বেশি হতে পারবে না");
             }
+
+            // ২. ভিডিও হলে ৩০ সেকেন্ড ডিউরেশন চেক (সেফটি মার্জিনের জন্য ৩১ সেকেন্ড দেওয়া হলো)
             if (file.type.startsWith('video/')) {
                 mediaType = "video";
                 await new Promise((resolve, reject) => {
@@ -51,8 +54,8 @@ window.submitStory = async () => {
                     video.preload = 'metadata';
                     video.onloadedmetadata = function() {
                         window.URL.revokeObjectURL(video.src);
-                        if (video.duration > 16) { 
-                            reject(new Error("ভিডিও ১৫ সেকেন্ডের বেশি হতে পারবে না"));
+                        if (video.duration > 31) { 
+                            reject(new Error("ভিডিও ৩০ সেকেন্ডের বেশি হতে পারবে না"));
                         } else {
                             resolve();
                         }
@@ -65,6 +68,8 @@ window.submitStory = async () => {
             } else {
                 throw new Error("শুধুমাত্র ছবি বা ভিডিও দেওয়া যাবে");
             }
+
+            // ৩. ক্লাউডিনারিতে আপলোড
             const res = await window.uploadMediaToCloudinary(file, true);
             mediaUrl = res.url;
         }
@@ -72,6 +77,7 @@ window.submitStory = async () => {
         const timestamp = Date.now();
         const storyId = `${window.currentUser.uid}_${timestamp}`;
 
+        // ৪. ডাটাবেসে সেভ (আনলিমিটেড স্টোরি স্ট্রাকচার)
         await set(ref(window.db, `stories/${storyId}`), {
             storyId: storyId,
             uid: window.currentUser.uid,
@@ -83,7 +89,7 @@ window.submitStory = async () => {
             timestamp: timestamp,
             reactions: {} 
         });
-
+        
         window.showToast("স্টোরি শেয়ার করা হয়েছে!", "success");
         window.toggleNoteModal(false);
 
