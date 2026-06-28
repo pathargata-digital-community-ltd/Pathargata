@@ -2,13 +2,13 @@ import {
     ref,
     set,
     onValue,
-    remove,
-    update
+    remove
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // গ্লোবাল ভেরিয়েবল
-let allActiveStories = [];
-let currentStoryIndex = 0;
+let storyUsers = []; // স্টোরিগুলোকে ইউজার অনুযায়ী গ্রুপ করে রাখা হবে
+let currentUserIndex = 0; // কোন ইউজারের স্টোরি দেখছি
+let currentSubStoryIndex = 0; // ওই ইউজারের কত নাম্বার স্টোরি দেখছি
 let storyTimer = null;
 let progressInterval = null;
 
@@ -69,7 +69,6 @@ window.submitStory = async () => {
             mediaUrl = res.url;
         }
 
-        // আনলিমিটেড স্টোরির জন্য ইউনিক আইডি
         const timestamp = Date.now();
         const storyId = `${window.currentUser.uid}_${timestamp}`;
 
@@ -82,7 +81,7 @@ window.submitStory = async () => {
             mediaUrl: mediaUrl,
             mediaType: mediaType,
             timestamp: timestamp,
-            reactions: {} // রিঅ্যাকশনের জন্য ফাঁকা অবজেক্ট
+            reactions: {} 
         });
 
         window.showToast("স্টোরি শেয়ার করা হয়েছে!", "success");
@@ -98,11 +97,18 @@ window.submitStory = async () => {
 
 // নিজের স্টোরি ডিলিট করা
 window.deleteMyStory = async (storyId, timestamp) => {
-    if (confirm("আপনি কি আপনার স্টোরি ডিলিট করতে চান?")) {
+    if (confirm("আপনি কি এই স্টোরিটি ডিলিট করতে চান?")) {
         try {
-            const story = allActiveStories.find(s => s.storyId === storyId);
-            if (story) {
-                await set(ref(window.db, `story_trash/${storyId}`), story);
+            // খুঁজে বের করা স্টোরিটি
+            let targetStory = null;
+            storyUsers.forEach(user => {
+                user.stories.forEach(s => {
+                    if(s.storyId === storyId) targetStory = s;
+                });
+            });
+
+            if (targetStory) {
+                await set(ref(window.db, `story_trash/${storyId}`), targetStory);
             }
             await remove(ref(window.db, `stories/${storyId}`));
             window.showToast("স্টোরি ডিলিট করা হয়েছে", "success");
@@ -113,11 +119,58 @@ window.deleteMyStory = async (storyId, timestamp) => {
     }
 };
 
-// স্টোরি লোড করা
-window.loadNotes = () => {
+// ফিডে কার্ড রেন্ডার করার ফাংশন (UI Update)
+const renderStoryFeed = (usersData) => {
     const container = document.getElementById('notes-list-container');
     if (!container) return;
 
+    let safeUser = window.userDetails || {};
+    let myProfilePic = safeUser.profile_pic || 'https://via.placeholder.com/150';
+    let myBg = safeUser.cover_pic || myProfilePic; 
+
+    // Add Story Card (Always First)
+    let html = `
+    <div onclick="toggleNoteModal(true)" class="story-card group min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border border-gray-200">
+        <img src="${myBg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+        <div class="story-add-btn absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
+            <i class="fa-solid fa-plus text-xs"></i>
+        </div>
+        <p class="story-name text-center text-xs font-medium bg-white w-full absolute bottom-0 py-1">Add Story</p>
+    </div>`;
+
+    // Users Story Cards (One per user)
+    usersData.forEach((user, index) => {
+        let av = user.authorPic || 'https://via.placeholder.com/150';
+        let latestStory = user.stories[user.stories.length - 1];
+        let bgImg = latestStory.mediaType === 'image' && latestStory.mediaUrl ? latestStory.mediaUrl 
+                    : (latestStory.mediaType === 'video' ? 'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png' : av);
+        
+        let isMe = window.currentUser && user.uid === window.currentUser.uid;
+        let borderClass = isMe ? 'border-blue-500' : 'border-blue-400';
+
+        html += `
+        <div onclick="openStoryViewer(${index})" class="story-card min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border-2 ${borderClass}">
+            <img src="${bgImg}" class="w-full h-full object-cover">
+            <img src="${av}" class="story-avatar absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white object-cover">
+            <p class="story-name absolute bottom-1 left-2 text-white text-xs font-bold shadow-black drop-shadow-md truncate w-11/12">${isMe ? 'Your Story' : window.escapeHTML(user.author).split(' ')[0]}</p>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+};
+
+// স্টোরি লোড ও ক্যাশিং লজিক
+window.loadNotes = () => {
+    // ১. প্রথমে Local Storage থেকে ইনস্ট্যান্ট লোড করা
+    const cachedStories = localStorage.getItem('cachedStoryUsers');
+    if (cachedStories) {
+        try {
+            storyUsers = JSON.parse(cachedStories);
+            renderStoryFeed(storyUsers);
+        } catch(e) { console.error("Cache parse error", e); }
+    }
+
+    // ২. ব্যাকগ্রাউন্ডে ফায়ারবেস থেকে রিয়েল-টাইম আপডেট চেক করা
     onValue(ref(window.db, 'stories'), async (snap) => {
         const storiesData = snap.val() || {};
         const now = Date.now();
@@ -126,7 +179,6 @@ window.loadNotes = () => {
 
         for (const key in storiesData) {
             const story = storiesData[key];
-            // পুরানো স্টোরির জন্য storyId না থাকলে key টাই storyId হিসেবে ধরবে
             if (!story.storyId) story.storyId = key; 
 
             if (now - story.timestamp > ONE_DAY) {
@@ -137,39 +189,50 @@ window.loadNotes = () => {
             }
         }
 
-        validStories.sort((a, b) => b.timestamp - a.timestamp);
-        allActiveStories = validStories;
-
-        let safeUser = window.userDetails || {};
-        let myProfilePic = safeUser.profile_pic || 'https://via.placeholder.com/150';
-        let myBg = safeUser.cover_pic || myProfilePic; 
-
-        let html = `
-        <div onclick="toggleNoteModal(true)" class="story-card group min-w-[100px]">
-            <img src="${myBg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-            <div class="story-add-btn">
-                <i class="fa-solid fa-plus text-xs"></i>
-            </div>
-            <p class="story-name text-center" style="bottom: 4px;">Add Story</p>
-        </div>`;
-
-        validStories.forEach((s, index) => {
-            let av = s.authorPic ? s.authorPic : 'https://via.placeholder.com/150';
-            let bgImg = s.mediaType === 'image' && s.mediaUrl ? s.mediaUrl : (s.mediaType === 'video' ? 'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png' : av);
-            
-            html += `
-            <div onclick="openStoryViewer(${index})" class="story-card min-w-[100px] border-2 ${s.uid === window.currentUser?.uid ? 'border-blue-500' : 'border-gray-200'}">
-                <img src="${bgImg}" class="w-full h-full object-cover">
-                <img src="${av}" class="story-avatar">
-                <p class="story-name">${s.uid === window.currentUser?.uid ? 'Your Story' : window.escapeHTML(s.author).split(' ')[0]}</p>
-            </div>`;
+        let groups = {};
+        validStories.forEach(s => {
+            if (!groups[s.uid]) {
+                groups[s.uid] = { 
+                    uid: s.uid, 
+                    author: s.author, 
+                    authorPic: s.authorPic, 
+                    stories: [] 
+                };
+            }
+            groups[s.uid].stories.push(s);
         });
 
-        container.innerHTML = html;
-        
-        // ভিউয়ার ওপেন থাকলে লাইভ রিয়্যাকশন আপডেট করার জন্য
-        if (!document.getElementById('story-viewer-modal').classList.contains('hidden-custom')) {
-            renderReactions(currentStoryIndex);
+        Object.values(groups).forEach(user => {
+            user.stories.sort((a, b) => a.timestamp - b.timestamp);
+        });
+
+        let sortedUsers = Object.values(groups);
+        sortedUsers.sort((a, b) => {
+            if (window.currentUser) {
+                if (a.uid === window.currentUser.uid) return -1;
+                if (b.uid === window.currentUser.uid) return 1;
+            }
+            let aLatest = a.stories[a.stories.length - 1].timestamp;
+            let bLatest = b.stories[b.stories.length - 1].timestamp;
+            return bLatest - aLatest;
+        });
+
+        // ৩. ক্যাশের সাথে নতুন ডাটা মিলিয়ে দেখা
+        const newDataString = JSON.stringify(sortedUsers);
+        if (newDataString !== localStorage.getItem('cachedStoryUsers')) {
+            storyUsers = sortedUsers;
+            localStorage.setItem('cachedStoryUsers', newDataString); 
+            renderStoryFeed(storyUsers); 
+            
+            // ভিউয়ার ওপেন থাকলে লাইভ রিয়্যাকশন বা ডিলিট হওয়া স্টোরি আপডেট করা
+            const modal = document.getElementById('story-viewer-modal');
+            if (modal && !modal.classList.contains('hidden-custom')) {
+                if(!storyUsers[currentUserIndex] || !storyUsers[currentUserIndex].stories[currentSubStoryIndex]) {
+                    window.closeStoryViewer(); 
+                } else {
+                    renderReactions(); 
+                }
+            }
         }
     });
 };
@@ -178,52 +241,80 @@ setTimeout(() => {
     if (window.currentUser && typeof window.loadNotes === 'function') {
         window.loadNotes();
     }
-}, 2000);
+}, 500);
+
 
 // ==========================================
 // STORY VIEWER LOGIC 
 // ==========================================
 
-window.openStoryViewer = (index) => {
-    if (!allActiveStories || allActiveStories.length === 0) return;
-    currentStoryIndex = index;
+window.openStoryViewer = (userIndex, subIndex = 0) => {
+    if (!storyUsers || storyUsers.length === 0) return;
+    currentUserIndex = userIndex;
+    currentSubStoryIndex = subIndex;
+    
+    // History API দিয়ে ব্যাক বাটনের জন্য স্টেট সেভ করা
+    history.pushState({ modal: 'storyViewer' }, null, '#story');
+
     const modal = document.getElementById('story-viewer-modal');
     modal.classList.remove('hidden-custom');
-    playStory(currentStoryIndex);
+    playStory();
 };
 
-window.closeStoryViewer = () => {
+window.closeStoryViewer = (fromBackButton = false) => {
     const modal = document.getElementById('story-viewer-modal');
-    modal.classList.add('hidden-custom');
+    if(modal) modal.classList.add('hidden-custom');
+    
     clearTimeout(storyTimer);
     clearInterval(progressInterval);
-    document.getElementById('story-media-container').innerHTML = ''; 
+    const mediaContainer = document.getElementById('story-media-container');
+    if(mediaContainer) mediaContainer.innerHTML = ''; 
     document.getElementById('story-viewer-delete-btn')?.remove(); 
+    
+    // যদি ব্যাক বাটন ছাড়া অন্যভাবে ক্লোজ হয়, তাহলে URL থেকে হ্যাশ রিমুভ করা
+    if (!fromBackButton && window.location.hash === '#story') {
+        history.back();
+    }
 };
 
-function playStory(index) {
+// ফোনের ব্যাক বাটন চাপলে ভিউয়ার ক্লোজ করার লিসেনার
+window.addEventListener('popstate', (event) => {
+    const modal = document.getElementById('story-viewer-modal');
+    if (modal && !modal.classList.contains('hidden-custom')) {
+        window.closeStoryViewer(true);
+    }
+});
+
+function playStory() {
     clearTimeout(storyTimer);
     clearInterval(progressInterval);
     
-    if (index < 0 || index >= allActiveStories.length) {
-        closeStoryViewer();
+    if (currentUserIndex >= storyUsers.length) {
+        window.closeStoryViewer();
         return;
     }
 
-    const story = allActiveStories[index];
+    const user = storyUsers[currentUserIndex];
+    if (currentSubStoryIndex >= user.stories.length) {
+        window.nextStory();
+        return;
+    }
+
+    const story = user.stories[currentSubStoryIndex];
     
+    // UI Update
     const avatarDiv = document.getElementById('story-viewer-avatar');
-    if (story.authorPic) {
-        avatarDiv.innerHTML = `<img src="${story.authorPic}" class="w-full h-full object-cover">`;
+    if (user.authorPic) {
+        avatarDiv.innerHTML = `<img src="${user.authorPic}" class="w-full h-full object-cover">`;
     } else {
-        avatarDiv.innerHTML = `<div class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-bold">${story.author.charAt(0)}</div>`;
+        avatarDiv.innerHTML = `<div class="w-full h-full bg-blue-500 flex items-center justify-center text-white font-bold">${user.author.charAt(0)}</div>`;
     }
     
-    document.getElementById('story-viewer-name').innerText = story.uid === window.currentUser?.uid ? 'Your Story' : story.author;
+    document.getElementById('story-viewer-name').innerText = user.uid === window.currentUser?.uid ? 'Your Story' : user.author;
     document.getElementById('story-viewer-time').innerText = window.timeAgo(story.timestamp);
     document.getElementById('story-viewer-caption').innerText = story.text || "";
 
-    // ডিলিট বাটন (শুধু নিজের স্টোরি হলে)
+    // ডিলিট বাটন
     document.getElementById('story-viewer-delete-btn')?.remove(); 
     if (story.uid === window.currentUser?.uid) {
         const headerDiv = document.querySelector('#story-viewer-modal .absolute.top-4');
@@ -235,9 +326,10 @@ function playStory(index) {
         headerDiv.insertBefore(deleteBtn, headerDiv.lastElementChild);
     }
 
-    renderReactions(index);
-    setupProgressBars(index);
+    renderReactions();
+    setupProgressBars(user.stories.length, currentSubStoryIndex);
 
+    // Media Setup
     const mediaContainer = document.getElementById('story-media-container');
     mediaContainer.innerHTML = '';
     let duration = 15000; 
@@ -251,27 +343,29 @@ function playStory(index) {
         
         video.onloadedmetadata = () => {
             duration = video.duration * 1000;
-            startProgress(index, duration);
+            startProgress(currentSubStoryIndex, duration);
         };
-        video.onended = () => nextStory();
+        video.onended = () => window.nextStory();
         mediaContainer.appendChild(video);
     } else if (story.mediaType === 'image' && story.mediaUrl) {
         const img = document.createElement('img');
         img.src = story.mediaUrl;
         img.className = "max-w-full max-h-full object-contain";
         mediaContainer.appendChild(img);
-        startProgress(index, duration);
+        startProgress(currentSubStoryIndex, duration);
     } else {
         mediaContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center p-6 bg-gradient-to-br from-blue-900 to-purple-900"><p class="text-white text-2xl text-center font-bold">${window.escapeHTML(story.text)}</p></div>`;
         document.getElementById('story-viewer-caption').innerText = ''; 
-        startProgress(index, duration);
+        startProgress(currentSubStoryIndex, duration);
     }
 }
 
 // রিঅ্যাকশন রেন্ডার করা
-function renderReactions(index) {
+function renderReactions() {
     const display = document.getElementById('story-reactions-display');
-    const story = allActiveStories[index];
+    const user = storyUsers[currentUserIndex];
+    if(!user) return;
+    const story = user.stories[currentSubStoryIndex];
     display.innerHTML = '';
 
     if (story && story.reactions) {
@@ -295,18 +389,26 @@ function renderReactions(index) {
     }
 }
 
-// রিঅ্যাকশন ফায়ারবেসে পাঠানো ও ফ্লোটিং এনিমেশন
+// প্রফেশনাল রিঅ্যাকশন অ্যানিমেশন ও ফায়ারবেস সেভ
 window.sendReaction = async (emoji) => {
-    const story = allActiveStories[currentStoryIndex];
+    const user = storyUsers[currentUserIndex];
+    const story = user.stories[currentSubStoryIndex];
     if (!story) return;
 
-    // ভাসমান ইমোজি তৈরি করা
-    const floatEl = document.createElement('div');
-    floatEl.innerText = emoji;
-    floatEl.className = 'absolute bottom-20 left-1/2 text-5xl animate-float-up z-[400]';
-    document.getElementById('story-viewer-modal').appendChild(floatEl);
-    
-    setTimeout(() => floatEl.remove(), 1500);
+    // ভাসমান ইমোজির জন্য ৩-৪ টি এলিমেন্ট তৈরি করা
+    const modal = document.getElementById('story-viewer-modal');
+    for(let i=0; i<3; i++) {
+        setTimeout(() => {
+            const floatEl = document.createElement('div');
+            floatEl.innerText = emoji;
+            let leftPos = 40 + Math.random() * 20; 
+            floatEl.className = `reaction-bubble text-4xl`;
+            floatEl.style.left = `${leftPos}%`;
+            modal.appendChild(floatEl);
+            
+            setTimeout(() => floatEl.remove(), 1500);
+        }, i * 150); 
+    }
 
     // ফায়ারবেসে সেভ করা
     try {
@@ -316,11 +418,11 @@ window.sendReaction = async (emoji) => {
     }
 };
 
-function setupProgressBars(activeIndex) {
+function setupProgressBars(totalStories, activeIndex) {
     const container = document.getElementById('story-progress-container');
     container.innerHTML = '';
     
-    allActiveStories.forEach((_, i) => {
+    for (let i = 0; i < totalStories; i++) {
         const bar = document.createElement('div');
         bar.className = 'story-progress-bar';
         const fill = document.createElement('div');
@@ -329,7 +431,7 @@ function setupProgressBars(activeIndex) {
         if (i < activeIndex) fill.style.width = '100%';
         bar.appendChild(fill);
         container.appendChild(bar);
-    });
+    }
 }
 
 function startProgress(index, duration) {
@@ -348,22 +450,40 @@ function startProgress(index, duration) {
     }, 16);
 
     storyTimer = setTimeout(() => {
-        nextStory();
+        window.nextStory();
     }, duration);
 }
 
+// Next Story Logic
 window.nextStory = () => {
-    if (currentStoryIndex < allActiveStories.length - 1) {
-        openStoryViewer(currentStoryIndex + 1);
+    let user = storyUsers[currentUserIndex];
+    if (currentSubStoryIndex < user.stories.length - 1) {
+        currentSubStoryIndex++;
+        playStory();
     } else {
-        closeStoryViewer();
+        if (currentUserIndex < storyUsers.length - 1) {
+            currentUserIndex++;
+            currentSubStoryIndex = 0;
+            playStory();
+        } else {
+            window.closeStoryViewer();
+        }
     }
 };
 
+// Prev Story Logic
 window.prevStory = () => {
-    if (currentStoryIndex > 0) {
-        openStoryViewer(currentStoryIndex - 1);
+    if (currentSubStoryIndex > 0) {
+        currentSubStoryIndex--;
+        playStory();
     } else {
-        openStoryViewer(0);
+        if (currentUserIndex > 0) {
+            currentUserIndex--;
+            currentSubStoryIndex = storyUsers[currentUserIndex].stories.length - 1;
+            playStory();
+        } else {
+            currentSubStoryIndex = 0;
+            playStory();
+        }
     }
 };
