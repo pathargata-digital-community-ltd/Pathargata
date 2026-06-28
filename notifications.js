@@ -15,16 +15,22 @@ import {
 // Notification Pagination Variables
 let lastNotifKey = null;
 let hasMoreNotifs = true;
-let shownPopups = new Set(); // কোন নোটিফিকেশনগুলো ভাসমান হিসেবে দেখানো হয়েছে তা মনে রাখার জন্য
+let shownPopups = new Set(); 
 
 // ১. নোটিফিকেশন ব্যাজ লিসেনার
 window.listenForNotificationBadge = (uid) => {
     onValue(query(ref(window.db, `notifications/${uid}`), orderByChild('read'), equalTo(false)), (snap) => {
         const count = snap.exists() ? Object.keys(snap.val()).length : 0;
         const badge = document.getElementById('header-badge-notice');
+        const markAllBtn = document.getElementById('btn-mark-all-read');
+        
         if (badge) {
-            badge.innerText = count;
+            badge.innerText = count > 99 ? '99+' : count;
             badge.classList[count > 0 ? 'add' : 'remove']('active');
+        }
+        // আনরিড নোটিফিকেশন থাকলে 'সব মার্ক করুন' বাটন দেখাবে
+        if (markAllBtn) {
+            markAllBtn.classList[count > 0 ? 'remove' : 'add']('hidden');
         }
     });
 };
@@ -34,11 +40,9 @@ window.showTikTokStyleToast = async (notif) => {
     const container = document.getElementById('in-app-toast-container');
     if (!container) return;
 
-    // একই নোটিফিকেশন যেন বারবার পপআপ না হয়
     if (shownPopups.has(notif.id)) return;
     shownPopups.add(notif.id);
 
-    // টেক্সট নির্ধারণ
     let text = 'একটি নতুন পোস্ট শেয়ার করেছেন';
     let icon = '<i class="fa-solid fa-rss"></i>';
     let colorClass = 'text-blue-600 bg-blue-100';
@@ -57,67 +61,59 @@ window.showTikTokStyleToast = async (notif) => {
         colorClass = 'text-red-600 bg-red-100';
     }
 
-    // --- રિયલ-টাইম প্রোফাইল পিকচার ফেচ করা ---
-    let imgHtml = `<div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0 ${colorClass}">${notif.fromName ? notif.fromName.charAt(0) : icon}</div>`;
+    let profilePicUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(notif.fromName || 'U')}&background=random`;
     
-    // ডাটাবেস থেকে ইউজারের তথ্য আনা (যদি fromUid থাকে)
     if (notif.fromUid && window.getUserData) {
         try {
             const uData = await window.getUserData(notif.fromUid);
             if (uData && uData.profile_pic) {
-                imgHtml = `<img src="${uData.profile_pic}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-100 shadow-sm">`;
+                profilePicUrl = uData.profile_pic;
             }
         } catch (error) {
-            console.error("Profile pic fetch error for floating notif", error);
+            console.error("Profile pic fetch error", error);
         }
     }
 
     const toast = document.createElement('div');
-    toast.className = 'in-app-toast bg-white/95 backdrop-blur-md border border-gray-100 rounded-full p-2 pr-4 flex items-center gap-3 w-full cursor-pointer';
+    // in-app-toast-anim ক্লাসটি সিএসএস থেকে অ্যানিমেশন নেবে
+    toast.className = 'in-app-toast-anim bg-white/95 backdrop-blur-md border border-gray-100 shadow-xl rounded-full p-2 pr-3 flex items-center gap-3 w-[90%] max-w-sm mx-auto mb-2 cursor-pointer pointer-events-auto';
     
     toast.innerHTML = `
-        ${imgHtml}
+        <img src="${profilePicUrl}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200">
         <div class="flex-1 min-w-0">
             <h4 class="font-bold text-gray-800 text-sm truncate">${window.escapeHTML(notif.fromName || 'নোটিফিকেশন')}</h4>
             <p class="text-xs text-gray-600 truncate">${text}</p>
         </div>
+        <div class="w-8 h-8 rounded-full ${colorClass} flex items-center justify-center shrink-0">
+            ${icon}
+        </div>
     `;
 
-    // ক্লিক করলে নোটিফিকেশন পেজে/পোস্টে নিয়ে যাবে
     toast.onclick = () => {
-        toast.classList.add('hide');
-        setTimeout(() => toast.remove(), 300);
+        toast.remove();
         window.handleNotificationClick(notif.id, notif.postId, notif.type);
     };
 
-    // কন্টেইনারে অ্যাড করা
     container.appendChild(toast);
     
-    // সময় শেষ হলে রিমুভ
+    // ৪ সেকেন্ড পর রিমুভ হবে (অ্যানিমেশনের সাথে মিল রেখে)
     setTimeout(() => {
-        if (toast.parentElement) {
-            toast.classList.add('hide');
-            setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300);
-        }
-    }, 4000); // ৪ সেকেন্ড পর চলে যাবে (ফেচ করার কারণে একটু সময় বেশি দেওয়া হলো)
+        if (toast.parentElement) toast.remove();
+    }, 4000);
 };
 
-// ৩. নতুন আনরিড নোটিফিকেশনের জন্য লিসেনার (অ্যাপ ওপেন হলে লাস্ট নোটিফিকেশন দেখাবে)
+// ৩. আনরিড নোটিফিকেশনের জন্য লিসেনার
 window.listenForInAppPopups = (uid) => {
-    // শুধুমাত্র আনরিড নোটিফিকেশনগুলো ধরবে
     const unreadQuery = query(ref(window.db, `notifications/${uid}`), orderByChild('read'), equalTo(false), limitToLast(1));
-    
     onChildAdded(unreadQuery, (snap) => {
         const notif = { id: snap.key, ...snap.val() };
-        // নিজের করা এক্টিভিটি যেন পপআপ না হয়
         if (notif.fromUid !== uid) {
-            // একটু ডিলে করে পপআপ দেখাবে যাতে অ্যাপ পুরোপুরি লোড হওয়ার সময় পায়
             setTimeout(() => window.showTikTokStyleToast(notif), 2000);
         }
     });
 };
 
-// ৪. মেইন নোটিফিকেশন লোডার (অটো-ডিলিট সিস্টেম সহ)
+// ৪. মেইন নোটিফিকেশন লোডার 
 window.loadNotifications = (isInitial = false) => {
     const list = document.getElementById('notifications-list');
     const btn = document.getElementById('btn-load-more-notif');
@@ -125,7 +121,7 @@ window.loadNotifications = (isInitial = false) => {
     if (!window.currentUser || !list) return;
 
     if (isInitial) {
-        list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
+        list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
         lastNotifKey = null;
         hasMoreNotifs = true;
     }
@@ -140,24 +136,34 @@ window.loadNotifications = (isInitial = false) => {
     if (isInitial) notifQuery = query(ref(window.db, `notifications/${window.currentUser.uid}`), limitToLast(pageSize));
     else notifQuery = query(ref(window.db, `notifications/${window.currentUser.uid}`), endAt(lastNotifKey), limitToLast(pageSize + 1));
 
-    get(notifQuery).then(snap => {
+    // সুন্দর Empty State Design
+    const emptyStateHTML = `
+        <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <i class="fa-solid fa-bell-slash text-3xl text-gray-400"></i>
+            </div>
+            <h3 class="text-gray-800 font-bold text-lg mb-1">কোনো নোটিফিকেশন নেই</h3>
+            <p class="text-gray-500 text-sm">নতুন কোনো আপডেট আসলে এখানে দেখতে পাবেন</p>
+        </div>
+    `;
+
+    get(notifQuery).then(async (snap) => {
         const data = snap.val();
         if (isInitial) list.innerHTML = '';
         
         if (!data) {
-            if (isInitial) list.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো নোটিফিকেশন নেই</p>';
+            if (isInitial) list.innerHTML = emptyStateHTML;
             hasMoreNotifs = false;
             if (btn) btn.classList.add('hidden');
             return;
         }
 
         const now = Date.now();
-        const fiveDaysInMillis = 5 * 24 * 60 * 60 * 1000; // ৫ দিনের হিসাব
+        const fiveDaysInMillis = 5 * 24 * 60 * 60 * 1000; // ৫ দিনের লজিক
 
         let items = [];
         Object.entries(data).forEach(([key, val]) => {
             if (typeof val === 'object' && val !== null) {
-                // *** অটো-ডিলিট লজিক (৫ দিনের বেশি পুরোনো হলে ডাটাবেস থেকে ডিলিট) ***
                 if (now - (val.timestamp || 0) > fiveDaysInMillis) {
                     remove(ref(window.db, `notifications/${window.currentUser.uid}/${key}`));
                 } else {
@@ -172,24 +178,70 @@ window.loadNotifications = (isInitial = false) => {
         if (items.length < pageSize && !isInitial) hasMoreNotifs = false;
 
         if (items.length === 0) {
-            if (isInitial) list.innerHTML = '<p class="text-center text-gray-400 mt-10">কোনো নোটিফিকেশন নেই</p>';
+            if (isInitial) list.innerHTML = emptyStateHTML;
             hasMoreNotifs = false;
             if (btn) btn.classList.add('hidden');
             return;
         }
 
-        items.forEach(n => {
-            const bgClass = n.read ? 'bg-white' : 'bg-blue-50';
+        // প্রোফাইল পিকচার ফেচ করা
+        const itemsWithPics = await Promise.all(items.map(async (n) => {
+            n.profilePicUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(n.fromName || 'U')}&background=random`;
+            if (n.fromUid && window.getUserData) {
+                try {
+                    const uData = await window.getUserData(n.fromUid);
+                    if (uData && uData.profile_pic) {
+                        n.profilePicUrl = uData.profile_pic;
+                    }
+                } catch (e) { console.error(e); }
+            }
+            return n;
+        }));
+
+        // HTML রেন্ডারিং
+        itemsWithPics.forEach(n => {
+            const bgClass = n.read ? 'bg-white' : 'bg-blue-50'; // আনরিড হলে হাইলাইট
             let html = '';
             
             if (n.type === 'blood_req') {
-                html = `<div class="${bgClass} p-3 rounded-xl shadow-sm border-l-4 border-red-600 flex justify-between items-center mb-3"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold"><i class="fa-solid fa-droplet"></i></div><div><h4 class="font-bold text-red-800 text-sm">জরুরি রক্ত প্রয়োজন! (${window.escapeHTML(n.group)})</h4><p class="text-xs text-gray-600">যোগাযোগ: ${window.escapeHTML(n.contact)}</p><p class="text-[10px] text-gray-400">${window.timeAgo(n.timestamp)}</p></div></div><a href="tel:${n.contact}" class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white"><i class="fa-solid fa-phone"></i></a></div>`;
+                html = `
+                <div id="notif-${n.id}" class="${bgClass} p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between mb-3 cursor-pointer transition-colors duration-300">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <img src="${n.profilePicUrl}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-red-700 text-sm truncate">জরুরি রক্ত প্রয়োজন!</h4>
+                            <p class="text-xs text-gray-600 truncate">গ্রুপ: ${window.escapeHTML(n.group)} | নাম: ${window.escapeHTML(n.fromName)}</p>
+                            <p class="text-[10px] text-gray-400 mt-0.5">${window.timeAgo(n.timestamp)}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center gap-1 shrink-0 ml-2">
+                        <div class="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                            <i class="fa-solid fa-droplet text-xs"></i>
+                        </div>
+                        <a href="tel:${n.contact}" class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-white mt-1 shadow-sm hover:scale-110 transition" onclick="event.stopPropagation(); update(ref(window.db, 'notifications/${window.currentUser.uid}/${n.id}'), { read: true }); document.getElementById('notif-${n.id}').classList.replace('bg-blue-50', 'bg-white');">
+                            <i class="fa-solid fa-phone text-xs"></i>
+                        </a>
+                    </div>
+                </div>`;
             } else {
-                let icon = 'fa-rss', color = 'text-blue-600', bg = 'bg-blue-100', text = 'একটি নতুন পোস্ট শেয়ার করেছেন';
-                if (n.type === 'like') { icon = 'fa-thumbs-up'; color = 'text-green-600'; bg = 'bg-green-100'; text = 'আপনার পোস্টে লাইক দিয়েছেন'; }
-                if (n.type === 'comment') { icon = 'fa-comment'; color = 'text-purple-600'; bg = 'bg-purple-100'; text = 'আপনার পোস্টে কমেন্ট করেছেন'; }
+                let icon = 'fa-rss', color = 'text-blue-600', iconBg = 'bg-blue-100', text = 'একটি নতুন পোস্ট শেয়ার করেছেন';
+                if (n.type === 'like') { icon = 'fa-thumbs-up'; color = 'text-green-600'; iconBg = 'bg-green-100'; text = 'আপনার পোস্টে লাইক দিয়েছেন'; }
+                if (n.type === 'comment') { icon = 'fa-comment'; color = 'text-purple-600'; iconBg = 'bg-purple-100'; text = 'আপনার পোস্টে কমেন্ট করেছেন'; }
                 
-                html = `<div class="${bgClass} p-3 rounded-xl shadow-sm border-l-4 border-blue-400 flex justify-between items-center mb-3 cursor-pointer" onclick="handleNotificationClick('${n.id}', '${n.postId}', '${n.type}')"><div class="flex items-center gap-3"><div class="w-10 h-10 ${bg} rounded-full flex items-center justify-center ${color} font-bold"><i class="fa-solid ${icon}"></i></div><div><h4 class="font-bold text-gray-800 text-sm">${window.escapeHTML(n.fromName)}</h4><p class="text-xs text-gray-500">${text}</p><p class="text-[10px] text-gray-400">${window.timeAgo(n.timestamp)}</p></div></div></div>`;
+                html = `
+                <div id="notif-${n.id}" class="${bgClass} p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between mb-3 cursor-pointer hover:bg-gray-50 transition-colors duration-300" onclick="handleNotificationClick('${n.id}', '${n.postId}', '${n.type}')">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <img src="${n.profilePicUrl}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">${window.escapeHTML(n.fromName)}</h4>
+                            <p class="text-xs text-gray-500 truncate">${text}</p>
+                            <p class="text-[10px] text-gray-400 mt-0.5">${window.timeAgo(n.timestamp)}</p>
+                        </div>
+                    </div>
+                    <div class="w-9 h-9 rounded-full ${iconBg} flex items-center justify-center ${color} shrink-0 ml-2 shadow-sm">
+                        <i class="fa-solid ${icon} text-sm"></i>
+                    </div>
+                </div>`;
             }
             list.insertAdjacentHTML('beforeend', html);
         });
@@ -208,17 +260,47 @@ window.loadNotifications = (isInitial = false) => {
 
 // ৫. নোটিফিকেশন ক্লিক ইভেন্ট
 window.handleNotificationClick = (notifId, postId, type) => {
-    update(ref(window.db, `notifications/${window.currentUser.uid}/${notifId}`), { read: true });
-    
-    // ভাসমান নোটিফিকেশন থেকে ক্লিক করলে টপ মেনুতে ব্যাজ কাউন্ট যেন কমে যায়
-    const badge = document.getElementById('header-badge-notice');
-    if(badge && parseInt(badge.innerText) > 0) {
-        let current = parseInt(badge.innerText) - 1;
-        badge.innerText = current;
-        if(current === 0) badge.classList.remove('active');
-    }
+    // UI তে সাথে সাথে রিড মার্ক করা
+    const notifElement = document.getElementById(`notif-${notifId}`);
+    if (notifElement) notifElement.classList.replace('bg-blue-50', 'bg-white');
 
+    // ডাটাবেসে আপডেট করা
+    update(ref(window.db, `notifications/${window.currentUser.uid}/${notifId}`), { read: true });
+
+    // পোস্ট ওপেন করা
     if (['new_post', 'like', 'comment'].includes(type) && window.openSinglePostModal) {
         window.openSinglePostModal(postId);
+    }
+};
+
+// ৬. নতুন ফিচার: সব নোটিফিকেশন একসাথে রিড (Mark all as read)
+window.markAllAsRead = async () => {
+    if (!window.currentUser) return;
+    
+    try {
+        const unreadQuery = query(ref(window.db, `notifications/${window.currentUser.uid}`), orderByChild('read'), equalTo(false));
+        const snap = await get(unreadQuery);
+        
+        if (snap.exists()) {
+            let updates = {};
+            snap.forEach(child => {
+                updates[`${child.key}/read`] = true;
+            });
+            
+            // ফায়ারবেসে একবারে সব আপডেট করা
+            await update(ref(window.db, `notifications/${window.currentUser.uid}`), updates);
+            
+            // লোকাল UI আপডেট করা (হালকা নীল ব্যাকগ্রাউন্ড সরিয়ে সাদা করা)
+            document.querySelectorAll('#notifications-list > div.bg-blue-50').forEach(el => {
+                el.classList.replace('bg-blue-50', 'bg-white');
+            });
+            
+            // বাটন হাইড করা
+            document.getElementById('btn-mark-all-read')?.classList.add('hidden');
+            
+            if (window.showToast) window.showToast("সব নোটিফিকেশন রিড করা হয়েছে", "success");
+        }
+    } catch (e) {
+        console.error("Mark all read error:", e);
     }
 };
