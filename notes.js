@@ -1,4 +1,3 @@
-<script type="module">
 import {
     ref,
     set,
@@ -25,7 +24,7 @@ window.toggleNoteModal = (show) => {
     }
 };
 
-// স্টোরি সাবমিট করা (ভিডিও/ছবি সহ) - আনলিমিটেড সাপোর্ট
+// স্টোরি সাবমিট করা (আনলিমিটেড সাপোর্ট)
 window.submitStory = async () => {
     const text = document.getElementById('note-input-text').value.trim();
     const fileInput = document.getElementById('story-file-input');
@@ -43,7 +42,7 @@ window.submitStory = async () => {
 
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
-                throw new Error("ফাইল ৫ এমবির বেশি হতে পারবে এন্টি");
+                throw new Error("ফাইল ৫ এমবির বেশি হতে পারবে না");
             }
             if (file.type.startsWith('video/')) {
                 mediaType = "video";
@@ -70,7 +69,7 @@ window.submitStory = async () => {
             mediaUrl = res.url;
         }
 
-        // আনলিমিটেড স্টোরি: ইউনিক আইডি তৈরি করা হলো
+        // আনলিমিটেড স্টোরির জন্য ইউনিক আইডি
         const timestamp = Date.now();
         const storyId = `${window.currentUser.uid}_${timestamp}`;
 
@@ -182,7 +181,7 @@ setTimeout(() => {
 }, 2000);
 
 // ==========================================
-// STORY VIEWER LOGIC (Facebook/Insta Style)
+// STORY VIEWER LOGIC 
 // ==========================================
 
 window.openStoryViewer = (index) => {
@@ -296,12 +295,12 @@ function renderReactions(index) {
     }
 }
 
-// রিঅ্যাকশন ডাটাবেসে সেভ করা এবং ফ্লোটিং এনিমেশন
+// রিঅ্যাকশন ফায়ারবেসে পাঠানো ও ফ্লোটিং এনিমেশন
 window.sendReaction = async (emoji) => {
     const story = allActiveStories[currentStoryIndex];
     if (!story) return;
 
-    // ভাসমান ইমোজি তৈরি করা (ভিজ্যুয়াল ইফেক্ট)
+    // ভাসমান ইমোজি তৈরি করা
     const floatEl = document.createElement('div');
     floatEl.innerText = emoji;
     floatEl.className = 'absolute bottom-20 left-1/2 text-5xl animate-float-up z-[400]';
@@ -368,4 +367,3 @@ window.prevStory = () => {
         openStoryViewer(0);
     }
 };
-</script>
