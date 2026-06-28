@@ -1,0 +1,118 @@
+<!-- Blood Bank Page -->
+<div id="page-blood" class="hidden p-4 bg-gray-50 min-h-screen">
+    <div class="sticky top-0 pt-safe z-30 bg-gray-50 pb-2 mb-2">
+        <button onclick="switchPage('services')" class="text-gray-500 font-bold text-sm flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> সকল সেবা</button>
+    </div>
+    
+    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-center text-white mb-6 shadow-lg relative overflow-hidden">
+        <i class="fa-solid fa-heart-pulse absolute -right-6 -bottom-6 text-9xl opacity-20"></i>
+        <h2 class="text-2xl font-bold mb-2">রক্ত দিন, জীবন বাঁচান</h2>
+        <div class="flex gap-2 justify-center mt-4">
+            <button onclick="toggleDonorModal(true)" class="bg-white text-red-600 px-5 py-2.5 rounded-full font-bold shadow-md text-sm hover:bg-red-50 transition transform hover:scale-105 active:scale-95">ডোনার হন</button>
+            <button onclick="toggleBloodRequestModal(true)" class="bg-red-800 text-white px-5 py-2.5 rounded-full font-bold shadow-md text-sm border border-red-400 animate-pulse hover:bg-red-900 transition transform hover:scale-105 active:scale-95">জরুরি রক্তের প্রয়োজন</button>
+        </div>
+    </div>
+
+    <!-- Live Emergency Requests Section (নতুন ফিচার ২) -->
+    <div id="live-blood-requests-container" class="mb-4 hidden">
+        <h3 class="font-bold text-red-600 border-l-4 border-red-600 pl-3 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-tower-broadcast animate-pulse"></i> লাইভ ইমার্জেন্সি রিকোয়েস্ট
+        </h3>
+        <div id="live-requests-list" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+            <!-- Live requests will be injected here -->
+        </div>
+    </div>
+
+    <div class="bg-white p-3 rounded-xl shadow-sm mb-4">
+        <h3 class="font-bold text-gray-700 border-l-4 border-red-500 pl-3 mb-3">ডোনার খুঁজুন</h3>
+        <div class="flex gap-2">
+            <select id="blood-filter" onchange="filterDonors()" class="w-1/2 text-sm bg-gray-50 border p-2.5 rounded-lg outline-none">
+                <option value="all">সকল গ্রুপ</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+            </select>
+            <select id="blood-union-filter" onchange="filterDonors()" class="w-1/2 text-sm bg-gray-50 border p-2.5 rounded-lg outline-none">
+                <option value="all">সকল এলাকা</option>
+                <option value="Patharghata Union Sadar">পাথরঘাটা (সদর)</option>
+                <option value="Char Duani Union">চরদুয়ানী</option>
+                <option value="Kakchira Union">কাকচিরা</option>
+                <option value="Kalmegha Union">কালমেঘা</option>
+                <option value="Kathaltoli Union">কাঁঠালতলী</option>
+                <option value="Nachnapara Union">নাচনাপাড়া</option>
+                <option value="Raihanpur Union">রায়হানপুর</option>
+            </select>
+        </div>
+    </div>
+    <div id="donor-list" class="space-y-3 pb-20">
+        <p class="text-center text-gray-400 text-sm py-4">ডোনার লোড হচ্ছে...</p>
+    </div>
+</div>
+
+<!-- Donor Registration Modal -->
+<div id="donor-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center hidden-custom p-4">
+    <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
+        <button onclick="toggleDonorModal(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <h3 class="text-xl font-bold text-red-600 mb-1 text-center">রক্তদাতা হোন</h3>
+        <p class="text-[10px] text-gray-500 text-center mb-4">প্রথমবার ডোনার হলে <b class="text-yellow-600">১০০ পয়েন্ট</b> বোনাস পাবেন!</p> <!-- (নতুন ফিচার ৫) -->
+        
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">রক্তের গ্রুপ *</label>
+                <select id="donor-blood-group" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm outline-none">
+                    <option value="">বাছাই করুন</option>
+                    <option value="A+">A+</option><option value="A-">A-</option>
+                    <option value="B+">B+</option><option value="B-">B-</option>
+                    <option value="O+">O+</option><option value="O-">O-</option>
+                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">যোগাযোগের নম্বর *</label>
+                <input type="tel" id="donor-phone" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm outline-none" placeholder="017XXXXXXXX">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">শেষ রক্তদানের তারিখ</label>
+                <input type="date" id="donor-last-date" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm outline-none">
+                <p class="text-[9px] text-gray-400 mt-1">মনে না থাকলে খালি রাখুন</p>
+            </div>
+            
+            <!-- Privacy Control (নতুন ফিচার ৩) -->
+            <div class="flex items-center gap-2 bg-red-50 p-2 rounded-lg border border-red-100 mt-2">
+                <input type="checkbox" id="donor-hide-phone" class="w-4 h-4 text-red-600 rounded">
+                <label for="donor-hide-phone" class="text-xs text-red-800 font-bold cursor-pointer">আমার মোবাইল নাম্বার গোপন রাখুন</label>
+            </div>
+        </div>
+        <button onclick="submitDonor()" class="w-full bg-red-600 text-white font-bold py-3 mt-6 rounded-lg shadow-lg hover:bg-red-700 transition">তালিকায় যুক্ত হন</button>
+    </div>
+</div>
+
+<!-- Emergency Blood Request Modal -->
+<div id="modal-blood-request" class="fixed inset-0 bg-black bg-opacity-80 z-[105] flex items-center justify-center hidden-custom p-4">
+    <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
+        <button onclick="toggleBloodRequestModal(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div class="text-center mb-5">
+            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-pulse"><i class="fa-solid fa-bell text-red-600 text-3xl"></i></div>
+            <h3 class="text-xl font-bold text-red-600">জরুরি রক্তের প্রয়োজন</h3>
+            <p class="text-xs text-red-500">আপনার রিকোয়েস্ট লাইভ ফিডে যুক্ত হবে এবং ডোনারদের নোটিফিকেশন যাবে।</p>
+        </div>
+        <div class="space-y-3">
+            <select id="req-blood-group" class="w-full border-2 border-red-200 p-2.5 rounded-lg bg-red-50 text-sm font-bold text-red-800 outline-none">
+                <option value="">কোন গ্রুপের রক্ত প্রয়োজন?</option>
+                <option value="A+">A+</option><option value="A-">A-</option>
+                <option value="B+">B+</option><option value="B-">B-</option>
+                <option value="O+">O+</option><option value="O-">O-</option>
+                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+            </select>
+            <input type="text" id="req-location" placeholder="হাসপাতাল বা স্থান" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm outline-none">
+            <input type="tel" id="req-contact" placeholder="যোগাযোগের নম্বর" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm outline-none">
+            <textarea id="req-details" placeholder="অতিরিক্ত বিবরণ (রোগীর অবস্থা, কত ব্যাগ লাগবে)..." rows="2" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm outline-none"></textarea>
+        </div>
+        <button onclick="sendEmergencyBloodRequest()" id="btn-blood-req" class="w-full bg-red-600 text-white font-bold py-3 mt-6 rounded-lg shadow-lg hover:bg-red-700 transition btn-emergency">রিকোয়েস্ট পোস্ট করুন</button>
+    </div>
+</div>
