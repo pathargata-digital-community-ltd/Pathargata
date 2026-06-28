@@ -1273,59 +1273,8 @@
             </div>
             <button onclick="submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
         </div>
-    </div>   
-
-    <div id="donor-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center hidden-custom p-4">
-        <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
-            <button onclick="toggleDonorModal(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-xl font-bold text-red-600 mb-1 text-center">রক্তদাতা হোন</h3>
-            <p class="text-xs text-gray-500 text-center mb-6">আপনার রক্তে বাঁচবে একটি প্রাণ ❤️</p>
-            <div class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-600 mb-1">রক্তের গ্রুপ</label><select id="donor-blood-group" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
-                        <option value="">বাছাই করুন</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                    </select></div>
-                <div><label class="block text-xs font-bold text-gray-600 mb-1">যোগাযোগের নম্বর</label><input type="tel" id="donor-phone" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm" placeholder="017XXXXXXXX"></div>
-                <div><label class="block text-xs font-bold text-gray-600 mb-1">শেষ রক্তদানের তারিখ</label><input type="date" id="donor-last-date" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm"></div>
-            </div>
-            <button onclick="submitDonor()" class="w-full bg-red-600 text-white font-bold py-3 mt-6 rounded-lg shadow-lg hover:bg-red-700 transition">তালিকায় যুক্ত হন</button>
-        </div>
-    </div>
-
-    <div id="modal-blood-request" class="fixed inset-0 bg-black bg-opacity-80 z-[105] flex items-center justify-center hidden-custom p-4">
-        <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
-            <button onclick="toggleBloodRequestModal(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="text-center mb-5">
-                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-pulse"><i class="fa-solid fa-bell text-red-600 text-3xl"></i></div>
-                <h3 class="text-xl font-bold text-red-600">জরুরি রক্তের প্রয়োজন</h3>
-                <p class="text-xs text-red-500">নির্বাচিত গ্রুপের সকল ডোনারকে নোটিফিকেশন পাঠানো হবে</p>
-            </div>
-            <div class="space-y-3">
-                <select id="req-blood-group" class="w-full border-2 border-red-200 p-2.5 rounded-lg bg-red-50 text-sm font-bold text-red-800">
-                    <option value="">কোন গ্রুপের রক্ত প্রয়োজন?</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                </select>
-                <input type="text" id="req-location" placeholder="হাসপাতাল বা স্থান" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
-                <input type="tel" id="req-contact" placeholder="যোগাযোগের নম্বর" class="w-full border p-2.5 rounded-lg bg-gray-50 text-sm">
-            </div>
-            <button onclick="sendEmergencyBloodRequest()" id="btn-blood-req" class="w-full bg-red-600 text-white font-bold py-3 mt-6 rounded-lg shadow-lg hover:bg-red-700 transition btn-emergency">নোটিফিকেশন পাঠান</button>
-        </div>
-    </div>
-
+    </div>       
+  
     <!-- EMERGENCY ALERT MODAL -->
     <div id="emergency-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[106] flex items-center justify-center hidden-custom p-4">
         <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative border-2 border-red-500">
@@ -1701,21 +1650,7 @@
                 </div>
             </div>
 
-            <div id="page-blood" class="hidden p-4 bg-gray-50 min-h-screen">
-                <button onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
-                <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 text-center text-white mb-6 shadow-lg relative overflow-hidden">
-                    <i class="fa-solid fa-heart-pulse absolute -right-6 -bottom-6 text-9xl opacity-20"></i>
-                    <h2 class="text-2xl font-bold mb-2">রক্ত দিন, জীবন বাঁচান</h2>
-                    <div class="flex gap-2 justify-center mt-4">
-                        <button onclick="toggleDonorModal(true)" class="bg-white text-red-600 px-5 py-2.5 rounded-full font-bold shadow-md text-sm hover:bg-red-50 transition transform hover:scale-105 active:scale-95">ডোনার হন</button>
-                        <button onclick="toggleBloodRequestModal(true)" class="bg-red-800 text-white px-5 py-2.5 rounded-full font-bold shadow-md text-sm border border-red-400 animate-pulse hover:bg-red-900 transition transform hover:scale-105 active:scale-95">জরুরি রক্তের প্রয়োজন</button>
-                    </div>
-                </div>
-                <div class="bg-white p-3 rounded-xl shadow-sm mb-4">
-                    <h3 class="font-bold text-gray-700 border-l-4 border-red-500 pl-3 mb-3">ডোনার খুঁজুন</h3>
-                    <div class="flex gap-2">
-                        <select id="blood-filter" onchange="filterDonors()" class="w-1/2 text-sm bg-gray-50 border p-2.5 rounded-lg">
-                            <option value="all">সকল গ্রুপ</option>
+            <div id="blood-ui-container"></div>                            <option value="all">সকল গ্রুপ</option>
                             <option value="A+">A+</option>
                             <option value="A-">A-</option>
                             <option value="B+">B+</option>
@@ -4867,52 +4802,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                 }).join('');
             });
         }
-
-        window.submitDonor = () => {
-            const bloodGroup = document.getElementById('donor-blood-group').value;
-            if (!bloodGroup) return showToast("সব তথ্য দিন!", 'error');
-            set(ref(db, 'donors/' + window.currentUser.uid), {
-                name: userDetails.name,
-                bloodGroup,
-                phone: document.getElementById('donor-phone').value,
-                lastDate: document.getElementById('donor-last-date').value,
-                uid: window.currentUser.uid,
-                union: userDetails.union || '',
-                village: userDetails.village || ''
-            }).then(() => {
-                showToast("আপনি ডোনার তালিকায় যুক্ত হয়েছেন!");
-                toggleDonorModal(false);
-            });
-        };
-        window.sendEmergencyBloodRequest = () => {
-            const group = document.getElementById('req-blood-group').value;
-            if (!group) return showToast("গ্রুপ এবং মোবাইল নম্বর আবশ্যক", 'error');
-            get(ref(db, 'donors')).then((snapshot) => {
-                const count = Object.values(snapshot.val() || {}).filter(d => d.bloodGroup === group).length;
-                Object.values(snapshot.val() || {}).filter(d => d.bloodGroup === group).forEach(d => push(ref(db, `notifications/${d.uid}`), {
-                    type: 'blood_req',
-                    group,
-                    location: document.getElementById('req-location').value.trim(),
-                    contact: document.getElementById('req-contact').value.trim(),
-                    timestamp: Date.now(),
-                    read: false
-                }));
-                showToast(`${count} জন ডোনারকে নোটিফিকেশন পাঠানো হয়েছে!`);
-                toggleBloodRequestModal(false);
-            });
-        }
-
-        onValue(ref(db, 'donors'), (snapshot) => {
-            allDonors = Object.values(snapshot.val() || {});
-            filterDonors();
-        });
-        window.filterDonors = () => {
-            const bgFilter = document.getElementById('blood-filter').value,
-                unionFilter = document.getElementById('blood-union-filter').value;
-            const filtered = allDonors.filter(d => (bgFilter === 'all' || d.bloodGroup === bgFilter) && (unionFilter === 'all' || d.union === unionFilter));
-            document.getElementById('donor-list').innerHTML = filtered.length > 0 ? filtered.map(donor => `<div class="bg-white p-4 rounded-xl shadow-sm border border-red-50 flex justify-between items-center"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-xs border border-red-200">${escapeHTML(donor.bloodGroup)}</div><div><p class="font-bold text-gray-800 text-sm">${escapeHTML(donor.name)}</p><p class="text-[10px] text-gray-500 mt-0.5"><i class="fa-solid fa-location-dot mr-1"></i>${escapeHTML(donor.union || 'Unknown')}</p><p class="text-[10px] text-gray-500 mt-0.5"><i class="fa-regular fa-calendar mr-1"></i>শেষ দান: ${escapeHTML(donor.lastDate)}</p></div></div><a href="tel:${donor.phone}" class="bg-green-500 text-white w-9 h-9 rounded-full flex items-center justify-center shadow hover:bg-green-600"><i class="fa-solid fa-phone text-sm"></i></a></div>`).join('') : '<div class="text-center p-6 text-gray-400">এই শর্তে কোনো ডোনার নেই</div>';
-        };
-
+        
         window.submitComplaint = () => {
             const text = document.getElementById('complaint-text').value.trim();
             if (!text) return showToast("অভিযোগের বিস্তারিত লিখুন", 'error');
@@ -6416,8 +6306,29 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Market UI:", error);
             }
         }
+        
+        // Blood UI Fetcher
+        async function loadBloodUI() {
+            try {
+                const response = await fetch('blood-ui.html');
+                if (!response.ok) throw new Error('Failed to load Blood UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('blood-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Blood Design Loaded Successfully!");
+                    
+                    // লোড হওয়ার পর ডিফল্ট ইউজারের নাম্বার ফর্মে বসানোর চেষ্টা
+                    if(window.userDetails && document.getElementById('donor-phone')) {
+                        document.getElementById('donor-phone').value = window.userDetails.phone || "";
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading Blood UI:", error);
+            }
+        }
 
-        // Load the UI as soon as the main DOM is ready
         document.addEventListener("DOMContentLoaded", () => {
             loadProfileUI();
             loadContestUI();
@@ -6425,6 +6336,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadNotificationsUI();
             loadNotesUI();
             loadMarketUI();
+            loadBloodUI();
         });
     </script>
     
@@ -6435,6 +6347,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="notifications.js"></script>
     <script type="module" src="notes.js"></script>
     <script type="module" src="market.js"></script>
+    <script type="module" src="blood.js"></script>
 </body>
 
 </html>
