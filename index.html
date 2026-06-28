@@ -1273,21 +1273,7 @@
             </div>
             <button onclick="submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
         </div>
-    </div>
-
-    <div id="sell-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl relative">
-            <button onclick="toggleSellModal(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">পণ্য বিক্রি করুন</h3>
-            <div class="space-y-3">
-                <input type="text" id="sell-title" placeholder="পণ্যের নাম" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
-                <input type="number" id="sell-price" placeholder="দাম (টাকা)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
-                <textarea id="sell-desc" placeholder="বিবরণ এবং যোগাযোগ নম্বর..." rows="3" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea>
-                <div><label class="block text-xs font-bold text-gray-500 mb-1">পণ্যের ছবি</label><input type="file" id="sell-image-file" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-orange-50 file:text-orange-700"></div>
-            </div>
-            <button onclick="submitProduct()" id="btn-sell-submit" class="w-full bg-orange-500 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-orange-600 transition flex justify-center items-center gap-2">বিজ্ঞাপন দিন</button>
-        </div>
-    </div>
+    </div>   
 
     <div id="donor-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center hidden-custom p-4">
         <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
@@ -1702,16 +1688,7 @@
                 <!-- messages-ui.html এর ডিজাইন এখানে ডাইনামিকভাবে লোড হবে -->
             </div>
 
-            <div id="page-market" class="hidden p-4 bg-gray-100 min-h-screen pb-20">
-                <div class="flex items-center mb-5 sticky top-0 pt-safe z-30 bg-gray-100 py-2 gap-3">
-                    <button onclick="switchPage('services')" class="text-gray-500 w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                    <h2 class="text-xl font-bold text-gray-800 border-l-4 border-orange-500 pl-3 flex-1">উপজেলা মার্কেট</h2>
-                    <button onclick="toggleSellModal(true)" class="bg-orange-500 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow hover:bg-orange-600 flex items-center gap-2 transform active:scale-95 transition"><i class="fa-solid fa-plus"></i> বিক্রি করুন</button>
-                </div>
-                <div id="market-list" class="grid grid-cols-2 gap-3">
-                    <p class="col-span-2 text-center text-gray-400 py-10">লোড হচ্ছে...</p>
-                </div>
-            </div>
+            <div id="market-ui-container"></div>
             
             <!-- Profile UI Container (Fetched dynamically) -->
 <div id="profile-ui-container"></div>
@@ -2381,7 +2358,7 @@ if (refUid) {
             return "";
         }
 
-        // --- UPDATED CLOUDINARY UPLOAD (Video Compression Added) ---
+        // --- UPDATED CLOUDINARY UPLOAD (Separate Account for Stories) ---
         window.uploadMediaToCloudinary = async function(file, isStory = false) {
             // ভিডিও আপলোড শুধুমাত্র স্টোরির জন্য অ্যালাউড
             if (file.type.startsWith('video/') && !isStory) {
@@ -2390,7 +2367,6 @@ if (refUid) {
             }
 
             let fileToUpload = file;
-            // শুধুমাত্র ছবির জন্য ক্যানভাস রিসাইজ হবে
             if (file.type.startsWith('image/')) {
                 try {
                     fileToUpload = await resizeImage(file);
@@ -2401,18 +2377,24 @@ if (refUid) {
 
             const formData = new FormData();
             formData.append('file', fileToUpload);
-            formData.append('upload_preset', 'Pathargata digital');
 
-            // ভিডিওর জন্য 'video', অডিওর জন্যও 'video', ছবির জন্য 'auto'
-            const resourceType = (file.type.startsWith('audio/') || file.type.startsWith('video/')) ? 'video' : 'auto';
+            // 🌟 নতুন লজিক: রেগুলার পোস্ট এবং স্টোরির জন্য আলাদা ক্লাউডিনারি 🌟
+            let cloudName = 'dl1auoanl'; // আপনার মেইন ক্লাউডিনারি নাম (রেগুলার পোস্টের জন্য)
+            let uploadPreset = 'Pathargata digital'; // মেইন প্রিসেট
 
-            // ⭐️ ক্লাউডিনারিকে ভিডিও রিসাইজ করার ইনস্ট্রাকশন দেওয়া (Eager Transformation) ⭐️
-            if (file.type.startsWith('video/')) {
-                formData.append('eager', 'q_60,w_720,c_limit'); 
+            if (isStory) {
+                // স্টোরির জন্য ২য় ক্লাউডিনারি ডিটেইলস (এখানে আপনার নতুন ক্লাউডিনারির নাম ও প্রিসেট দিন)
+                cloudName = 'YOUR_STORY_CLOUD_NAME'; 
+                uploadPreset = 'YOUR_STORY_UPLOAD_PRESET'; 
             }
 
+            formData.append('upload_preset', uploadPreset);
+
+            const resourceType = (file.type.startsWith('audio/') || file.type.startsWith('video/')) ? 'video' : 'auto';
+
             try {
-                const res = await fetch(`https://api.cloudinary.com/v1_1/dl1auoanl/${resourceType}/upload`, {
+                // URL এ ডাইনামিকভাবে cloudName বসানো হয়েছে
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`, {
                     method: 'POST',
                     body: formData
                 });
@@ -2420,15 +2402,8 @@ if (refUid) {
                 
                 if (data.error) throw new Error(data.error.message);
                 
-                let finalUrl = data.secure_url;
-
-                // ⭐️ ভিডিও হলে, ক্লাউডিনারির কনভার্ট করা (রিসাইজড) লিংকটি নিব ⭐️
-                if (file.type.startsWith('video/') && data.eager && data.eager.length > 0) {
-                    finalUrl = data.eager[0].secure_url;
-                }
-
                 return {
-                    url: finalUrl,
+                    url: data.secure_url,
                     type: resourceType
                 }; 
             } catch (error) {
@@ -4852,51 +4827,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                 document.getElementById('live-notices').innerHTML = `<div class="bg-orange-50 p-4 m-3 rounded-xl border-l-4 border-orange-500 flex items-start gap-3 shadow-sm"><i class="fa-solid fa-bullhorn text-orange-600 mt-1"></i><div><h3 class="font-bold text-orange-900 text-sm">${escapeHTML(notice.title)}</h3><p class="text-xs text-orange-800 line-clamp-2 mt-1">${escapeHTML(notice.description)}</p></div></div>`;
             }
         });
-
-        window.submitProduct = async () => {
-            const title = document.getElementById('sell-title').value.trim(),
-                price = document.getElementById('sell-price').value.trim(),
-                desc = document.getElementById('sell-desc').value.trim(),
-                file = document.getElementById('sell-image-file').files[0];
-            if (!title) return;
-            const btn = document.getElementById('btn-sell-submit');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> আপলোড হচ্ছে...';
-            btn.disabled = true;
-            try {
-                let imgUrl = "";
-                if (file) {
-                    const res = await uploadMediaToCloudinary(file);
-                    imgUrl = res.url;
-                }
-                await push(ref(db, 'market_items'), {
-                    uid: window.currentUser.uid,
-                    seller: userDetails.name,
-                    title,
-                    price,
-                    desc,
-                    image: imgUrl,
-                    time: Date.now()
-                });
-                toggleSellModal(false);
-                document.getElementById('sell-title').value = "";
-                showToast("পণ্য যুক্ত হয়েছে!");
-            } catch (e) {
-                console.error(e);
-                showToast("ছবি আপলোডে সমস্যা: " + e.message, 'error');
-            } finally {
-                btn.innerText = "বিজ্ঞাপন দিন";
-                btn.disabled = false;
-            }
-        };
-
-        onValue(ref(db, 'market_items'), (snap) => {
-            globalMarketItems = Object.values(snap.val() || {}).reverse();
-            document.getElementById('market-list').innerHTML = globalMarketItems.length > 0 ? globalMarketItems.map(item => {
-                const imgTag = item.image ? `<img src="${item.image}" class="h-full w-full object-cover">` : `<i class="fa-solid fa-image text-3xl"></i>`;
-                return `<div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between"><div><div class="h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-300 overflow-hidden">${imgTag}</div><h3 class="font-bold text-sm text-gray-800 line-clamp-1">${escapeHTML(item.title)}</h3><p class="text-orange-600 font-bold text-sm">৳ ${escapeHTML(item.price)}</p><p class="text-[10px] text-gray-500 line-clamp-2 mt-1">${escapeHTML(item.desc)}</p></div><div class="mt-2 pt-2 border-t flex justify-between items-center"><span class="text-[10px] text-gray-400">${escapeHTML(item.seller).split(' ')[0]}</span><button class="bg-green-500 text-white px-2 py-1 rounded text-xs"><i class="fa-solid fa-phone"></i></button></div></div>`;
-            }).join('') : '<p class="col-span-2 text-center text-gray-400 py-10">কোনো পণ্য নেই</p>';
-        });
-
+        
         window.submitEmergencyAlert = () => {
             const type = document.getElementById('emergency-type').value;
             const title = document.getElementById('emergency-title').value.trim();
@@ -6468,6 +6399,23 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Notes UI:", error);
             }
         }
+        
+        // Market HTML Fetcher
+        async function loadMarketUI() {
+            try {
+                const response = await fetch('market-ui.html');
+                if (!response.ok) throw new Error('Failed to load Market UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('market-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Market Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Market UI:", error);
+            }
+        }
 
         // Load the UI as soon as the main DOM is ready
         document.addEventListener("DOMContentLoaded", () => {
@@ -6476,6 +6424,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadMessagesUI();
             loadNotificationsUI();
             loadNotesUI();
+            loadMarketUI();
         });
     </script>
     
@@ -6485,6 +6434,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="fifa.js"></script>
     <script type="module" src="notifications.js"></script>
     <script type="module" src="notes.js"></script>
+    <script type="module" src="market.js"></script>
 </body>
 
 </html>
