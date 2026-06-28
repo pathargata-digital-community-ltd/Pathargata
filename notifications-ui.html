@@ -1,9 +1,37 @@
+<style>
+    /* In-App Toast Animation (TikTok Style) */
+    @keyframes slideDownAndFade {
+        0% { transform: translateY(-50px); opacity: 0; }
+        10% { transform: translateY(0); opacity: 1; }
+        90% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-50px); opacity: 0; }
+    }
+    .in-app-toast-anim {
+        animation: slideDownAndFade 4s ease-in-out forwards;
+    }
+</style>
+
 <div id="page-notifications" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
-    <h2 class="text-xl font-bold text-gray-800 mb-4 border-l-4 border-yellow-500 pl-3">নোটিফিকেশন</h2>
-    <div id="notifications-list" class="space-y-3">
-        <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
+    <!-- Header with 'Mark all as read' button -->
+    <div class="flex justify-between items-center mb-4 border-l-4 border-yellow-500 pl-3">
+        <h2 class="text-xl font-bold text-gray-800">নোটিফিকেশন</h2>
+        <button onclick="markAllAsRead()" id="btn-mark-all-read" class="hidden text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-gray-100 transition">
+            <i class="fa-solid fa-check-double text-blue-500 mr-1"></i> সব মার্ক করুন
+        </button>
     </div>
+
+    <!-- Notifications List -->
+    <div id="notifications-list" class="space-y-3">
+        <!-- Skeleton Loader (Professional empty state while loading) -->
+        <div class="flex justify-center py-10">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+    </div>
+
+    <!-- Load More Button -->
     <div class="text-center mt-6">
-        <button id="btn-load-more-notif" onclick="loadNotifications(false)" class="hidden bg-white border px-4 py-2 rounded-full text-sm font-bold text-gray-600 shadow-sm">আরো দেখুন</button>
+        <button id="btn-load-more-notif" onclick="loadNotifications(false)" class="hidden bg-white border px-5 py-2 rounded-full text-sm font-bold text-gray-600 shadow-sm hover:bg-gray-100 transition">
+            <i class="fa-solid fa-caret-down mr-1"></i> আরো দেখুন
+        </button>
     </div>
 </div>
