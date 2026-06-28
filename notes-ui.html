@@ -1,3 +1,16 @@
+<style>
+    /* Floating Emoji Animation CSS */
+    @keyframes float-up {
+        0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+        50% { transform: translate(-50%, -80px) scale(1.5); opacity: 0.8; }
+        100% { transform: translate(-50%, -150px) scale(1); opacity: 0; }
+    }
+    .animate-float-up { 
+        animation: float-up 1.5s ease-out forwards; 
+        pointer-events: none;
+    }
+</style>
+
 <div id="temp-notes-feed">
     <!-- স্টোরি সেকশন (Facebook Style) -->
     <div class="bg-white pt-3 pb-4 mb-2 shadow-sm border-b">
@@ -57,16 +70,31 @@
         <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black mt-10 mb-16" id="story-media-container">
             <!-- Image or Video will be injected here -->
         </div>
+        
+        <!-- Touch Controls (Left for Prev, Right for Next) -->
+        <!-- z-30 and mb-32 added so it doesn't block the reaction buttons below -->
+        <div class="absolute inset-0 z-30 flex mt-16 mb-32">
+            <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
+            <div class="w-2/3 h-full cursor-pointer" onclick="nextStory()"></div>
+        </div>
+
+        <!-- Reactions Display (Who reacted what) -->
+        <div id="story-reactions-display" class="absolute bottom-24 left-4 z-50 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md">
+            <!-- Reactions will be loaded here -->
+        </div>
 
         <!-- Caption Area -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent z-50 pb-8 text-center">
+        <div class="absolute bottom-16 left-0 right-0 px-4 bg-gradient-to-t from-black to-transparent z-40 pb-4 text-center pointer-events-none">
             <p id="story-viewer-caption" class="text-white text-sm font-medium shadow-black drop-shadow-md whitespace-pre-line"></p>
         </div>
 
-        <!-- Touch Controls (Left for Prev, Right for Next) -->
-        <div class="absolute inset-0 z-40 flex mt-12 mb-20">
-            <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
-            <div class="w-2/3 h-full cursor-pointer" onclick="nextStory()"></div>
+        <!-- Reaction Interaction Bar -->
+        <div class="absolute bottom-4 left-0 right-0 z-50 flex justify-center gap-4 px-4 pb-2">
+            <button onclick="sendReaction('👍')" class="text-3xl hover:scale-125 transition-transform drop-shadow-lg">👍</button>
+            <button onclick="sendReaction('❤️')" class="text-3xl hover:scale-125 transition-transform drop-shadow-lg">❤️</button>
+            <button onclick="sendReaction('😂')" class="text-3xl hover:scale-125 transition-transform drop-shadow-lg">😂</button>
+            <button onclick="sendReaction('😮')" class="text-3xl hover:scale-125 transition-transform drop-shadow-lg">😮</button>
+            <button onclick="sendReaction('😢')" class="text-3xl hover:scale-125 transition-transform drop-shadow-lg">😢</button>
         </div>
     </div>
 </div>
