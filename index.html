@@ -2201,12 +2201,44 @@ if (refUid) {
         };
 
         // --- HELPER FUNCTIONS ---
+        // সাউন্ড প্লে করার মাস্টার ফাংশন
+        window.playSound = (type) => {
+            try {
+                let sound = document.getElementById(type + '-sound');
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log("Sound autoplay blocked:", e));
+                }
+            } catch (e) {}
+        };
+
+        // মেসেজ সাউন্ড কন্ট্রোলার (শুধু চ্যাটের বাইরে থাকলে বাজবে)
+        window.playMessageSound = (senderUid) => {
+            const chatView = document.getElementById('chat-conversation-view');
+            const isChatOpen = chatView && !chatView.classList.contains('hidden');
+            
+            // যদি চ্যাটের ভেতরে থাকে এবং যার সাথে চ্যাট হচ্ছে সেই মেসেজ দেয়, তাহলে সাউন্ড হবে না।
+            if (isChatOpen && window.currentChatUser && window.currentChatUser.uid === senderUid) {
+                return; // সাউন্ড বন্ধ
+            }
+            
+            // অন্যথায় সাউন্ড বাজবে
+            window.playSound('message');
+        };
+
         window.escapeHTML = (str) => {
             if (!str) return "";
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
         // --- আপডেট করা টোস্ট নোটিফিকেশন সিস্টেম ---
         window.showToast = (msg, type = 'success') => {
+            // নোটিফিকেশন বা এরর সাউন্ড বাজবে
+            if (type === 'error') {
+                window.playSound('error');
+            } else {
+                window.playSound('notification');
+            }
+
             const container = document.getElementById('toast-container');
 
             // ট্রিক: নতুন মেসেজ আসার আগে আগের সব মেসেজ ক্লিয়ার করে দেওয়া হবে
@@ -2294,8 +2326,8 @@ if (refUid) {
 
             if (isStory) {
                 // স্টোরির জন্য ২য় ক্লাউডিনারি ডিটেইলস (এখানে আপনার নতুন ক্লাউডিনারির নাম ও প্রিসেট দিন)
-                cloudName = 'YOUR_STORY_CLOUD_NAME'; 
-                uploadPreset = 'YOUR_STORY_UPLOAD_PRESET'; 
+                cloudName = 'dixazfmlr'; 
+                uploadPreset = 'Pathargata story'; 
             }
 
             formData.append('upload_preset', uploadPreset);
@@ -2948,6 +2980,7 @@ loadMyComplaints();
                 // মডাল সম্পূর্ণ রিসেট এবং বন্ধ করা
                 window.resetPostForm();
                 togglePostModal(false);
+                window.playSound('send'); // সেন্ড সাউন্ড
                 showToast("পোস্ট করা হয়েছে!", "success");
 
                 if (privacy !== 'only_me') notifyFriends(newPostData.uid, userDetails.name);
@@ -2994,6 +3027,9 @@ loadMyComplaints();
                     
                     // মোবাইলে হালকা ভাইব্রেশন (যদি সাপোর্ট করে)
                     if (navigator.vibrate) navigator.vibrate(40);
+                    
+                    // লাইক সাউন্ড
+                    window.playSound('like');
                 }
             });
             
@@ -4122,6 +4158,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             }).then(() => {
                 // Award Points for Comment
                 window.awardPoints('comment');
+                window.playSound('send'); // কমেন্ট সেন্ড সাউন্ড
                 input.value = "";
                 get(ref(db, `posts/${postId}`)).then(s => {
                     const p = s.val();
@@ -5810,8 +5847,9 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 // ইউজার নিজে পোস্ট করলে তো আর অ্যালার্ট দেখানোর দরকার নেই, তাই এই চেকটি করা হলো
                 if (window.currentUser && post.uid !== window.currentUser.uid) {
                     const alertBtn = document.getElementById('new-post-alert');
-                    if (alertBtn) {
+                    if (alertBtn && alertBtn.classList.contains('hidden')) {
                         alertBtn.classList.remove('hidden');
+                        window.playSound('notification'); // নতুন পোস্টের সাউন্ড
                     }
                 }
             });
@@ -6323,6 +6361,12 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="notes.js"></script>
     <script type="module" src="market.js"></script>
     <script type="module" src="blood.js"></script>
+<!-- সাউন্ড ইফেক্টস -->
+    <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
+    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <audio id="message-sound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
+    <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2954/2954-preview.mp3" preload="auto"></audio>
+    <audio id="send-sound" src="https://assets.mixkit.co/active_storage/sfx/237/237-preview.mp3" preload="auto"></audio>
 </body>
 
 </html>
