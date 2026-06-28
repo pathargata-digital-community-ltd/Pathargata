@@ -10,9 +10,10 @@ window.submitDonor = async () => {
     const bloodGroup = document.getElementById('donor-blood-group').value;
     const phone = document.getElementById('donor-phone').value;
     const hidePhone = document.getElementById('donor-hide-phone').checked;
+    const lastDate = document.getElementById('donor-last-date').value;
     
     if (!bloodGroup || !phone) return window.showToast("রক্তের গ্রুপ এবং মোবাইল নাম্বার আবশ্যক!", 'error');
-    if (!/^01[3-9]\d{8}$/.test(phone)) return window.showToast("সঠিক মোবাইল নম্বর দিন", 'error');
+    if (!/^01[3-9]\d{8}$/.test(phone)) return window.showToast("সঠিক মোবাইল নম্বর দিন (যেমন: 017...)", 'error');
     
     const uid = window.currentUser.uid;
     const donorRef = ref(db, 'donors/' + uid);
@@ -26,7 +27,7 @@ window.submitDonor = async () => {
             bloodGroup,
             phone,
             hidePhone,
-            lastDate: document.getElementById('donor-last-date').value || "",
+            lastDate: lastDate || "",
             uid: uid,
             union: window.userDetails.union || '',
             village: window.userDetails.village || '',
@@ -40,19 +41,73 @@ window.submitDonor = async () => {
             });
             window.showToast("ব্লাড হিরো ব্যাজ এবং ১০০ পয়েন্ট যুক্ত হয়েছে!", "success");
         } else {
-            window.showToast("আপনার ডোনার প্রোফাইল আপডেট হয়েছে!", "success");
+            window.showToast("আপনার ডোনার প্রোফাইল সফলভাবে আপডেট হয়েছে!", "success");
         }
 
         window.toggleDonorModal(false);
+        checkIfUserIsDonor(); // বাটন আপডেট করার জন্য
     } catch (e) {
         window.showToast("ত্রুটি: " + e.message, "error");
     }
 };
 
 // ==========================================
+// মডাল আপডেট লজিক (নতুন vs পুরাতন ডোনার)
+// ==========================================
+window.openUpdateDonorModal = async () => {
+    const uid = window.currentUser.uid;
+    const donorRef = ref(db, 'donors/' + uid);
+    
+    try {
+        const snap = await get(donorRef);
+        if (snap.exists()) {
+            const data = snap.val();
+            document.getElementById('donor-blood-group').value = data.bloodGroup || '';
+            document.getElementById('donor-phone').value = data.phone || '';
+            document.getElementById('donor-last-date').value = data.lastDate || '';
+            document.getElementById('donor-hide-phone').checked = data.hidePhone || false;
+            
+            document.getElementById('donor-modal-title').innerText = "তথ্য আপডেট করুন";
+            document.getElementById('donor-modal-subtitle').innerText = "রক্ত দেওয়ার পর এখান থেকে তারিখ আপডেট করতে পারবেন।";
+            document.getElementById('donor-submit-btn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> আপডেট সেভ করুন';
+            
+            window.openModalWithHistory('donor-modal', "#donor-reg");
+            document.getElementById('donor-modal').classList.remove('hidden-custom');
+        }
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+window.checkIfUserIsDonor = () => {
+    if (!window.currentUser) return;
+    const uid = window.currentUser.uid;
+    onValue(ref(db, 'donors/' + uid), (snap) => {
+        const btn = document.getElementById('main-donor-btn');
+        if (btn) {
+            if (snap.exists()) {
+                btn.innerHTML = '<i class="fa-solid fa-pen"></i> রক্তদানের তথ্য আপডেট';
+                btn.onclick = window.openUpdateDonorModal;
+                btn.classList.replace('text-red-600', 'text-blue-600');
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-hand-holding-droplet"></i> ডোনার হন';
+                btn.onclick = () => window.toggleDonorModal(true);
+                btn.classList.replace('text-blue-600', 'text-red-600');
+                
+                // রিসেট মডাল টেক্সট
+                document.getElementById('donor-modal-title').innerText = "রক্তদাতা হোন";
+                document.getElementById('donor-modal-subtitle').innerHTML = 'প্রথমবার ডোনার হলে <b class="text-yellow-600">১০০ পয়েন্ট</b> বোনাস পাবেন!';
+                document.getElementById('donor-submit-btn').innerHTML = 'তালিকায় যুক্ত হন';
+            }
+        }
+    });
+};
+
+// ==========================================
 // ২. লাইভ ইমার্জেন্সি রিকোয়েস্ট
 // ==========================================
 window.sendEmergencyBloodRequest = async () => {
+    // (আগের মতই থাকবে, কোনো পরিবর্তন নেই)
     const group = document.getElementById('req-blood-group').value;
     const location = document.getElementById('req-location').value.trim();
     const contact = document.getElementById('req-contact').value.trim();
@@ -148,40 +203,37 @@ window.deleteBloodRequest = (id) => {
 // ==========================================
 // ৩. ডোনার লিস্ট লোড (Local Storage Cache + Background Update)
 // ==========================================
-
-// প্রথমে লোকাল স্টোরেজ থেকে ডাটা নিয়ে ইনস্ট্যান্ট দেখিয়ে দেওয়া হচ্ছে (Zero loading time)
 const cachedDonors = localStorage.getItem('cached_blood_donors');
 if (cachedDonors) {
     try {
         window.allDonors = JSON.parse(cachedDonors);
         setTimeout(() => {
             if(document.getElementById('donor-list')) window.filterDonors();
+            checkIfUserIsDonor();
         }, 100);
     } catch (e) {
         console.error("Cache parsing error", e);
     }
 }
 
-// ব্যাকগ্রাউন্ডে ফায়ারবেস থেকে নতুন ডাটা নিয়ে আসা হচ্ছে
 onValue(ref(db, 'donors'), (snapshot) => {
     if (snapshot.exists()) {
         const freshDonors = Object.values(snapshot.val());
         window.allDonors = freshDonors;
-        // নতুন ডাটা লোকাল স্টোরেজে সেভ করে রাখা হচ্ছে ভবিষ্যতের জন্য
         localStorage.setItem('cached_blood_donors', JSON.stringify(freshDonors));
     } else {
         window.allDonors = [];
         localStorage.removeItem('cached_blood_donors'); 
     }
     
-    // ব্যাকগ্রাউন্ড ডাটা আসার পর UI আপডেট করা হচ্ছে
     if(document.getElementById('donor-list')) {
         window.filterDonors();
+        checkIfUserIsDonor();
     }
 });
 
 // ==========================================
-// ৪. ফিল্টার, স্ট্যাটাস ট্র্যাকার এবং হোয়াটসঅ্যাপ
+// ৪. ফিল্টার, স্ট্যাটাস ট্র্যাকার এবং স্মার্ট কন্টাক্ট বাটন
 // ==========================================
 window.filterDonors = () => {
     const bgFilter = document.getElementById('blood-filter')?.value || 'all';
@@ -207,22 +259,36 @@ window.filterDonors = () => {
             if (diffDays < 120) {
                 isAvailable = false;
                 const daysLeft = 120 - diffDays;
-                eligibilityBadge = `<span class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold"><i class="fa-solid fa-clock"></i> ${daysLeft} দিন পর পারবে</span>`;
+                // কবে রক্ত দিয়েছে সেটাও ছোট করে দেখাবে
+                const givenDate = new Date(donor.lastDate).toLocaleDateString('bn-BD');
+                eligibilityBadge = `<span class="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold" title="${givenDate} তারিখে রক্ত দিয়েছেন"><i class="fa-solid fa-clock"></i> আরও ${daysLeft} দিন পর পারবে</span>`;
             }
         }
 
         let contactButtons = '';
         if (isMe) {
-            contactButtons = `<button onclick="removeMeFromDonor()" class="text-xs text-red-500 font-bold bg-red-50 px-2 py-1 rounded hover:bg-red-100 border border-red-200 shadow-sm"><i class="fa-solid fa-trash-can"></i> রিমুভ</button>`;
+            // নিজের কার্ড হলে আপডেট ও ডিলিট বাটন দেখাবে
+            contactButtons = `
+                <button onclick="window.openUpdateDonorModal()" class="text-[11px] text-blue-600 font-bold bg-blue-50 px-2 py-1.5 rounded hover:bg-blue-100 border border-blue-200 shadow-sm mr-1 transition"><i class="fa-solid fa-pen"></i> আপডেট</button>
+                <button onclick="removeMeFromDonor()" class="text-[11px] text-red-500 font-bold bg-red-50 px-2 py-1.5 rounded hover:bg-red-100 border border-red-200 shadow-sm transition"><i class="fa-solid fa-trash-can"></i> রিমুভ</button>
+            `;
         } else {
-            const chatBtn = `<button onclick="startChat('${donor.uid}', '${window.escapeHTML(donor.name)}')" class="bg-blue-50 text-blue-600 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-100 transition shadow-sm" title="মেসেজ"><i class="fa-brands fa-facebook-messenger"></i></button>`;
+            // অ্যাপের ভেতরের ইন-বিল্ট চ্যাট ফাংশন
+            const chatBtn = `<button onclick="startChat('${donor.uid}', '${window.escapeHTML(donor.name)}')" class="bg-blue-50 text-blue-600 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-100 transition shadow-sm" title="অ্যাপে মেসেজ দিন"><i class="fa-brands fa-facebook-messenger"></i></button>`;
+            
             if (donor.hidePhone) {
+                // নাম্বার হাইড থাকলে শুধু মেসেজ করতে পারবে
                 contactButtons = chatBtn;
             } else {
-                let waNumber = donor.phone.startsWith('0') ? '88' + donor.phone : donor.phone;
+                // WhatsApp নাম্বার ফরমেটিং লজিক (+880 যুক্ত করা)
+                let cleanPhone = donor.phone.replace(/[^0-9]/g, ''); // স্পেস বা অন্য কিছু থাকলে ক্লিয়ার করা
+                let waNumber = cleanPhone.startsWith('01') ? '88' + cleanPhone : cleanPhone; // 017.. কে 88017.. বানানো
+                
                 const waMsg = encodeURIComponent(`আসসালামু আলাইকুম। আমার ইমার্জেন্সি ${donor.bloodGroup} রক্ত লাগবে। আপনি কি রক্ত দিতে পারবেন?`);
                 const waBtn = `<a href="https://wa.me/${waNumber}?text=${waMsg}" target="_blank" class="bg-green-100 text-green-600 w-9 h-9 rounded-full flex items-center justify-center hover:bg-green-200 transition shadow-sm" title="WhatsApp"><i class="fa-brands fa-whatsapp text-lg"></i></a>`;
-                const callBtn = `<a href="tel:${donor.phone}" class="bg-green-500 text-white w-9 h-9 rounded-full flex items-center justify-center shadow hover:bg-green-600 transition hover:scale-105" title="কল"><i class="fa-solid fa-phone text-sm"></i></a>`;
+                
+                const callBtn = `<a href="tel:${donor.phone}" class="bg-green-500 text-white w-9 h-9 rounded-full flex items-center justify-center shadow hover:bg-green-600 transition hover:scale-105" title="সরাসরি কল"><i class="fa-solid fa-phone text-sm"></i></a>`;
+                
                 contactButtons = `${chatBtn} ${waBtn} ${callBtn}`;
             }
         }
@@ -257,9 +323,7 @@ window.removeMeFromDonor = () => {
     if(confirm("আপনি কি ডোনার তালিকা থেকে আপনার নাম মুছে ফেলতে চান?")) {
         remove(ref(db, 'donors/' + window.currentUser.uid)).then(() => {
             window.showToast("আপনার নাম তালিকা থেকে মুছে ফেলা হয়েছে");
-            if(document.getElementById('donor-phone')) document.getElementById('donor-phone').value = "";
-            if(document.getElementById('donor-last-date')) document.getElementById('donor-last-date').value = "";
-            if(document.getElementById('donor-hide-phone')) document.getElementById('donor-hide-phone').checked = false;
+            checkIfUserIsDonor(); // বাটন আবার আগের মত করে দিবে
         });
     }
 }
