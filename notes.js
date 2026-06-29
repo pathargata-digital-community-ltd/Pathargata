@@ -5,7 +5,8 @@ import {
     remove,
     query,
     orderByChild,
-    startAt
+    startAt,
+    push // <--- এটি ইমপোর্ট করা মিসিং ছিল
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // গ্লোবাল ভেরিয়েবল
