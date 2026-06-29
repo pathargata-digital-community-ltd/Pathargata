@@ -382,18 +382,26 @@ let pauseTime = 0;
 let remainingDuration = 0;
 let currentStartTime = 0;
 
+// 🔴 ফিক্স করা অংশ 🔴
 function pauseStory(index) {
     clearTimeout(storyTimer);
     clearInterval(progressInterval);
     pauseTime = Date.now();
+    
     const mediaContainer = document.getElementById('story-media-container');
     const video = mediaContainer.querySelector('video');
     if(video) video.pause();
     
-    document.querySelector('.absolute.top-4').style.opacity = '0';
-    document.getElementById('story-reply-input')?.parentElement.parentElement.style.opacity = '0';
+    const topBar = document.querySelector('.absolute.top-4');
+    if (topBar) topBar.style.opacity = '0';
+    
+    const replyInput = document.getElementById('story-reply-input');
+    if (replyInput && replyInput.parentElement && replyInput.parentElement.parentElement) {
+        replyInput.parentElement.parentElement.style.opacity = '0';
+    }
 }
 
+// 🔴 ফিক্স করা অংশ 🔴
 function resumeStory(index, totalDuration, type) {
     let passedTime = pauseTime - currentStartTime;
     remainingDuration = totalDuration - passedTime;
@@ -402,8 +410,13 @@ function resumeStory(index, totalDuration, type) {
     const video = mediaContainer.querySelector('video');
     if(video) video.play();
 
-    document.querySelector('.absolute.top-4').style.opacity = '1';
-    document.getElementById('story-reply-input')?.parentElement.parentElement.style.opacity = '1';
+    const topBar = document.querySelector('.absolute.top-4');
+    if (topBar) topBar.style.opacity = '1';
+    
+    const replyInput = document.getElementById('story-reply-input');
+    if (replyInput && replyInput.parentElement && replyInput.parentElement.parentElement) {
+        replyInput.parentElement.parentElement.style.opacity = '1';
+    }
 
     startProgress(index, totalDuration, type, true); 
 }
