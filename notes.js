@@ -6,13 +6,13 @@ import {
     query,
     orderByChild,
     startAt,
-    push // <--- এটি ইমপোর্ট করা মিসিং ছিল
+    push 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // গ্লোবাল ভেরিয়েবল
-let storyUsers = []; // স্টোরিগুলোকে ইউজার অনুযায়ী গ্রুপ করে রাখা হবে
-let currentUserIndex = 0; // কোন ইউজারের স্টোরি দেখছি
-let currentSubStoryIndex = 0; // ওই ইউজারের কত নাম্বার স্টোরি দেখছি
+let storyUsers = []; 
+let currentUserIndex = 0; 
+let currentSubStoryIndex = 0; 
 let storyTimer = null;
 let progressInterval = null;
 
@@ -38,7 +38,7 @@ window.checkFileSize = (input) => {
     }
 };
 
-// স্টোরি সাবমিট করা (ভিডিও/ছবি সহ - ১০ এমবি ও ৩০ সেকেন্ড লিমিট)
+// স্টোরি সাবমিট করা
 window.submitStory = async () => {
     const text = document.getElementById('note-input-text').value.trim();
     const fileInput = document.getElementById('story-file-input');
@@ -55,12 +55,10 @@ window.submitStory = async () => {
         let mediaType = "text";
 
         if (file) {
-            // ১. ফাইল সাইজ চেক (সর্বোচ্চ ১০ MB করা হলো)
             if (file.size > 10 * 1024 * 1024) {
                 throw new Error("ফাইল ১০ এমবির বেশি হতে পারবে না");
             }
 
-            // ২. ভিডিও হলে ৩০ সেকেন্ড ডিউরেশন চেক (সেফটি মার্জিনের জন্য ৩১ সেকেন্ড দেওয়া হলো)
             if (file.type.startsWith('video/')) {
                 mediaType = "video";
                 await new Promise((resolve, reject) => {
@@ -83,14 +81,12 @@ window.submitStory = async () => {
                 throw new Error("শুধুমাত্র ছবি বা ভিডিও দেওয়া যাবে");
             }
 
-            // ৩. ক্লাউডিনারিতে আপলোড এবং প্রগ্রেস বার অ্যানিমেশন
             document.getElementById('upload-progress-container').style.display = 'block';
             document.getElementById('upload-status-text').classList.remove('hidden');
             let progress = 0;
             const progressEl = document.getElementById('upload-progress-bar');
             const textEl = document.getElementById('upload-status-text');
             
-            // ফেক প্রগ্রেস সিমুলেশন (যেহেতু ক্লাউডিনারি ফাংশনে প্রগ্রেস ইভেন্ট নেই)
             let simInterval = setInterval(() => {
                 if(progress < 90) {
                     progress += Math.floor(Math.random() * 5) + 2;
@@ -110,7 +106,6 @@ window.submitStory = async () => {
         const timestamp = Date.now();
         const storyId = `${window.currentUser.uid}_${timestamp}`;
 
-        // ৪. ডাটাবেসে সেভ (আনলিমিটেড স্টোরি স্ট্রাকচার)
         await set(ref(window.db, `stories/${storyId}`), {
             storyId: storyId,
             uid: window.currentUser.uid,
@@ -131,6 +126,8 @@ window.submitStory = async () => {
     } finally {
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> স্টোরি শেয়ার করুন';
         btn.disabled = false;
+        document.getElementById('upload-progress-container').style.display = 'none';
+        document.getElementById('upload-status-text').classList.add('hidden');
     }
 };
 
@@ -138,7 +135,6 @@ window.submitStory = async () => {
 window.deleteMyStory = async (storyId, timestamp) => {
     if (confirm("আপনি কি এই স্টোরিটি ডিলিট করতে চান?")) {
         try {
-            // খুঁজে বের করা স্টোরিটি
             let targetStory = null;
             storyUsers.forEach(user => {
                 user.stories.forEach(s => {
@@ -158,7 +154,7 @@ window.deleteMyStory = async (storyId, timestamp) => {
     }
 };
 
-// ফিডে কার্ড রেন্ডার করার ফাংশন (UI Update)
+// ফিডে কার্ড রেন্ডার করা
 const renderStoryFeed = (usersData) => {
     const container = document.getElementById('notes-list-container');
     if (!container) return;
@@ -167,7 +163,6 @@ const renderStoryFeed = (usersData) => {
     let myProfilePic = safeUser.profile_pic || 'https://via.placeholder.com/150';
     let myBg = safeUser.cover_pic || myProfilePic; 
 
-    // Add Story Card (Always First)
     let html = `
     <div onclick="toggleNoteModal(true)" class="story-card group min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border border-gray-200">
         <img src="${myBg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -177,7 +172,6 @@ const renderStoryFeed = (usersData) => {
         <p class="story-name text-center text-xs font-medium bg-white w-full absolute bottom-0 py-1">Add Story</p>
     </div>`;
 
-    // Users Story Cards (One per user)
     usersData.forEach((user, index) => {
         let av = user.authorPic || 'https://via.placeholder.com/150';
         let latestStory = user.stories[user.stories.length - 1];
@@ -198,9 +192,8 @@ const renderStoryFeed = (usersData) => {
     container.innerHTML = html;
 };
 
-// স্টোরি লোড ও ক্যাশিং লজিক
+// স্টোরি লোড
 window.loadNotes = () => {
-    // ১. প্রথমে Local Storage থেকে ইনস্ট্যান্ট লোড করা
     const cachedStories = localStorage.getItem('cachedStoryUsers');
     if (cachedStories) {
         try {
@@ -209,7 +202,6 @@ window.loadNotes = () => {
         } catch(e) { console.error("Cache parse error", e); }
     }
 
-    // ২. ব্যাকগ্রাউন্ডে ফায়ারবেস থেকে রিয়েল-টাইম আপডেট চেক করা (শুধু গত ২৪ ঘণ্টার ডাটা)
     const ONE_DAY = 24 * 60 * 60 * 1000;
     const yesterday = Date.now() - ONE_DAY;
     const recentStoriesQuery = query(ref(window.db, 'stories'), orderByChild('timestamp'), startAt(yesterday));
@@ -218,7 +210,6 @@ window.loadNotes = () => {
         const storiesData = snap.val() || {};
         const now = Date.now();
         const validStories = [];
-        const ONE_DAY = 24 * 60 * 60 * 1000;
 
         for (const key in storiesData) {
             const story = storiesData[key];
@@ -260,14 +251,12 @@ window.loadNotes = () => {
             return bLatest - aLatest;
         });
 
-        // ৩. ক্যাশের সাথে নতুন ডাটা মিলিয়ে দেখা
         const newDataString = JSON.stringify(sortedUsers);
         if (newDataString !== localStorage.getItem('cachedStoryUsers')) {
             storyUsers = sortedUsers;
             localStorage.setItem('cachedStoryUsers', newDataString); 
             renderStoryFeed(storyUsers); 
             
-            // ভিউয়ার ওপেন থাকলে লাইভ রিয়্যাকশন বা ডিলিট হওয়া স্টোরি আপডেট করা
             const modal = document.getElementById('story-viewer-modal');
             if (modal && !modal.classList.contains('hidden-custom')) {
                 if(!storyUsers[currentUserIndex] || !storyUsers[currentUserIndex].stories[currentSubStoryIndex]) {
@@ -280,25 +269,13 @@ window.loadNotes = () => {
     });
 };
 
-setTimeout(() => {
-    if (window.currentUser && typeof window.loadNotes === 'function') {
-        window.loadNotes();
-    }
-}, 500);
-
-
-// ==========================================
-// STORY VIEWER LOGIC 
-// ==========================================
-
+// স্টোরি ভিউয়ার ওপেন 
 window.openStoryViewer = (userIndex, subIndex = 0) => {
     if (!storyUsers || storyUsers.length === 0) return;
     currentUserIndex = userIndex;
     currentSubStoryIndex = subIndex;
     
-    // History API দিয়ে ব্যাক বাটনের জন্য স্টেট সেভ করা
     history.pushState({ modal: 'storyViewer' }, null, '#story');
-
     const modal = document.getElementById('story-viewer-modal');
     modal.classList.remove('hidden-custom');
     playStory();
@@ -314,13 +291,11 @@ window.closeStoryViewer = (fromBackButton = false) => {
     if(mediaContainer) mediaContainer.innerHTML = ''; 
     document.getElementById('story-viewer-delete-btn')?.remove(); 
     
-    // যদি ব্যাক বাটন ছাড়া অন্যভাবে ক্লোজ হয়, তাহলে URL থেকে হ্যাশ রিমুভ করা
     if (!fromBackButton && window.location.hash === '#story') {
         history.back();
     }
 };
 
-// ফোনের ব্যাক বাটন চাপলে ভিউয়ার ক্লোজ করার লিসেনার
 window.addEventListener('popstate', (event) => {
     const modal = document.getElementById('story-viewer-modal');
     if (modal && !modal.classList.contains('hidden-custom')) {
@@ -345,7 +320,6 @@ function playStory() {
 
     const story = user.stories[currentSubStoryIndex];
     
-    // UI Update
     const avatarDiv = document.getElementById('story-viewer-avatar');
     if (user.authorPic) {
         avatarDiv.innerHTML = `<img src="${user.authorPic}" class="w-full h-full object-cover">`;
@@ -357,7 +331,6 @@ function playStory() {
     document.getElementById('story-viewer-time').innerText = window.timeAgo(story.timestamp);
     document.getElementById('story-viewer-caption').innerText = story.text || "";
 
-    // ডিলিট বাটন
     document.getElementById('story-viewer-delete-btn')?.remove(); 
     if (story.uid === window.currentUser?.uid) {
         const headerDiv = document.querySelector('#story-viewer-modal .absolute.top-4');
@@ -372,7 +345,6 @@ function playStory() {
     renderReactions();
     setupProgressBars(user.stories.length, currentSubStoryIndex);
 
-    // Media Setup
     const mediaContainer = document.getElementById('story-media-container');
     mediaContainer.innerHTML = '';
     let duration = 15000; 
@@ -386,7 +358,7 @@ function playStory() {
         
         video.onloadedmetadata = () => {
             duration = video.duration * 1000;
-            startProgress(currentSubStoryIndex, duration, 'video'); // টাইপ পাঠানো হলো
+            startProgress(currentSubStoryIndex, duration, 'video');
         };
         video.onended = () => window.nextStory();
         mediaContainer.appendChild(video);
@@ -402,12 +374,10 @@ function playStory() {
         startProgress(currentSubStoryIndex, duration);
     }
 
-    // অ্যাডভান্সড ফিচার: স্ক্রিনে চাপ দিয়ে ধরলে স্টোরি পজ হওয়া
     mediaContainer.onmousedown = mediaContainer.ontouchstart = () => pauseStory(currentSubStoryIndex);
     mediaContainer.onmouseup = mediaContainer.ontouchend = () => resumeStory(currentSubStoryIndex, duration, story.mediaType);
 }
 
-// Pause & Resume Logic
 let pauseTime = 0;
 let remainingDuration = 0;
 let currentStartTime = 0;
@@ -420,7 +390,6 @@ function pauseStory(index) {
     const video = mediaContainer.querySelector('video');
     if(video) video.pause();
     
-    // UI hide to see image clearly
     document.querySelector('.absolute.top-4').style.opacity = '0';
     document.getElementById('story-reply-input')?.parentElement.parentElement.style.opacity = '0';
 }
@@ -433,15 +402,12 @@ function resumeStory(index, totalDuration, type) {
     const video = mediaContainer.querySelector('video');
     if(video) video.play();
 
-    // UI show back
     document.querySelector('.absolute.top-4').style.opacity = '1';
     document.getElementById('story-reply-input')?.parentElement.parentElement.style.opacity = '1';
 
-    // Resume progress
     startProgress(index, totalDuration, type, true); 
 }
 
-// রিঅ্যাকশন রেন্ডার করা
 function renderReactions() {
     const display = document.getElementById('story-reactions-display');
     const user = storyUsers[currentUserIndex];
@@ -470,20 +436,17 @@ function renderReactions() {
     }
 }
 
-// অ্যাডভান্সড রিঅ্যাকশন অ্যানিমেশন (Burst Effect) ও ফায়ারবেস সেভ
 window.sendReaction = async (emoji) => {
     const user = storyUsers[currentUserIndex];
     const story = user.stories[currentSubStoryIndex];
     if (!story) return;
 
     const modal = document.getElementById('story-viewer-modal');
-    // ৬-৭ টি ইমোজির বার্স্ট অ্যানিমেশন
     for(let i=0; i<7; i++) {
         const floatEl = document.createElement('div');
         floatEl.innerText = emoji;
         floatEl.className = `reaction-bubble text-3xl md:text-4xl`;
         
-        // র‍্যান্ডম দিকে ছড়িয়ে পড়ার হিসাব
         let tx = (Math.random() - 0.5) * 200 + 'px'; 
         let ty = -(Math.random() * 200 + 100) + 'px'; 
         floatEl.style.setProperty('--tx', tx);
@@ -498,7 +461,6 @@ window.sendReaction = async (emoji) => {
     } catch (e) {}
 };
 
-// স্টোরিতে মেসেঞ্জারে রিপ্লাই দেওয়া
 window.sendStoryReply = async () => {
     const input = document.getElementById('story-reply-input');
     const msg = input.value.trim();
@@ -507,7 +469,6 @@ window.sendStoryReply = async () => {
     const user = storyUsers[currentUserIndex];
     const story = user.stories[currentSubStoryIndex];
     
-    // নিজের স্টোরিতে নিজে রিপ্লাই দেওয়া বন্ধ করা
     if(story.uid === window.currentUser.uid) {
         window.showToast("নিজের স্টোরিতে রিপ্লাই দেওয়া যায় না", "error");
         input.value = "";
@@ -519,19 +480,18 @@ window.sendStoryReply = async () => {
             senderId: window.currentUser.uid,
             receiverId: story.uid,
             message: msg,
-            storyRefUrl: story.mediaUrl, // স্টোরির ছবি/ভিডিও লিংক
+            storyRefUrl: story.mediaUrl, 
             storyText: story.text,
             timestamp: Date.now(),
             type: "story_reply"
         };
 
-        // এখানে আপনার মেসেঞ্জার ডাটাবেস এর পাথ বসাবেন (আমি একটি ডেমো পাথ দিলাম)
         const newMsgRef = push(ref(window.db, `messages/${window.currentUser.uid}_${story.uid}`));
         await set(newMsgRef, replyData);
         
         window.showToast("রিপ্লাই পাঠানো হয়েছে!", "success");
         input.value = "";
-        window.closeStoryViewer(); // রিপ্লাই দেওয়ার পর চাইলে ভিউয়ার ক্লোজ করে দিতে পারেন
+        window.closeStoryViewer(); 
     } catch (e) {
         window.showToast("রিপ্লাই পাঠাতে সমস্যা হয়েছে", "error");
     }
@@ -570,7 +530,6 @@ function startProgress(index, duration, type = 'image', isResume = false) {
         fill.style.width = `${percentage}%`;
     }, 16);
 
-    // শুধুমাত্র ছবি বা টেক্সটের ক্ষেত্রে টাইমার কাজ করবে, ভিডিওর ক্ষেত্রে onended কাজ করবে
     if (type !== 'video') {
         storyTimer = setTimeout(() => {
             window.nextStory();
@@ -578,7 +537,6 @@ function startProgress(index, duration, type = 'image', isResume = false) {
     }
 }
 
-// Next Story Logic
 window.nextStory = () => {
     let user = storyUsers[currentUserIndex];
     if (currentSubStoryIndex < user.stories.length - 1) {
@@ -595,7 +553,6 @@ window.nextStory = () => {
     }
 };
 
-// Prev Story Logic
 window.prevStory = () => {
     if (currentSubStoryIndex > 0) {
         currentSubStoryIndex--;
@@ -611,3 +568,9 @@ window.prevStory = () => {
         }
     }
 };
+
+setTimeout(() => {
+    if (window.currentUser && typeof window.loadNotes === 'function') {
+        window.loadNotes();
+    }
+}, 500);
