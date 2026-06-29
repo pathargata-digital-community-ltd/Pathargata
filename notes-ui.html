@@ -74,7 +74,6 @@
             
             <div class="mb-4">
                 <label class="block text-xs font-bold text-gray-600 mb-2">ছবি বা ভিডিও নির্বাচন করুন *</label>
-                <!-- onchange ইভেন্ট যুক্ত করা হয়েছে ফাইল সাইজ চেকের জন্য -->
                 <input type="file" id="story-file-input" onchange="checkFileSize(this)" accept="image/*,video/mp4" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700">
             </div>
             
@@ -110,9 +109,7 @@
         </div>
 
         <!-- Media Container -->
-        <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black mt-10 mb-16" id="story-media-container">
-            <!-- Image or Video will be injected here -->
-        </div>
+        <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black mt-10 mb-16" id="story-media-container"></div>
         
         <!-- Touch Controls (Left for Prev, Right for Next) -->
         <div class="absolute inset-0 z-30 flex mt-16 mb-32">
@@ -120,10 +117,8 @@
             <div class="w-2/3 h-full cursor-pointer" onclick="nextStory()"></div>
         </div>
 
-        <!-- Reactions Display (Who reacted what) -->
-        <div id="story-reactions-display" class="absolute bottom-24 left-4 z-50 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md">
-            <!-- Reactions will be loaded here -->
-        </div>
+        <!-- Reactions Display -->
+        <div id="story-reactions-display" class="absolute bottom-24 left-4 z-50 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md"></div>
 
         <!-- Caption Area -->
         <div class="absolute bottom-16 left-0 right-0 px-4 bg-gradient-to-t from-black to-transparent z-40 pb-4 text-center pointer-events-none">
@@ -132,14 +127,12 @@
 
         <!-- Story Reply & Reaction Bar -->
         <div class="absolute bottom-4 left-0 right-0 z-50 flex items-center justify-between gap-2 px-4 pb-2">
-            <!-- Reply Input -->
             <div class="flex-1 relative flex items-center">
                 <input type="text" id="story-reply-input" placeholder="স্টোরিতে রিপ্লাই দিন..." class="w-full bg-black/40 text-white placeholder-gray-300 text-sm rounded-full py-2.5 pl-4 pr-10 border border-gray-400/50 backdrop-blur-sm focus:outline-none focus:border-white transition">
                 <button onclick="sendStoryReply()" class="absolute right-2 text-white p-1 hover:text-blue-400">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
-            <!-- Reaction Button (Shows emojis on hover/click) -->
             <div class="relative group">
                 <button class="text-2xl hover:scale-110 transition-transform drop-shadow-lg text-white">❤️</button>
                 <div class="absolute bottom-10 right-0 flex bg-black/60 backdrop-blur-md rounded-full px-2 py-1 gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
