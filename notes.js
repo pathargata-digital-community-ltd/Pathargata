@@ -296,7 +296,7 @@ function playStory() {
     if (story.uid === window.currentUser?.uid) {
         const deleteBtn = document.createElement('button');
         deleteBtn.id = 'story-viewer-delete-btn';
-        deleteBtn.className = 'text-white bg-red-600/80 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 backdrop-blur-md';
+        deleteBtn.className = 'text-white bg-red-600/80 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600 backdrop-blur-md z-50';
         deleteBtn.innerHTML = '<i class="fa-solid fa-trash text-sm"></i>';
         deleteBtn.onclick = () => window.deleteMyStory(story.storyId);
         headerActions.prepend(deleteBtn);
@@ -312,18 +312,18 @@ function playStory() {
     // Media Setup
     const mediaContainer = document.getElementById('story-media-container');
     mediaContainer.innerHTML = '';
-    currentStoryDuration = 15000; 
+    currentStoryDuration = 15000; // Default 15 Seconds
 
     if (story.mediaType === 'video' && story.mediaUrl) {
         const video = document.createElement('video');
         video.src = story.mediaUrl;
-        video.className = "max-w-full max-h-full object-contain";
+        video.className = "max-w-full max-h-full object-contain pointer-events-none"; // prevents click interception
         video.autoplay = true;
         video.playsInline = true;
         video.muted = true; 
         
         const muteBtn = document.createElement('button');
-        muteBtn.className = "absolute top-4 right-4 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center z-50 backdrop-blur-md";
+        muteBtn.className = "absolute top-4 right-4 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center z-[400] backdrop-blur-md";
         muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark text-sm"></i>';
         muteBtn.onclick = (e) => {
             e.stopPropagation();
@@ -338,12 +338,12 @@ function playStory() {
     } else if (story.mediaType === 'image' && story.mediaUrl) {
         const img = document.createElement('img');
         img.src = story.mediaUrl;
-        img.className = "max-w-full max-h-full object-contain";
+        img.className = "max-w-full max-h-full object-contain pointer-events-none";
+        img.onload = () => startProgress(currentSubStoryIndex); // Start progress after fully loaded
         mediaContainer.appendChild(img);
-        startProgress(currentSubStoryIndex);
     } else {
         let txtBg = story.bgColor || bgColors[0];
-        mediaContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center p-8 ${txtBg}"><p class="text-3xl text-center font-bold leading-relaxed break-words">${window.escapeHTML(story.text)}</p></div>`;
+        mediaContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center p-8 ${txtBg} pointer-events-none"><p class="text-3xl text-center font-bold leading-relaxed break-words">${window.escapeHTML(story.text)}</p></div>`;
         document.getElementById('story-viewer-caption').innerText = ''; 
         startProgress(currentSubStoryIndex);
     }
@@ -351,24 +351,31 @@ function playStory() {
     setupTouchAndClickControls(mediaContainer);
 }
 
-// Swipe, Tap, Hold Logic 
+// Fixed: Swipe, Tap, Hold Logic
 function setupTouchAndClickControls(container) {
-    let startX = 0, pressTimer;
+    let startX = 0, startY = 0, pressTimer;
+    let isDragging = false;
 
     const handleStart = (e) => {
-        if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        // Ignore clicks on header, footer, inputs, buttons
+        if(e.target.closest('button, input, #story-footer-container, #header-actions')) return;
+        
+        isDragging = false;
         startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        startY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
+        
         pressTimer = setTimeout(() => {
             isPaused = true;
             const video = container.querySelector('video');
             if(video) video.pause();
         }, 200); 
     };
+    
+    const handleMove = () => { isDragging = true; };
 
     const handleEnd = (e) => {
-        if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        if(e.target.closest('button, input, #story-footer-container, #header-actions')) return;
         clearTimeout(pressTimer);
-        let endX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].clientX;
         
         if (isPaused) {
             isPaused = false;
@@ -377,20 +384,37 @@ function setupTouchAndClickControls(container) {
             return; 
         }
 
+        let endX = e.type.includes('mouse') ? e.pageX : e.changedTouches[0].clientX;
         let diffX = startX - endX;
-        if (Math.abs(diffX) > 50) {
+
+        // যদি অন্তত ৪০ পিক্সেল মুভ করে তবেই সেটা Swipe, নতুবা সেটা Tap
+        if (Math.abs(diffX) > 40 && isDragging) {
             if (diffX > 0) window.nextStory(); 
             else window.prevStory(); 
         } else {
-            if (endX < window.innerWidth * 0.3) window.prevStory();
-            else window.nextStory();
+            // Tap Logic: স্ক্রিনের কতটুকু অংশে ক্লিক করেছে
+            const rect = container.getBoundingClientRect();
+            const tapX = endX - rect.left;
+            
+            if (tapX < rect.width * 0.3) {
+                window.prevStory(); // বামের ৩০% এ ক্লিক করলে পূর্বের স্টোরি
+            } else {
+                window.nextStory(); // ডানের ৭০% এ ক্লিক করলে পরের স্টোরি
+            }
         }
     };
 
-    container.addEventListener('mousedown', handleStart);
-    container.addEventListener('touchstart', handleStart);
-    container.addEventListener('mouseup', handleEnd);
-    container.addEventListener('touchend', handleEnd);
+    // Remove old listeners to prevent duplicate triggers
+    container.replaceWith(container.cloneNode(true));
+    const newContainer = document.getElementById('story-media-container');
+
+    newContainer.addEventListener('mousedown', handleStart);
+    newContainer.addEventListener('mousemove', handleMove);
+    newContainer.addEventListener('mouseup', handleEnd);
+    
+    newContainer.addEventListener('touchstart', handleStart);
+    newContainer.addEventListener('touchmove', handleMove);
+    newContainer.addEventListener('touchend', handleEnd);
 }
 
 // Progress Bar
@@ -415,7 +439,7 @@ function setupProgressBars(total, activeIndex) {
     const container = document.getElementById('story-progress-container');
     container.innerHTML = '';
     for (let i = 0; i < total; i++) {
-        container.innerHTML += `<div class="flex-1 bg-white/30 h-full rounded-full overflow-hidden"><div class="bg-white h-full w-0" id="progress-fill-${i}" style="${i < activeIndex ? 'width:100%' : ''}"></div></div>`;
+        container.innerHTML += `<div class="flex-1 bg-white/30 h-full rounded-full overflow-hidden"><div class="bg-white h-full w-0 transition-all duration-75" id="progress-fill-${i}" style="${i < activeIndex ? 'width:100%' : ''}"></div></div>`;
     }
 }
 
@@ -430,50 +454,61 @@ function updateViewsAndFooterUI() {
         let viewCount = story.views ? Object.keys(story.views).length : 0;
         footer.innerHTML = `
             <div class="w-full flex justify-center pb-2">
-                <div class="flex items-center gap-2 text-white font-medium cursor-pointer backdrop-blur-md bg-black/40 px-4 py-2 rounded-full border border-white/20">
+                <div class="flex items-center gap-2 text-white font-medium cursor-pointer backdrop-blur-md bg-black/50 px-4 py-2 rounded-full border border-white/20">
                     <i class="fa-solid fa-eye"></i> ${viewCount} Views
                 </div>
             </div>`;
     } else {
+        // Added onkeypress to handle "Enter" key for messaging
         footer.innerHTML = `
-            <div class="flex items-center gap-2 pb-2">
-                <div class="flex-1 flex bg-black/40 backdrop-blur-md border border-white/40 rounded-full px-4 py-3 shadow-lg">
-                    <input type="text" id="story-reply-input" placeholder="Reply to ${user.author.split(' ')[0]}..." class="flex-1 bg-transparent text-white outline-none text-sm placeholder-white/70">
+            <div class="flex items-center gap-2 pb-2 pointer-events-auto z-[500]">
+                <div class="flex-1 flex bg-black/50 backdrop-blur-md border border-white/40 rounded-full px-4 py-3 shadow-lg focus-within:border-white transition-colors">
+                    <input type="text" id="story-reply-input" onkeypress="if(event.key === 'Enter') sendStoryReply('${story.storyId}')" placeholder="Reply to ${user.author.split(' ')[0]}..." class="flex-1 bg-transparent text-white outline-none text-sm placeholder-white/70">
                     <button onclick="sendStoryReply('${story.storyId}')" class="text-white ml-2 hover:text-blue-400 transition"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
-                <button onclick="sendReaction('❤️')" class="text-3xl hover:scale-125 transition drop-shadow-md">❤️</button>
-                <button onclick="sendReaction('😂')" class="text-3xl hover:scale-125 transition drop-shadow-md">😂</button>
+                <button onclick="sendReaction('❤️')" class="text-3xl hover:scale-125 transition drop-shadow-md relative z-[500]">❤️</button>
+                <button onclick="sendReaction('😂')" class="text-3xl hover:scale-125 transition drop-shadow-md relative z-[500]">😂</button>
             </div>`;
     }
 }
 
-// Reactions & Replies
+// Fixed: Messages/Replies
 window.sendStoryReply = async (storyId) => {
     const input = document.getElementById('story-reply-input');
-    if(!input.value.trim()) return;
+    if(!input || !input.value.trim()) return;
     try {
         await set(ref(window.db, `story_replies/${storyId}/${window.currentUser.uid}_${Date.now()}`), input.value.trim());
         input.value = '';
-        window.showToast("Reply sent!", "success");
-    } catch(e) {}
+        input.blur(); // Remove focus after sending
+        if(window.showToast) window.showToast("Reply sent successfully!", "success");
+    } catch(e) {
+        if(window.showToast) window.showToast("Failed to send reply", "error");
+    }
 };
 
+// Fixed: Custom Reaction Flow
 window.sendReaction = async (emoji) => {
     const user = storyUsers[currentUserIndex];
     const story = user.stories[currentSubStoryIndex];
     if (!story) return;
 
     const modal = document.getElementById('story-viewer-modal');
-    for(let i=0; i<3; i++) {
+    
+    // Create multiple bubbles for a realistic floating effect
+    for(let i = 0; i < 4; i++) {
         setTimeout(() => {
             const el = document.createElement('div');
             el.innerText = emoji;
-            el.className = `reaction-bubble text-4xl`;
-            el.style.left = `${30 + Math.random() * 40}%`;
+            const size = 30 + Math.random() * 20; // Random size between 30px to 50px
+            el.className = `reaction-bubble`;
+            el.style.fontSize = `${size}px`;
+            el.style.bottom = '80px';
+            el.style.right = `${20 + (Math.random() * 40)}px`; // Pops up from the right corner (button area)
             modal.appendChild(el);
-            setTimeout(() => el.remove(), 1500);
+            setTimeout(() => el.remove(), 1800); // Clean up DOM
         }, i * 150); 
     }
+    
     try { await set(ref(window.db, `stories/${story.storyId}/reactions/${window.currentUser.uid}`), emoji); } catch (e) {}
 };
 
