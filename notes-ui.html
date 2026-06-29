@@ -1,24 +1,51 @@
 <style>
-    /* Professional Custom Floating Reaction Animation */
-    @keyframes floatReaction {
-        0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
-        20% { transform: translate(-15px, -40px) scale(1.3) rotate(-10deg); opacity: 1; }
-        50% { transform: translate(15px, -100px) scale(1.1) rotate(10deg); opacity: 0.9; }
-        80% { transform: translate(-10px, -180px) scale(1.2) rotate(-5deg); opacity: 0.6; }
-        100% { transform: translate(10px, -250px) scale(1.5) rotate(0deg); opacity: 0; }
+    /* Advanced Reaction Burst Animation */
+    @keyframes reactionBurst {
+        0% { transform: translate(0, 0) scale(0.5); opacity: 1; }
+        70% { opacity: 1; }
+        100% { transform: translate(var(--tx), var(--ty)) scale(1.5); opacity: 0; }
     }
-    
     .reaction-bubble {
         position: absolute;
-        animation: floatReaction 1.8s ease-out forwards;
+        bottom: 80px;
+        right: 20px;
+        animation: reactionBurst 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         pointer-events: none;
-        z-index: 9999;
+        z-index: 400;
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
     }
+    /* Upload Progress Bar */
+    .upload-progress-wrapper {
+        width: 100%; height: 6px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin-top: 10px; display: none;
+    }
+    .upload-progress-fill {
+        height: 100%; background: #2563eb; width: 0%; transition: width 0.3s;
+    }
     
-    /* Hide scrollbar */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    /* Story Progress Bar CSS */
+    .story-progress-container {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        gap: 4px;
+        z-index: 100;
+    }
+    .story-progress-bar {
+        flex: 1;
+        height: 4px;
+        background-color: rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .story-progress-fill {
+        height: 100%;
+        background-color: #ffffff;
+        width: 0%;
+        transition: width 0.1s linear;
+    }
 </style>
 
 <div id="temp-notes-feed">
@@ -27,7 +54,8 @@
         <div class="px-4 flex justify-between items-center mb-3">
             <h3 class="font-bold text-gray-800 text-sm">স্টোরি</h3>
         </div>
-        <div id="notes-list-container" class="flex gap-2 px-4 overflow-x-auto pb-2 no-scrollbar">
+        <div id="notes-list-container" class="flex gap-2 px-4 overflow-x-auto pb-2" style="scrollbar-width: none; -ms-overflow-style: none;">
+            <!-- স্টোরি কার্ডগুলো এখানে লোড হবে -->
             <p class="text-xs text-gray-400">স্টোরি লোড হচ্ছে...</p>
         </div>
     </div>
@@ -41,65 +69,88 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <h3 class="font-bold text-lg text-gray-800 mb-1">স্টোরি দিন</h3>
-            <p class="text-[11px] text-gray-500 mb-4">ছবি, ভিডিও বা টেক্সট দিন। ২৪ ঘণ্টা পর মুছে যাবে।</p>
+            <p class="text-[11px] text-gray-500 mb-4">ছবি বা ভিডিও (সর্বোচ্চ ১০MB এবং ৩০ সেকেন্ড)। ২৪ ঘণ্টা পর মুছে যাবে।</p>
             
-            <div class="relative w-full mb-3">
-                <textarea id="note-input-text" maxlength="80" rows="3" placeholder="ক্যাপশন বা টেক্সট লিখুন..." class="w-full bg-gray-50 border border-gray-200 p-4 rounded-xl text-lg focus:outline-none resize-none font-bold text-center transition-colors"></textarea>
-                <button onclick="changeStoryBackground()" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white/80 shadow flex items-center justify-center text-gray-700 hover:bg-gray-200" title="Change Background">
-                    <i class="fa-solid fa-palette text-sm"></i>
-                </button>
-            </div>
+            <textarea id="note-input-text" maxlength="80" rows="2" placeholder="ক্যাপশন লিখুন (ঐচ্ছিক)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm focus:bg-white resize-none font-medium text-center mb-3"></textarea>
             
             <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-600 mb-2">অথবা ছবি/ভিডিও দিন (সর্বোচ্চ ১০MB)</label>
-                <input type="file" id="story-file-input" accept="image/*,video/mp4" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700">
+                <label class="block text-xs font-bold text-gray-600 mb-2">ছবি বা ভিডিও নির্বাচন করুন *</label>
+                <!-- onchange ইভেন্ট যুক্ত করা হয়েছে ফাইল সাইজ চেকের জন্য -->
+                <input type="file" id="story-file-input" onchange="checkFileSize(this)" accept="image/*,video/mp4" class="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700">
             </div>
             
             <button onclick="submitStory()" id="btn-note-submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow hover:bg-blue-700 transition flex justify-center items-center gap-2">
                 <i class="fa-solid fa-paper-plane"></i> স্টোরি শেয়ার করুন
             </button>
+            
+            <!-- আপলোড প্রগ্রেস বার -->
+            <div id="upload-progress-container" class="upload-progress-wrapper">
+                <div id="upload-progress-bar" class="upload-progress-fill"></div>
+            </div>
+            <p id="upload-status-text" class="text-[10px] text-center text-gray-500 mt-1 hidden"></p>
         </div>
     </div>
 
     <!-- Fullscreen Story Viewer -->
     <div id="story-viewer-modal" class="fixed inset-0 bg-black z-[300] hidden-custom flex flex-col">
         <!-- Progress Bar -->
-        <div id="story-progress-container" class="absolute top-2 left-2 right-2 flex gap-1 z-50 h-1"></div>
+        <div class="story-progress-container" id="story-progress-container"></div>
         
         <!-- Header -->
-        <div class="absolute top-6 left-4 right-4 z-50 flex justify-between items-center mt-2">
+        <div class="absolute top-4 left-4 right-4 z-50 flex justify-between items-center mt-3">
             <div class="flex items-center gap-2">
-                <div id="story-viewer-avatar" class="w-10 h-10 rounded-full bg-gray-300 border border-white overflow-hidden shadow-md"></div>
+                <div id="story-viewer-avatar" class="w-10 h-10 rounded-full bg-gray-300 border border-white overflow-hidden"></div>
                 <div>
                     <h4 id="story-viewer-name" class="text-white font-bold text-sm shadow-black drop-shadow-md">Name</h4>
                     <p id="story-viewer-time" class="text-white text-[10px] opacity-80 shadow-black drop-shadow-md">Time</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3" id="header-actions">
-                <button onclick="closeStoryViewer()" class="w-8 h-8 text-white rounded-full flex items-center justify-center bg-black/50 hover:bg-black/80 backdrop-blur-md">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
+            <button onclick="closeStoryViewer()" class="w-8 h-8 text-white rounded-full flex items-center justify-center bg-black/50 hover:bg-black/80 backdrop-blur-md">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
         </div>
 
-        <!-- Media Container (Tap & Swipe handled by JS) -->
-        <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black mt-14 mb-20" id="story-media-container">
+        <!-- Media Container -->
+        <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black mt-10 mb-16" id="story-media-container">
             <!-- Image or Video will be injected here -->
         </div>
         
+        <!-- Touch Controls (Left for Prev, Right for Next) -->
+        <div class="absolute inset-0 z-30 flex mt-16 mb-32">
+            <div class="w-1/3 h-full cursor-pointer" onclick="prevStory()"></div>
+            <div class="w-2/3 h-full cursor-pointer" onclick="nextStory()"></div>
+        </div>
+
         <!-- Reactions Display (Who reacted what) -->
-        <div id="story-reactions-display" class="absolute bottom-20 left-4 z-40 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md pointer-events-none">
+        <div id="story-reactions-display" class="absolute bottom-24 left-4 z-50 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md">
             <!-- Reactions will be loaded here -->
         </div>
 
         <!-- Caption Area -->
-        <div class="absolute bottom-20 left-0 right-0 px-4 bg-gradient-to-t from-black via-black/50 to-transparent z-30 pb-4 text-center pointer-events-none">
+        <div class="absolute bottom-16 left-0 right-0 px-4 bg-gradient-to-t from-black to-transparent z-40 pb-4 text-center pointer-events-none">
             <p id="story-viewer-caption" class="text-white text-sm font-medium shadow-black drop-shadow-md whitespace-pre-line"></p>
         </div>
 
-        <!-- Dynamic Footer (Reactions/Reply OR Views) -->
-        <div id="story-footer-container" class="absolute bottom-4 left-0 right-0 z-50 px-4">
-            <!-- JS will inject dynamic footer here -->
+        <!-- Story Reply & Reaction Bar -->
+        <div class="absolute bottom-4 left-0 right-0 z-50 flex items-center justify-between gap-2 px-4 pb-2">
+            <!-- Reply Input -->
+            <div class="flex-1 relative flex items-center">
+                <input type="text" id="story-reply-input" placeholder="স্টোরিতে রিপ্লাই দিন..." class="w-full bg-black/40 text-white placeholder-gray-300 text-sm rounded-full py-2.5 pl-4 pr-10 border border-gray-400/50 backdrop-blur-sm focus:outline-none focus:border-white transition">
+                <button onclick="sendStoryReply()" class="absolute right-2 text-white p-1 hover:text-blue-400">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+            <!-- Reaction Button (Shows emojis on hover/click) -->
+            <div class="relative group">
+                <button class="text-2xl hover:scale-110 transition-transform drop-shadow-lg text-white">❤️</button>
+                <div class="absolute bottom-10 right-0 flex bg-black/60 backdrop-blur-md rounded-full px-2 py-1 gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                    <button onclick="sendReaction('👍')" class="text-2xl hover:scale-125 transition-transform">👍</button>
+                    <button onclick="sendReaction('❤️')" class="text-2xl hover:scale-125 transition-transform">❤️</button>
+                    <button onclick="sendReaction('😂')" class="text-2xl hover:scale-125 transition-transform">😂</button>
+                    <button onclick="sendReaction('😮')" class="text-2xl hover:scale-125 transition-transform">😮</button>
+                    <button onclick="sendReaction('😢')" class="text-2xl hover:scale-125 transition-transform">😢</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
