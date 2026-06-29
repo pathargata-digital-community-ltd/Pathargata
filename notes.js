@@ -6,6 +6,7 @@ import {
     query,
     orderByChild,
     startAt,
+    limitToLast,
     push 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -175,8 +176,25 @@ const renderStoryFeed = (usersData) => {
     usersData.forEach((user, index) => {
         let av = user.authorPic || 'https://via.placeholder.com/150';
         let latestStory = user.stories[user.stories.length - 1];
-        let bgImg = latestStory.mediaType === 'image' && latestStory.mediaUrl ? latestStory.mediaUrl 
-                    : (latestStory.mediaType === 'video' ? 'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png' : av);
+        
+        // ⭐️ ক্লাউডিনারি ভিডিও লিংকের এক্সটেনশন .jpg করে দিলে অটোমেটিক থাম্বনেইল তৈরি হয়
+        let bgImg = av;
+        let videoIcon = '';
+        
+        if (latestStory.mediaUrl) {
+            // ক্লাউডিনারি লিংকে ট্রান্সফর্মেশন যুক্ত করে ছোট ছবি কল করা হচ্ছে (Data Optimization)
+            let optimizedUrl = latestStory.mediaUrl;
+            if (optimizedUrl.includes('/upload/')) {
+                optimizedUrl = optimizedUrl.replace('/upload/', '/upload/w_300,h_400,c_fill,q_auto,f_auto/');
+            }
+
+            if (latestStory.mediaType === 'image') {
+                bgImg = optimizedUrl;
+            } else if (latestStory.mediaType === 'video') {
+                bgImg = optimizedUrl.replace(/\.[^/.]+$/, ".jpg"); 
+                videoIcon = '<i class="fa-solid fa-play absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-2xl drop-shadow-lg opacity-80"></i>';
+            }
+        }
         
         let isMe = window.currentUser && user.uid === window.currentUser.uid;
         let borderClass = isMe ? 'border-blue-500' : 'border-blue-400';
@@ -184,12 +202,16 @@ const renderStoryFeed = (usersData) => {
         html += `
         <div onclick="openStoryViewer(${index})" class="story-card min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border-2 ${borderClass}">
             <img src="${bgImg}" class="w-full h-full object-cover">
+            ${videoIcon}
             <img src="${av}" class="story-avatar absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white object-cover">
             <p class="story-name absolute bottom-1 left-2 text-white text-xs font-bold shadow-black drop-shadow-md truncate w-11/12">${isMe ? 'Your Story' : window.escapeHTML(user.author).split(' ')[0]}</p>
         </div>`;
     });
 
+    // স্ক্রোল পজিশন ঠিক রাখার লজিক
+    const currentScroll = container.scrollLeft; 
     container.innerHTML = html;
+    container.scrollLeft = currentScroll; 
 };
 
 // স্টোরি লোড
@@ -204,9 +226,10 @@ window.loadNotes = () => {
 
     const ONE_DAY = 24 * 60 * 60 * 1000;
     const yesterday = Date.now() - ONE_DAY;
-    const recentStoriesQuery = query(ref(window.db, 'stories'), orderByChild('timestamp'), startAt(yesterday));
+    // শুধুমাত্র গত ২৪ ঘন্টার এবং লেটেস্ট ১০০টি স্টোরি ফেচ করবে (ব্যান্ডউইথ বাঁচানোর জন্য)
+    const recentStoriesQuery = query(ref(window.db, 'stories'), orderByChild('timestamp'), startAt(yesterday), limitToLast(100));
 
-    onValue(recentStoriesQuery, async (snap) => {
+    onValue(recentStoriesQuery, (snap) => {
         const storiesData = snap.val() || {};
         const now = Date.now();
         const validStories = [];
@@ -215,10 +238,9 @@ window.loadNotes = () => {
             const story = storiesData[key];
             if (!story.storyId) story.storyId = key; 
 
-            if (now - story.timestamp > ONE_DAY) {
-                await set(ref(window.db, `story_trash/${story.storyId}`), story);
-                await remove(ref(window.db, `stories/${story.storyId}`));
-            } else {
+            // ক্লায়েন্ট থেকে কোনো ডিলিট অপারেশন হবে না! 
+            // শুধুমাত্র ২৪ ঘন্টার কম বয়সী স্টোরিগুলো অ্যাপে দেখাবে।
+            if (now - story.timestamp <= ONE_DAY) {
                 validStories.push(story);
             }
         }
@@ -254,7 +276,12 @@ window.loadNotes = () => {
         const newDataString = JSON.stringify(sortedUsers);
         if (newDataString !== localStorage.getItem('cachedStoryUsers')) {
             storyUsers = sortedUsers;
-            localStorage.setItem('cachedStoryUsers', newDataString); 
+            try {
+                localStorage.setItem('cachedStoryUsers', newDataString); 
+            } catch(e) {
+                // স্টোরেজ ফুল হয়ে গেলে পুরনো ক্যাশ ক্লিয়ার করে দিবে, অ্যাপ ক্র্যাশ করবে না
+                localStorage.removeItem('cachedStoryUsers');
+            }
             renderStoryFeed(storyUsers); 
             
             const modal = document.getElementById('story-viewer-modal');
@@ -378,15 +405,14 @@ function playStory() {
     mediaContainer.onmouseup = mediaContainer.ontouchend = () => resumeStory(currentSubStoryIndex, duration, story.mediaType);
 }
 
-let pauseTime = 0;
-let remainingDuration = 0;
-let currentStartTime = 0;
+let timePassed = 0;
+let storyStartTime = 0;
 
 // 🔴 ফিক্স করা অংশ 🔴
 function pauseStory(index) {
     clearTimeout(storyTimer);
     clearInterval(progressInterval);
-    pauseTime = Date.now();
+    timePassed += Date.now() - storyStartTime; // কতক্ষণ চলেছে তা সেভ রাখা হলো
     
     const mediaContainer = document.getElementById('story-media-container');
     const video = mediaContainer.querySelector('video');
@@ -403,9 +429,6 @@ function pauseStory(index) {
 
 // 🔴 ফিক্স করা অংশ 🔴
 function resumeStory(index, totalDuration, type) {
-    let passedTime = pauseTime - currentStartTime;
-    remainingDuration = totalDuration - passedTime;
-    
     const mediaContainer = document.getElementById('story-media-container');
     const video = mediaContainer.querySelector('video');
     if(video) video.play();
@@ -530,11 +553,11 @@ function startProgress(index, duration, type = 'image', isResume = false) {
     const fill = document.getElementById(`progress-fill-${index}`);
     if (!fill) return;
     
-    if(!isResume) currentStartTime = Date.now();
-    let startTime = isResume ? Date.now() - (pauseTime - currentStartTime) : currentStartTime;
+    if (!isResume) timePassed = 0; // নতুন স্টোরি শুরু হলে সময় রিসেট হবে
+    storyStartTime = Date.now(); // টাইমার আবার শুরু হবে
     
     progressInterval = setInterval(() => {
-        let elapsedTime = Date.now() - startTime;
+        let elapsedTime = timePassed + (Date.now() - storyStartTime);
         let percentage = (elapsedTime / duration) * 100;
         if (percentage >= 100) {
             percentage = 100;
@@ -544,9 +567,10 @@ function startProgress(index, duration, type = 'image', isResume = false) {
     }, 16);
 
     if (type !== 'video') {
+        let remainingTime = duration - timePassed; // রিজিউম করলে শুধু বাকি সময়টুকু চলবে
         storyTimer = setTimeout(() => {
             window.nextStory();
-        }, duration);
+        }, remainingTime);
     }
 }
 
