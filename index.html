@@ -792,6 +792,24 @@
             background: white;
             width: 0%;
         }
+        
+        /* --- Dark Mode Fix for Stories --- */
+        body.dark-mode .story-card,
+        .dark-theme .story-card,
+        [data-theme="dark"] .story-card {
+            background-color: #374151 !important;
+            border-color: #4b5563 !important;
+            /* ডার্ক মোড যেন ব্যাকগ্রাউন্ড ইমেজ মুছে না দেয় */
+            background-blend-mode: normal !important; 
+        }
+        body.dark-mode .story-name,
+        .dark-theme .story-name {
+            color: #ffffff !important;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9) !important;
+        }
+        body.dark-mode .story-card::after {
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%) !important;
+        }
     </style>
     <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/advanced-features.js"></script>
     <!-- Dark Mode Files (Hosted on GitHub) -->
@@ -800,6 +818,51 @@
 </head>
 
 <body id="body-main">
+
+    <!-- === DEBUG ERROR LOGGER START === -->
+    <script>
+        function showDebugErrorOnScreen(msg) {
+            let errDiv = document.getElementById('debug-error-box');
+            if(!errDiv) {
+                errDiv = document.createElement('div');
+                errDiv.id = 'debug-error-box';
+                errDiv.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:rgba(220, 38, 38, 0.95); color:white; z-index:9999999; padding:15px; font-size:14px; overflow-wrap:break-word; max-height:50vh; overflow-y:auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-family: monospace; border-bottom: 4px solid #991b1b;';
+                
+                let closeBtn = document.createElement('button');
+                closeBtn.innerText = "Close (X)";
+                closeBtn.style.cssText = "float:right; background:black; color:white; border:none; padding:5px 10px; cursor:pointer;";
+                closeBtn.onclick = () => errDiv.style.display = 'none';
+                errDiv.appendChild(closeBtn);
+                
+                let title = document.createElement('strong');
+                title.innerText = "APP ERROR DETECTED:";
+                title.style.display = "block";
+                title.style.marginBottom = "10px";
+                errDiv.appendChild(title);
+
+                document.body.appendChild(errDiv);
+            }
+            let p = document.createElement('p');
+            p.style.borderBottom = "1px solid #fca5a5";
+            p.style.paddingBottom = "5px";
+            p.innerText = "❌ " + msg;
+            errDiv.appendChild(p);
+        }
+
+        // সাধারণ জাভাস্ক্রিপ্ট এরর ধরার জন্য
+        window.onerror = function(message, source, lineno, colno, error) {
+            let errorMsg = message + " \n[Line: " + lineno + "]";
+            showDebugErrorOnScreen(errorMsg);
+            return false;
+        };
+
+        // ফায়ারবেস বা প্রমিজ সংক্রান্ত এরর ধরার জন্য
+        window.addEventListener('unhandledrejection', function(event) {
+            let errorMsg = "Promise Error: " + (event.reason ? event.reason.message || event.reason : "Unknown");
+            showDebugErrorOnScreen(errorMsg);
+        });
+    </script>
+    <!-- === DEBUG ERROR LOGGER END === -->
 
     <!-- টোস্ট কন্টেইনার -->
     <div id="toast-container"></div>
