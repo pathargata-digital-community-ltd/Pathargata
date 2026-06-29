@@ -52,6 +52,10 @@ jobs:
             "appName": "Patharghata Digital",
             "webDir": "www",
             "bundledWebRuntime": false,
+            "server": {
+              "url": "https://pathargata-digital-community-ltd.github.io/Pathargata/",
+              "cleartext": true
+            },
             "plugins": {
               "Keyboard": {
                 "resize": "body",
@@ -67,10 +71,8 @@ jobs:
 
       - name: Add Essential Permissions
         run: |
-          # শুধুমাত্র ক্যামেরা, অডিও এবং স্টোরেজের পারমিশন রাখা হলো। 
-          # SYSTEM_ALERT_WINDOW এবং FOREGROUND_SERVICE বাদ দেওয়া হয়েছে।
-          sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>' android/app/src/main/AndroidManifest.xml
-
+          sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a \    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" \/>\n    <uses-permission android:name="android.permission.CAMERA" \/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO" \/>\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" \/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" \/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" \/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" \/>\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" \/>\n    <uses-permission android:name="android.permission.VIBRATE" \/>' android/app/src/main/AndroidManifest.xml
+          
       - name: Fix Kotlin Dependency Conflict
         run: |
           cat <<EOF >> android/build.gradle
