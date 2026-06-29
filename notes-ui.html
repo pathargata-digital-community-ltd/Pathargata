@@ -1,19 +1,21 @@
 <style>
-    /* Professional Floating Reaction Animation */
-    @keyframes floatUpAndFade {
-        0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
-        20% { transform: translateY(-20px) scale(1.2) rotate(-10deg); opacity: 1; }
-        50% { transform: translateY(-80px) scale(1) rotate(10deg); opacity: 0.9; }
-        100% { transform: translateY(-150px) scale(1.5) rotate(-15deg); opacity: 0; }
+    /* Professional Custom Floating Reaction Animation */
+    @keyframes floatReaction {
+        0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+        20% { transform: translate(-15px, -40px) scale(1.3) rotate(-10deg); opacity: 1; }
+        50% { transform: translate(15px, -100px) scale(1.1) rotate(10deg); opacity: 0.9; }
+        80% { transform: translate(-10px, -180px) scale(1.2) rotate(-5deg); opacity: 0.6; }
+        100% { transform: translate(10px, -250px) scale(1.5) rotate(0deg); opacity: 0; }
     }
+    
     .reaction-bubble {
         position: absolute;
-        bottom: 80px; 
-        animation: floatUpAndFade 1.5s ease-out forwards;
+        animation: floatReaction 1.8s ease-out forwards;
         pointer-events: none;
-        z-index: 400;
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        z-index: 9999;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
     }
+    
     /* Hide scrollbar */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -86,7 +88,7 @@
         </div>
         
         <!-- Reactions Display (Who reacted what) -->
-        <div id="story-reactions-display" class="absolute bottom-20 left-4 z-40 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md">
+        <div id="story-reactions-display" class="absolute bottom-20 left-4 z-40 flex items-center gap-2 text-white text-sm shadow-black drop-shadow-md pointer-events-none">
             <!-- Reactions will be loaded here -->
         </div>
 
