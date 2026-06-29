@@ -42,10 +42,20 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      // যেহেতু আপনার সাইটটি Pathargata ফোল্ডারে আছে, তাই পাথ ঠিক করে দেওয়া হলো
       navigator.serviceWorker.register('/Pathargata/service-worker.js')
         .then((registration) => {
           console.log('Service Worker সফলভাবে রেজিস্টার হয়েছে:', registration.scope);
+          // অটোমেটিক আপডেটের জন্য লিসেনার
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // নতুন আপডেট পাওয়া গেলে ক্যাশ ক্লিয়ার করে পেজ রিফ্রেশ
+                caches.keys().then(names => Promise.all(names.map(name => caches.delete(name))));
+                window.location.reload(true);
+              }
+            });
+          });
         })
         .catch((error) => {
           console.error('Service Worker রেজিস্ট্রেশন ফেইল করেছে:', error);
@@ -2183,9 +2193,59 @@
         const auth = getAuth(app);
         
         window.db = db;
-window.auth = auth;
+        window.auth = auth;
 
         window.currentUser = null;
+
+        // --- OTA UPDATE SYSTEM START ---
+        // ১. আপনার অ্যাপের বর্তমান ভার্সন (গিটহাবে আপলোড করার আগে এটি চেঞ্জ করবেন)
+        const LOCAL_APP_VERSION = "3.8.1"; 
+
+        // ২. সাইলেন্ট আপডেটের ফাংশন
+        function listenForSilentUpdates() {
+            const versionRef = ref(db, 'admin_settings/app_version');
+            
+            onValue(versionRef, async (snapshot) => {
+                const liveVersion = snapshot.val();
+                
+                // ডাটাবেসের ভার্সন এবং অ্যাপের ভার্সন না মিললে আপডেট হবে
+                if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
+                    console.log("New update detected. Downloading in background...");
+                    
+                    if(window.showToast) {
+                        window.showToast("নতুন আপডেট ব্যাকগ্রাউন্ডে ইনস্টল হচ্ছে...", "success");
+                    }
+
+                    try {
+                        // ক্যাশ ক্লিয়ার করা
+                        if ('caches' in window) {
+                            const cacheNames = await caches.keys();
+                            await Promise.all(cacheNames.map(name => caches.delete(name)));
+                        }
+                        
+                        if ('serviceWorker' in navigator) {
+                            const registrations = await navigator.serviceWorker.getRegistrations();
+                            for (let registration of registrations) {
+                                await registration.unregister();
+                            }
+                        }
+
+                        // ২.৫ সেকেন্ড পর অ্যাপ রিস্টার্ট নিবে
+                        setTimeout(() => {
+                            window.location.reload(true);
+                        }, 2500);
+                        
+                    } catch (e) {
+                        console.log("Update cache error", e);
+                        setTimeout(() => window.location.reload(true), 2500);
+                    }
+                }
+            });
+        }
+
+        // ৩. চেকিং চালু করা
+        listenForSilentUpdates();
+        // --- OTA UPDATE SYSTEM END ---
         window.myFriends = [];
         window.currentChatUser = null;
 
