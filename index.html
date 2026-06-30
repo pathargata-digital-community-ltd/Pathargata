@@ -1926,6 +1926,25 @@
                             </div>
                         </div>
                     </div>
+                    <!-- নতুন অ্যাবাউট ও সাপোর্ট সেকশন -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+                        <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">অ্যাবাউট ও সাপোর্ট</div>
+                        <div class="p-4 space-y-2">
+                            <div onclick="window.openRules()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition border-b border-gray-50">
+                                <span class="text-sm text-gray-700"><i class="fa-solid fa-scale-balanced text-gray-400 mr-2 w-5 text-center"></i> ব্যবহার বিধি ও নীতিমালা</span>
+                                <i class="fa-solid fa-angle-right text-gray-300"></i>
+                            </div>
+                            <div id="admin-wa-btn-settings" onclick="window.open(globalUpdateLink || 'https://wa.me/', '_blank')" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition border-b border-gray-50">
+                                <span class="text-sm text-gray-700"><i class="fa-brands fa-whatsapp text-green-500 mr-2 w-5 text-center"></i> অ্যাডমিনের সাথে যোগাযোগ</span>
+                                <i class="fa-solid fa-angle-right text-gray-300"></i>
+                            </div>
+                            <div onclick="checkForUpdates()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition">
+                                <span class="text-sm text-gray-700"><i class="fa-solid fa-rotate text-blue-500 mr-2 w-5 text-center"></i> নতুন আপডেট চেক করুন</span>
+                                <span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">v3.8.1</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
                         <div class="p-3 bg-red-50 border-b font-bold text-red-700 text-sm">ডেঞ্জার জোন</div>
                         <div class="p-4"><button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button></div>
@@ -2652,9 +2671,10 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
     const connectedRef = ref(db, '.info/connected');
     onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
+            // রুলস এরর হলে যেন অ্যাপ ক্র্যাশ না করে সেজন্য catch যুক্ত করা হলো
             onDisconnect(userStatusRef).set(isOfflineForDatabase).then(() => {
-                set(userStatusRef, isOnlineForDatabase);
-            });
+                set(userStatusRef, isOnlineForDatabase).catch(e => console.warn("Presence Error:", e));
+            }).catch(e => console.warn("Disconnect Error:", e));
         }
     });
 }).catch(err => console.log("Presence error: ", err));
@@ -2728,9 +2748,10 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
                     globalDirectory = snap.val() || {};
                 });
                 listenForFriendRequests(user.uid);
-                listenForNotificationBadge(user.uid);
-                listenForInAppPopups(user.uid); // নতুন ভাসমান নোটিফিকেশন লিসেনার
-                loadNotifications(true);
+                // সেফটি চেক: ফাংশনগুলো এক্সটার্নাল ফাইল থেকে লোড হলেই কেবল কল হবে
+                if (typeof window.listenForNotificationBadge === 'function') window.listenForNotificationBadge(user.uid);
+                if (typeof window.listenForInAppPopups === 'function') window.listenForInAppPopups(user.uid); 
+                if (typeof window.loadNotifications === 'function') window.loadNotifications(true);
 if(window.loadChatList) window.loadChatList(user.uid);
 if(window.listenForGlobalMessages) window.listenForGlobalMessages(user.uid); // বাবল চালু করার লাইন
 
@@ -4499,7 +4520,13 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
 
             let actionButtons = (post.mobile || post.socialLink) ? `<div class="grid grid-cols-2 gap-2 mt-3 mb-2">${post.mobile ? `<a href="tel:${post.mobile}" class="flex items-center justify-center gap-2 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-sm hover:bg-green-100 transition border border-green-200"><i class="fa-solid fa-phone"></i> Call Now</a>` : '<div></div>'}${post.socialLink ? `<a href="${post.socialLink}" target="_blank" class="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition border border-blue-200"><i class="fa-brands fa-whatsapp"></i> Message</a>` : '<div></div>'}</div>` : '';
 
-            return `<div id="post-card-${id}" class="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100 relative max-w-lg mx-auto ${post.authorRole === 'journalist' ? 'journalist-post' : ''}" style="${displayStyle}" data-union="${post.union||''}" data-village="${post.village||''}"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-3">${avatarHtml}<div>${headerText}<p class="text-[11px] text-gray-400 flex flex-wrap gap-1 items-center font-medium">${timeAgo(post.timestamp)} ${privacyIcon} ${locationTag}</p></div></div><div class="relative"><button onclick="togglePostMenu(event)" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button><div id="post-menu-${id}" class="post-menu-dropdown hidden absolute right-0 top-8 w-48 bg-white shadow-xl rounded-lg z-20 border border-gray-100 py-1 text-sm text-gray-700"><ul>${menuOptions}</ul></div></div></div>${contentHTML}${mediaHtml}${actionButtons}<div class="grid grid-cols-3 border-t border-b border-gray-100 py-2 mt-2"><button id="like-btn-${id}" onclick="toggleLike('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i id="like-icon-${id}" class="${isLiked ? 'fa-solid text-green-600' : 'fa-regular'} fa-thumbs-up text-lg"></i> <span id="like-cnt-${id}" class="text-sm ${isLiked ? 'font-bold text-green-600' : ''}">${likeCount}</span></button><button onclick="openFullCommentModal('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-regular fa-comment text-lg"></i> <span id="comment-cnt-${id}" class="text-sm">${commentCount}</span></button><button onclick="repost('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-solid fa-share text-lg"></i> <span class="text-sm">${post.repostCount||0}</span></button></div><div class="mt-2"><div id="comments-preview-${id}">${post.comments ? Object.entries(post.comments).slice(-2).map(([_, c]) => `<div class="bg-gray-50 px-3 py-1.5 rounded-lg mt-1 text-xs border border-gray-100 truncate"><span class="font-bold text-gray-800 mr-1">${escapeHTML(c.author)}</span>${escapeHTML(c.text)}</div>`).join('') : ''}</div>${commentCount > 0 ? `<button onclick="openFullCommentModal('${id}')" class="text-xs text-green-600 font-bold mt-2 hover:underline w-full text-left">সকল কমেন্ট দেখুন (${commentCount})</button>` : ''}<div class="mt-3 flex gap-2 items-center">${myInlineAvatar}<input type="text" id="inline-comment-input-${id}" onkeydown="handleEnter(event, 'comment', '${id}')" placeholder="আপনার মতামত..." class="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-green-500"><button onclick="submitInlineComment('${id}')" class="text-green-600 w-9 h-9 flex items-center justify-center bg-green-50 rounded-full hover:bg-green-100"><i class="fa-solid fa-paper-plane text-sm"></i></button></div></div></div>`;
+            // --- কমেন্ট সাজেশন এইচটিএমএল জেনারেট করা ---
+            const suggestions = window.getCommentSuggestions ? window.getCommentSuggestions(post) : [];
+            const suggestionsHtml = suggestions.length > 0 ? `<div id="comment-suggestions-${id}" class="flex gap-2 mt-3 overflow-x-auto hide-scrollbar pb-1">
+                ${suggestions.map(s => `<button onclick="autoPostSuggestion('${id}', '${s}', this)" class="shrink-0 bg-gray-100 hover:bg-green-50 hover:text-green-700 hover:border-green-200 border border-transparent text-gray-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 shadow-sm">${s}</button>`).join('')}
+            </div>` : '';
+
+            return `<div id="post-card-${id}" class="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100 relative max-w-lg mx-auto ${post.authorRole === 'journalist' ? 'journalist-post' : ''}" style="${displayStyle}" data-union="${post.union||''}" data-village="${post.village||''}"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-3">${avatarHtml}<div>${headerText}<p class="text-[11px] text-gray-400 flex flex-wrap gap-1 items-center font-medium">${timeAgo(post.timestamp)} ${privacyIcon} ${locationTag}</p></div></div><div class="relative"><button onclick="togglePostMenu(event)" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button><div id="post-menu-${id}" class="post-menu-dropdown hidden absolute right-0 top-8 w-48 bg-white shadow-xl rounded-lg z-20 border border-gray-100 py-1 text-sm text-gray-700"><ul>${menuOptions}</ul></div></div></div>${contentHTML}${mediaHtml}${actionButtons}<div class="grid grid-cols-3 border-t border-b border-gray-100 py-2 mt-2"><button id="like-btn-${id}" onclick="toggleLike('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i id="like-icon-${id}" class="${isLiked ? 'fa-solid text-green-600' : 'fa-regular'} fa-thumbs-up text-lg"></i> <span id="like-cnt-${id}" class="text-sm ${isLiked ? 'font-bold text-green-600' : ''}">${likeCount}</span></button><button onclick="openFullCommentModal('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-regular fa-comment text-lg"></i> <span id="comment-cnt-${id}" class="text-sm">${commentCount}</span></button><button onclick="repost('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-solid fa-share text-lg"></i> <span class="text-sm">${post.repostCount||0}</span></button></div><div class="mt-2"><div id="comments-preview-${id}">${post.comments ? Object.entries(post.comments).slice(-2).map(([_, c]) => `<div class="bg-gray-50 px-3 py-1.5 rounded-lg mt-1 text-xs border border-gray-100 truncate"><span class="font-bold text-gray-800 mr-1">${escapeHTML(c.author)}</span>${escapeHTML(c.text)}</div>`).join('') : ''}</div>${commentCount > 0 ? `<button onclick="openFullCommentModal('${id}')" class="text-xs text-green-600 font-bold mt-2 hover:underline w-full text-left">সকল কমেন্ট দেখুন (${commentCount})</button>` : ''} ${suggestionsHtml} <div class="mt-3 flex gap-2 items-center">${myInlineAvatar}<input type="text" id="inline-comment-input-${id}" onkeydown="handleEnter(event, 'comment', '${id}')" placeholder="আপনার মতামত..." class="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-green-500"><button onclick="submitInlineComment('${id}')" class="text-green-600 w-9 h-9 flex items-center justify-center bg-green-50 rounded-full hover:bg-green-100"><i class="fa-solid fa-paper-plane text-sm"></i></button></div></div></div>`;
         }
 
         // --- PEOPLE SEARCH & FILTER ---
@@ -5217,6 +5244,27 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             if (size !== 'normal') body.classList.add('text-' + size);
             localStorage.setItem('fontSize', size);
         };
+        
+        // --- OTA Update Check Logic ---
+        window.checkForUpdates = () => {
+            showToast("নতুন আপডেট চেক করা হচ্ছে...", "success");
+            
+            // একটু লেট করে চেক করবে যাতে রিয়েল ফিল আসে
+            setTimeout(() => {
+                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
+                    const { ref, get } = module;
+                    get(ref(db, 'admin_settings/app_version')).then((snap) => {
+                        const liveVersion = snap.val();
+                        if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
+                            showToast("নতুন ভার্সন পাওয়া গেছে! অ্যাপ আপডেট হচ্ছে...", "success");
+                            setTimeout(() => window.location.reload(true), 2000);
+                        } else {
+                            showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
+                        }
+                    }).catch(() => showToast("সার্ভার কানেকশন এরর", "error"));
+                });
+            }, 1500);
+        };        
 
         // --- Data Saver Logic ---
         window.toggleDataSaver = (checked) => {
@@ -6484,6 +6532,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="notes.js"></script>
     <script type="module" src="market.js"></script>
     <script type="module" src="blood.js"></script>
+    <script type="module" src="comments.js"></script>
 <!-- সাউন্ড ইফেক্টস -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
