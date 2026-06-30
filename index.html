@@ -1178,20 +1178,8 @@
         </div>
     </div>
 
-    <div id="comment-full-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
-        <div class="flex items-center justify-between p-4 border-b bg-white shadow-sm z-10 sticky top-0 pt-safe">
-            <div class="flex items-center gap-2"><button onclick="closeFullCommentModal()" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                <h3 class="font-bold text-gray-800 text-lg">কমেন্টসমূহ</h3>
-            </div>
-            <span id="full-comment-count" class="text-sm bg-gray-100 px-3 py-1 rounded-full font-bold text-gray-600">0</span>
-        </div>
-        <div id="full-comments-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 pb-20"></div>
-        <div class="p-3 border-t bg-white flex gap-2 items-center sticky bottom-0 w-full pb-safe">
-            <div id="my-comment-avatar-full" class="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0"><i class="fa-solid fa-user text-gray-400"></i></div>
-            <input type="text" id="full-comment-input" onkeydown="handleEnter(event, 'full-comment')" placeholder="আপনার মতামত লিখুন..." class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm border-0 focus:ring-1 focus:ring-green-500">
-            <button onclick="submitFullComment()" class="text-green-600 text-xl p-2 hover:bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center shadow-sm border border-gray-100"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-    </div>
+    <!-- COMMENTS UI CONTAINER -->
+    <div id="comments-ui-container"></div>
 
     <!-- SINGLE POST MODAL -->
     <div id="single-post-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
@@ -4317,72 +4305,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 });
             });
         };
-
-        window.openFullCommentModal = (postId) => {
-            currentFullPostId = postId;
-            document.getElementById('comment-full-modal').classList.remove('hidden-custom');
-            setTimeout(() => document.getElementById('comment-full-modal').classList.add('open'), 10);
-            history.pushState({
-                page: 'comment-modal',
-                postId
-            }, "", "#comments");
-            loadFullComments(postId);
-        };
-        window.closeFullCommentModal = () => {
-            document.getElementById('comment-full-modal').classList.remove('open');
-            setTimeout(() => {
-                document.getElementById('comment-full-modal').classList.add('hidden-custom');
-                currentFullPostId = null;
-            }, 300);
-        };
-        window.submitFullComment = () => submitCommentLogic(currentFullPostId, document.getElementById('full-comment-input'));
-        window.submitInlineComment = (postId) => submitCommentLogic(postId, document.getElementById(`inline-comment-input-${postId}`));
-
-        function submitCommentLogic(postId, input) {
-            const text = input.value.trim();
-            if (!text || !postId) return;
-            push(ref(db, `posts/${postId}/comments`), {
-                author: userDetails.name,
-                authorUid: window.currentUser.uid,
-                authorPic: userDetails.profile_pic || null,
-                text,
-                time: Date.now()
-            }).then(() => {
-                // Award Points for Comment
-                window.awardPoints('comment');
-                window.playSound('send'); // কমেন্ট সেন্ড সাউন্ড
-                input.value = "";
-                get(ref(db, `posts/${postId}`)).then(s => {
-                    const p = s.val();
-                    if (p && p.uid !== window.currentUser.uid) push(ref(db, `notifications/${p.uid}`), {
-                        type: 'comment',
-                        fromUid: window.currentUser.uid,
-                        fromName: userDetails.name,
-                        postId,
-                        timestamp: Date.now(),
-                        read: false
-                    });
-                });
-            });
-        }
-
-        function loadFullComments(postId) {
-            const container = document.getElementById('full-comments-list');
-            container.innerHTML = '<div class="flex justify-center p-4"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div></div>';
-            onValue(ref(db, `posts/${postId}/comments`), (snap) => {
-                if (currentFullPostId !== postId) return;
-                const comments = snap.val() || {};
-                document.getElementById('full-comment-count').innerText = Object.keys(comments).length;
-                container.innerHTML = Object.keys(comments).length > 0 ? Object.entries(comments).sort((a, b) => a[1].time - b[1].time).map(([cId, c]) => {
-                    const delBtn = c.authorUid === window.currentUser.uid ? `<button onclick="deleteComment('${postId}','${cId}')" class="text-xs text-red-400 ml-2">ডিলিট</button>` : '';
-                    const commentAvatar = c.authorPic ? `<img src="${c.authorPic}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-100">` : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 text-xs shrink-0">${escapeHTML(c.author).charAt(0)}</div>`;
-                    return `<div class="flex gap-2 mb-3">${commentAvatar}<div class="bg-gray-100 rounded-2xl px-3 py-2 relative group max-w-[85%]"><h4 class="font-bold text-xs text-gray-800">${escapeHTML(c.author)}</h4><p class="text-sm text-gray-700 leading-snug">${escapeHTML(c.text)}</p><div class="flex gap-2 mt-1"><span class="text-[10px] text-gray-400">${timeAgo(c.time)}</span>${delBtn}</div></div></div>`;
-                }).join('') : '<p class="text-center text-gray-400 mt-10">কোনো কমেন্ট নেই</p>';
-                container.scrollTop = container.scrollHeight;
-            });
-        }
-
-        window.deleteComment = (postId, commentId) => confirm("কমেন্ট ডিলিট করবেন?") && remove(ref(db, `posts/${postId}/comments/${commentId}`));
+        
         window.togglePostMenu = (event) => {
             event.stopPropagation();
             const btn = event.currentTarget;
@@ -6561,6 +6484,23 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             }
         }
 
+        // Comments UI Fetcher
+        async function loadCommentsUI() {
+            try {
+                const response = await fetch('comments-ui.html');
+                if (!response.ok) throw new Error('Failed to load Comments UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('comments-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Comments Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Comments UI:", error);
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             loadProfileUI();
             loadContestUI();
@@ -6569,6 +6509,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadNotesUI();
             loadMarketUI();
             loadBloodUI();
+            loadCommentsUI();
         });
     </script>
     
