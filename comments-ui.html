@@ -1,0 +1,40 @@
+<!-- Background Overlay -->
+<div id="comment-overlay" onclick="closeFullCommentModal()" class="fixed inset-0 bg-black bg-opacity-60 z-[175] hidden-custom transition-opacity duration-300 opacity-0 backdrop-blur-sm"></div>
+
+<!-- Floating Bottom Sheet Modal -->
+<div id="comment-full-modal" class="fixed inset-x-0 bottom-0 h-[75vh] max-w-[480px] mx-auto bg-white rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] z-[180] flex flex-col transition-transform duration-300 translate-y-full">
+    
+    <!-- Drag Handle Indicator -->
+    <div class="w-full flex justify-center pt-3 pb-2 cursor-pointer" onclick="closeFullCommentModal()">
+        <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-5 pb-3 border-b border-gray-100">
+        <h3 class="font-extrabold text-gray-800 text-lg">কমেন্টসমূহ</h3>
+        <span id="full-comment-count" class="text-xs bg-green-50 text-green-600 px-3 py-1 rounded-full font-bold border border-green-100">0</span>
+    </div>
+
+    <!-- Comments List -->
+    <div id="full-comments-list" class="flex-1 overflow-y-auto p-4 space-y-4 bg-white pb-20">
+        <!-- Comments will load here -->
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-3 border-t bg-white flex flex-col gap-2 sticky bottom-0 w-full pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
+        
+        <!-- Replying To Indicator (Hidden by default) -->
+        <div id="replying-to-indicator" class="hidden flex items-center justify-between bg-gray-100 px-3 py-1.5 rounded-t-lg -mb-2 z-0">
+            <span class="text-[11px] text-gray-600 font-medium">Replying to <b id="reply-to-name" class="text-gray-800">Name</b></span>
+            <button onclick="cancelReply()" class="text-gray-400 hover:text-red-500 text-xs"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="flex items-center gap-2 relative z-10">
+            <div id="my-comment-avatar-full" class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
+                <i class="fa-solid fa-user text-gray-400"></i>
+            </div>
+            <input type="text" id="full-comment-input" onkeydown="handleEnter(event, 'full-comment')" placeholder="আপনার মতামত লিখুন..." class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm border-0 focus:ring-1 focus:ring-green-500 transition-all">
+            <button onclick="submitFullComment()" class="text-white bg-green-600 text-lg p-2 hover:bg-green-700 rounded-full w-10 h-10 flex items-center justify-center shadow-md active:scale-95 transition-transform"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
