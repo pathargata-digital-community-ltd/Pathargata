@@ -2,25 +2,25 @@
 <div id="comment-full-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
     <div class="flex items-center justify-between p-4 border-b bg-white shadow-sm z-10 sticky top-0 pt-safe">
         <div class="flex items-center gap-2">
-            <button onclick="closeFullCommentModal()" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            <button onclick="closeFullCommentModal()" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition"><i class="fa-solid fa-arrow-left text-lg"></i></button>
             <h3 class="font-bold text-gray-800 text-lg">কমেন্টসমূহ</h3>
         </div>
-        <span id="full-comment-count" class="text-sm bg-gray-100 px-3 py-1 rounded-full font-bold text-gray-600">0</span>
+        <span id="full-comment-count" class="text-sm bg-blue-50 px-3 py-1 rounded-full font-bold text-blue-600 border border-blue-100">0</span>
     </div>
     
-    <div id="full-comments-list" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 pb-20">
-        <!-- কমেন্টগুলো এখানে লোড হবে -->
+    <div id="full-comments-list" class="flex-1 overflow-y-auto p-4 bg-white pb-20 scroll-smooth">
+        <!-- কমেন্টগুলো এখানে থ্রেড/নেস্টেড আকারে লোড হবে -->
     </div>
 
     <!-- রিপ্লাই ইন্ডিকেটর -->
-    <div id="replying-to-indicator" class="hidden flex items-center justify-between bg-gray-200 px-4 py-2 text-sm border-t">
-        <span class="text-gray-700">Replying to <b id="reply-to-name" class="text-gray-900">Name</b></span>
-        <button onclick="cancelReply()" class="text-gray-500 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+    <div id="replying-to-indicator" class="hidden flex items-center justify-between bg-gray-100 px-4 py-2 text-sm border-t border-gray-200 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        <span class="text-gray-600 font-medium">Replying to <b id="reply-to-name" class="text-gray-900">Name</b></span>
+        <button onclick="cancelReply()" class="text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-circle-xmark text-lg"></i></button>
     </div>
 
-    <div class="p-3 border-t bg-white flex gap-2 items-center sticky bottom-0 w-full pb-safe">
-        <div id="my-comment-avatar-full" class="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0"><i class="fa-solid fa-user text-gray-400"></i></div>
-        <input type="text" id="full-comment-input" onkeydown="handleEnter(event, 'full-comment')" placeholder="আপনার মতামত লিখুন..." class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm border-0 focus:ring-1 focus:ring-green-500">
-        <button onclick="submitFullComment()" class="text-green-600 text-xl p-2 hover:bg-gray-100 rounded-full w-10 h-10 flex items-center justify-center shadow-sm border border-gray-100"><i class="fa-solid fa-paper-plane"></i></button>
+    <div class="p-3 border-t bg-white flex gap-2 items-end sticky bottom-0 w-full pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+        <div id="my-comment-avatar-full" class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0 mb-0.5"><i class="fa-solid fa-user text-gray-400"></i></div>
+        <textarea id="full-comment-input" rows="1" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" placeholder="আপনার মতামত লিখুন..." class="flex-1 bg-gray-100 rounded-2xl px-4 py-2.5 text-sm border-0 focus:ring-1 focus:ring-blue-500 resize-none overflow-hidden min-h-[40px] max-h-[100px]"></textarea>
+        <button onclick="submitFullComment()" class="text-white bg-blue-600 text-lg p-2 hover:bg-blue-700 rounded-full w-10 h-10 flex items-center justify-center shadow-md transition active:scale-95 mb-0.5"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
 </div>
