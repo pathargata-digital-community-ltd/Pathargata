@@ -3,19 +3,22 @@ import { ref, push, get, remove, onValue } from "https://www.gstatic.com/firebas
 let replyingToCommentId = null;
 let replyingToAuthor = null;
 
+// Helper function to safely escape HTML
+const safeHTML = (str) => window.escapeHTML ? window.escapeHTML(str) : str;
+
 // --- 1. Modal Open/Close Logic (Floating Style) ---
 window.openFullCommentModal = (postId) => {
     window.currentFullPostId = postId;
     const modal = document.getElementById('comment-full-modal');
     const overlay = document.getElementById('comment-overlay');
     
-    modal.classList.remove('hidden-custom');
-    overlay.classList.remove('hidden-custom');
+    if(modal) modal.classList.remove('hidden-custom');
+    if(overlay) overlay.classList.remove('hidden-custom');
     
     // Allow slight delay for display block to render before animating
     setTimeout(() => {
-        modal.classList.remove('translate-y-full');
-        overlay.classList.remove('opacity-0');
+        if(modal) modal.classList.remove('translate-y-full');
+        if(overlay) overlay.classList.remove('opacity-0');
     }, 10);
     
     history.pushState({ page: 'comment-modal', postId }, "", "#comments");
@@ -26,58 +29,61 @@ window.closeFullCommentModal = () => {
     const modal = document.getElementById('comment-full-modal');
     const overlay = document.getElementById('comment-overlay');
     
-    modal.classList.add('translate-y-full');
-    overlay.classList.add('opacity-0');
+    if(modal) modal.classList.add('translate-y-full');
+    if(overlay) overlay.classList.add('opacity-0');
     
     setTimeout(() => {
-        modal.classList.add('hidden-custom');
-        overlay.classList.add('hidden-custom');
+        if(modal) modal.classList.add('hidden-custom');
+        if(overlay) overlay.classList.add('hidden-custom');
         window.currentFullPostId = null;
-        cancelReply(); // Reset reply state when closed
+        cancelReply(); 
     }, 300);
 };
 
 // --- 2. Load Comments with Reply & Profile Navigation ---
 window.loadFullComments = (postId) => {
     const container = document.getElementById('full-comments-list');
+    if(!container) return;
+
     container.innerHTML = '<div class="flex justify-center p-4"><div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div></div>';
     
     onValue(ref(window.db, `posts/${postId}/comments`), (snap) => {
         if (window.currentFullPostId !== postId) return;
         const comments = snap.val() || {};
-        document.getElementById('full-comment-count').innerText = Object.keys(comments).length;
+        const countElement = document.getElementById('full-comment-count');
+        if(countElement) countElement.innerText = Object.keys(comments).length;
         
         container.innerHTML = Object.keys(comments).length > 0 ? Object.entries(comments).sort((a, b) => a[1].time - b[1].time).map(([cId, c]) => {
             
             // Profile Navigation Links
-            const profileClick = `onclick="closeFullCommentModal(); setTimeout(()=>openUserProfile('${c.authorUid}'), 300);"`;
+            const profileClick = `onclick="closeFullCommentModal(); setTimeout(()=> { if(window.openUserProfile) window.openUserProfile('${c.authorUid}'); }, 300);"`;
             
             // Avatar HTML
             const commentAvatar = c.authorPic 
                 ? `<img ${profileClick} src="${c.authorPic}" class="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100 cursor-pointer hover:opacity-80">` 
-                : `<div ${profileClick} class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center font-bold text-green-600 text-xs shrink-0 cursor-pointer border border-green-100">${window.escapeHTML(c.author).charAt(0)}</div>`;
+                : `<div ${profileClick} class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center font-bold text-green-600 text-xs shrink-0 cursor-pointer border border-green-100">${safeHTML(c.author || 'U').charAt(0)}</div>`;
             
             // Actions (Reply & Delete)
-            let actionsHtml = `<button onclick="initiateReply('${cId}', '${window.escapeHTML(c.author)}')" class="text-[11px] text-gray-500 font-bold hover:text-blue-600 transition">রিপ্লাই</button>`;
+            let actionsHtml = `<button onclick="initiateReply('${cId}', '${safeHTML(c.author || 'User')}')" class="text-[11px] text-gray-500 font-bold hover:text-blue-600 transition">রিপ্লাই</button>`;
             
-            if (c.authorUid === window.currentUser.uid) {
+            if (window.currentUser && c.authorUid === window.currentUser.uid) {
                 actionsHtml += `<button onclick="deleteComment('${postId}','${cId}')" class="text-[11px] text-red-400 font-bold ml-3 hover:text-red-600 transition">ডিলিট</button>`;
             }
 
-            // Reply Tag UI (If comment is a reply)
-            let replyTagHtml = c.replyingTo ? `<span class="block text-[10px] text-blue-500 mb-0.5"><i class="fa-solid fa-reply fa-rotate-180 mr-1"></i> ${window.escapeHTML(c.replyingTo)} -কে রিপ্লাই</span>` : '';
+            // Reply Tag UI
+            let replyTagHtml = c.replyingTo ? `<span class="block text-[10px] text-blue-500 mb-0.5"><i class="fa-solid fa-reply fa-rotate-180 mr-1"></i> ${safeHTML(c.replyingTo)} -কে রিপ্লাই</span>` : '';
 
             return `
             <div class="flex gap-2.5 mb-2 animate-fade">
                 ${commentAvatar}
                 <div class="flex flex-col max-w-[85%]">
                     <div class="bg-gray-100 rounded-2xl rounded-tl-sm px-3.5 py-2 relative group">
-                        <h4 ${profileClick} class="font-bold text-xs text-gray-900 cursor-pointer hover:underline mb-0.5">${window.escapeHTML(c.author)}</h4>
+                        <h4 ${profileClick} class="font-bold text-xs text-gray-900 cursor-pointer hover:underline mb-0.5">${safeHTML(c.author || 'User')}</h4>
                         ${replyTagHtml}
-                        <p class="text-[14px] text-gray-800 leading-snug whitespace-pre-wrap">${window.escapeHTML(c.text)}</p>
+                        <p class="text-[14px] text-gray-800 leading-snug whitespace-pre-wrap">${safeHTML(c.text)}</p>
                     </div>
                     <div class="flex items-center gap-3 mt-1 ml-1">
-                        <span class="text-[10px] text-gray-400 font-medium">${window.timeAgo(c.time)}</span>
+                        <span class="text-[10px] text-gray-400 font-medium">${window.timeAgo ? window.timeAgo(c.time) : 'কিছুক্ষণ আগে'}</span>
                         ${actionsHtml}
                     </div>
                 </div>
@@ -97,13 +103,14 @@ window.initiateReply = (commentId, authorName) => {
     document.getElementById('reply-to-name').innerText = authorName;
     
     const input = document.getElementById('full-comment-input');
-    input.focus();
+    if(input) input.focus();
 };
 
 window.cancelReply = () => {
     replyingToCommentId = null;
     replyingToAuthor = null;
-    document.getElementById('replying-to-indicator').classList.add('hidden');
+    const indicator = document.getElementById('replying-to-indicator');
+    if(indicator) indicator.classList.add('hidden');
 };
 
 // --- 4. Submit Comment/Reply ---
@@ -111,18 +118,22 @@ window.submitFullComment = () => window.submitCommentLogic(window.currentFullPos
 window.submitInlineComment = (postId) => window.submitCommentLogic(postId, document.getElementById(`inline-comment-input-${postId}`));
 
 window.submitCommentLogic = (postId, inputElement) => {
+    if (!inputElement) return;
     const text = inputElement.value.trim();
     if (!text || !postId || !window.currentUser) return;
     
+    // ERROR FIX: Ensuring author is NEVER undefined
+    const authorName = window.userDetails?.name || window.currentUser?.displayName || "Unknown User";
+    const authorPic = window.userDetails?.profile_pic || window.currentUser?.photoURL || null;
+
     const commentData = {
-        author: window.userDetails.name,
+        author: authorName,
         authorUid: window.currentUser.uid,
-        authorPic: window.userDetails.profile_pic || null,
+        authorPic: authorPic,
         text: text,
         time: Date.now()
     };
 
-    // Add reply info if active
     if (replyingToAuthor) {
         commentData.replyingTo = replyingToAuthor;
     }
@@ -132,22 +143,23 @@ window.submitCommentLogic = (postId, inputElement) => {
         if(window.playSound) window.playSound('send');
         
         inputElement.value = "";
-        cancelReply(); // Reset reply state
+        cancelReply(); 
 
-        // Send Notification
         get(ref(window.db, `posts/${postId}`)).then(s => {
             const p = s.val();
             if (p && p.uid !== window.currentUser.uid) {
                 push(ref(window.db, `notifications/${p.uid}`), {
                     type: 'comment',
                     fromUid: window.currentUser.uid,
-                    fromName: window.userDetails.name,
+                    fromName: authorName,
                     postId: postId,
                     timestamp: Date.now(),
                     read: false
                 });
             }
         });
+    }).catch(e => {
+        if(window.showToast) window.showToast("কমেন্ট করা যায়নি: " + e.message, "error");
     });
 };
 
@@ -157,7 +169,7 @@ window.deleteComment = (postId, commentId) => {
     }
 };
 
-// --- 5. Smart Comment Suggestion Algorithm (From your code) ---
+// --- 5. Smart Comment Suggestion Algorithm ---
 window.getCommentSuggestions = (post) => {
     const text = (post.content || '').toLowerCase();
     const feeling = post.feeling ? post.feeling.text.toLowerCase() : '';
@@ -182,20 +194,23 @@ window.getCommentSuggestions = (post) => {
 };
 
 window.autoPostSuggestion = (postId, text, btnElement) => {
-    if (!window.currentUser) return window.showToast("আগে লগইন করুন", "error");
+    if (!window.currentUser) return window.showToast ? window.showToast("আগে লগইন করুন", "error") : alert("আগে লগইন করুন");
 
     const originalText = btnElement.innerText;
     btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btnElement.disabled = true;
 
+    // ERROR FIX: Ensuring author is NEVER undefined
+    const authorName = window.userDetails?.name || window.currentUser?.displayName || "Unknown User";
+    const authorPic = window.userDetails?.profile_pic || window.currentUser?.photoURL || null;
+
     push(ref(window.db, `posts/${postId}/comments`), {
-        author: window.userDetails.name,
+        author: authorName,
         authorUid: window.currentUser.uid,
-        authorPic: window.userDetails.profile_pic || null,
+        authorPic: authorPic,
         text: text,
         time: Date.now()
     }).then(() => {
-        // Hide Suggestion Bar with animation
         const suggContainer = document.getElementById(`comment-suggestions-${postId}`);
         if(suggContainer) {
             suggContainer.style.transition = "opacity 0.3s, transform 0.3s";
@@ -208,14 +223,13 @@ window.autoPostSuggestion = (postId, text, btnElement) => {
         if(window.playSound) window.playSound('send');
         if(window.showToast) window.showToast("সাজেশন থেকে কমেন্ট করা হয়েছে!");
 
-        // Notify Post Owner
         get(ref(window.db, `posts/${postId}`)).then(s => {
             const p = s.val();
             if (p && p.uid !== window.currentUser.uid) {
                 push(ref(window.db, `notifications/${p.uid}`), {
                     type: 'comment',
                     fromUid: window.currentUser.uid,
-                    fromName: window.userDetails.name,
+                    fromName: authorName,
                     postId: postId,
                     timestamp: Date.now(),
                     read: false
