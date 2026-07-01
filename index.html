@@ -1332,7 +1332,10 @@
                 <input type="text" id="poll-opt-3" placeholder="অপশন ৩ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
                 <input type="text" id="poll-opt-4" placeholder="অপশন ৪ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
             </div>
-            <!-- POST UI CONTAINER -->
+        </div> 
+    </div>
+    
+    <!-- POST UI CONTAINER -->
     <div id="post-ui-container"></div>       
   
     <!-- EMERGENCY ALERT MODAL -->
@@ -2754,9 +2757,9 @@ loadMyComplaints();
                 loadEmergencyAlerts();
 
                 loadAds();
-                loadFeed('all', true);
+                if(window.loadFeed) window.loadFeed('all', true);
                 
-                listenForNewPosts(); // রিয়েল-টাইম পোস্ট লিসেনার চালু হলো
+                if(window.listenForNewPosts) window.listenForNewPosts(); // রিয়েল-টাইম পোস্ট লিসেনার চালু হলো
 
                 loadNotes();
                 setupInfiniteScroll();
