@@ -1,6 +1,6 @@
 import { ref, push, set, get, update, remove, query, limitToLast, runTransaction, startAt, endAt, orderByChild, orderByKey, limitToFirst, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const db = window.db;
+const getDb = () => window.db;
 
 // --- GLOBALS FOR POSTS ---
 window.currentFeedFilter = 'all';
