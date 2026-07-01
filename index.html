@@ -203,15 +203,20 @@
 
         .post-color-dot {
             cursor: pointer;
-            border: 2px solid white;
+            width: 36px !important; /* Fixed width */
+            height: 36px !important; /* Fixed height */
+            min-width: 36px;
+            border-radius: 8px; /* Rounded corners */
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .post-color-dot:hover,
         .post-color-dot.selected {
-            transform: scale(1.2);
-            border-color: #333;
+            transform: scale(1.1);
+            border: 2px solid #1f2937 !important; /* Dark border when selected */
         }
 
         .colored-post-bg {
@@ -1189,18 +1194,19 @@
         </div>
     </div>
 
-    <!-- UPDATED PROFESSIONAL POST MODAL -->
-    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-[500px] rounded-2xl shadow-2xl transform transition-all scale-100 overflow-hidden relative">
-            <!-- Header -->
-            <div class="flex justify-between items-center px-4 py-3 border-b bg-white relative z-10">
-                <h3 class="font-bold text-lg text-gray-800 text-center flex-1">পোস্ট তৈরি করুন</h3>
-                <button onclick="togglePostModal(false)" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition absolute right-3">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- UPDATED PROFESSIONAL POST MODAL (FULL SCREEN) -->
+    <div id="post-modal" class="fixed inset-0 bg-white z-[200] flex flex-col hidden-custom">
+        <div class="bg-white w-full h-full flex flex-col relative">
+            <!-- Header (Full Screen Style) -->
+            <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+                <button onclick="togglePostModal(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
+                    <i class="fa-solid fa-arrow-left text-xl"></i>
                 </button>
+                <h3 class="font-bold text-gray-800 text-lg flex-1">পোস্ট তৈরি করুন</h3>
             </div>
 
-            <div class="max-h-[80vh] overflow-y-auto">
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 overflow-y-auto pb-safe">
                 <!-- User Info & Privacy -->
                 <div class="px-4 py-3 flex items-center gap-3">
                     <div id="post-modal-user-img" class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
