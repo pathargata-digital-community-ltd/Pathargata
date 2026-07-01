@@ -32,6 +32,27 @@
         </div>
     </div>
 
+    <!-- Check-in / Location Modal -->
+    <div id="location-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom" style="transition: transform 0.3s ease-in-out; transform: translateY(100%);">
+        <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+            <button onclick="closeLocationModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <div class="flex-1">
+                <input type="text" id="custom-location-input" placeholder="কোথায় আছেন? (লিখুন)" class="w-full bg-gray-100 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-red-500 outline-none border-none">
+            </div>
+            <button onclick="selectCustomLocation()" class="text-red-600 font-bold text-sm px-2">সেট</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 bg-gray-50 pb-20">
+            <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase ml-1">জনপ্রিয় স্থানসমূহ</h4>
+            <div class="space-y-2">
+                <div onclick="selectLocation('পাথরঘাটা গোলচত্বর')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">পাথরঘাটা গোলচত্বর</span></div>
+                <div onclick="selectLocation('পাথরঘাটা লঞ্চঘাট')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">পাথরঘাটা লঞ্চঘাট</span></div>
+                <div onclick="selectLocation('হরিণঘাটা পর্যটন কেন্দ্র')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">হরিণঘাটা পর্যটন কেন্দ্র</span></div>
+                <div onclick="selectLocation('লালদিয়া সমুদ্র সৈকত')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">লালদিয়া সমুদ্র সৈকত</span></div>
+                <div onclick="selectLocation('বিএফডিসি মৎস্য অবতরণ কেন্দ্র')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">বিএফডিসি মৎস্য অবতরণ কেন্দ্র</span></div>
+            </div>
+        </div>
+    </div>
+
     <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
         <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
             <button onclick="toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
@@ -110,29 +131,29 @@
                 <div class="px-4 py-2" id="color-picker-wrapper">
                     <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide items-center" id="color-picker-container">
                         <!-- Default White (Clear Background) -->
-                        <div onclick="selectPostColor('')" class="post-color-dot bg-white border border-gray-300 shadow-sm shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform flex items-center justify-center" title="Default">
-                            <i class="fa-solid fa-ban text-gray-400 text-xs"></i>
+                        <div onclick="selectPostColor('', this)" class="post-color-dot bg-gray-100 border-2 border-gray-800 shadow-sm shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform flex items-center justify-center selected" title="Default">
+                            <i class="fa-solid fa-ban text-gray-500 text-sm"></i>
                         </div>
                         
                         <!-- Solid Colors (FB Style) -->
-                        <div onclick="selectPostColor('#1877F2')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #1877F2;" title="Blue"></div>
-                        <div onclick="selectPostColor('#E42C64')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #E42C64;" title="Pink"></div>
-                        <div onclick="selectPostColor('#00A400')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #00A400;" title="Green"></div>
-                        <div onclick="selectPostColor('#FF8C00')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #FF8C00;" title="Orange"></div>
-                        <div onclick="selectPostColor('#242526')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #242526;" title="Dark"></div>
+                        <div onclick="selectPostColor('#1877F2', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #1877F2;" title="Blue"></div>
+                        <div onclick="selectPostColor('#E42C64', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #E42C64;" title="Pink"></div>
+                        <div onclick="selectPostColor('#00A400', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #00A400;" title="Green"></div>
+                        <div onclick="selectPostColor('#FF8C00', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #FF8C00;" title="Orange"></div>
+                        <div onclick="selectPostColor('#242526', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #242526;" title="Dark"></div>
 
                         <!-- Professional Linear Gradients -->
-                        <div onclick="selectPostColor('linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(135deg, #ff0844 0%, #ffb199 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #43e97b 0%, #38f9d7 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #fa709a 0%, #fee140 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #fa709a 0%, #fee140 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #000000 0%, #434343 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #000000 0%, #434343 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(135deg, #ff0844 0%, #ffb199 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #43e97b 0%, #38f9d7 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #fa709a 0%, #fee140 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #fa709a 0%, #fee140 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #000000 0%, #434343 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #000000 0%, #434343 100%);"></div>
 
                         <!-- Radial / Aesthetic Gradients -->
-                        <div onclick="selectPostColor('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%);"></div>
-                        <div onclick="selectPostColor('radial-gradient(circle at top right, #f6d365 0%, #fda085 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle at top right, #f6d365 0%, #fda085 100%);"></div>
-                        <div onclick="selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle at top right, #f6d365 0%, #fda085 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at top right, #f6d365 0%, #fda085 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);"></div>
                     </div>
                     <input type="hidden" id="selected-post-color" value="">
                 </div>
@@ -185,6 +206,10 @@
                             <div onclick="openFeelingModal()" class="cursor-pointer text-yellow-500 hover:bg-yellow-50 p-1.5 rounded-full transition" title="Feeling/Activity">
                                 <i class="fa-regular fa-face-smile text-xl"></i>
                             </div>
+                            <!-- Check-in Icon -->
+                            <div onclick="openLocationModal()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Check In">
+                                <i class="fa-solid fa-location-dot text-xl"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -193,6 +218,14 @@
                 <div class="px-4 py-2 flex gap-2">
                     <input type="tel" id="post-mobile" placeholder="মোবাইল (কল বাটন)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
                     <input type="url" id="post-social-link" placeholder="সোশ্যাল লিংক (WhatsApp)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
+                </div>
+                
+                <!-- 24 Hour Ephemeral Post Checkbox -->
+                <div class="px-4 pb-2">
+                    <label class="flex items-center gap-2 cursor-pointer bg-orange-50 border border-orange-200 p-2.5 rounded-lg text-sm font-semibold text-orange-700 hover:bg-orange-100 transition w-full">
+                        <input type="checkbox" id="post-ephemeral" class="w-5 h-5 text-orange-600 rounded focus:ring-orange-500 border-orange-300">
+                        <i class="fa-solid fa-stopwatch animate-pulse"></i> ২৪ ঘণ্টা পর স্বয়ংক্রিয়ভাবে মুছে যাবে
+                    </label>
                 </div>
 
                 <!-- Hidden File Input (Updated for Multiple Images) -->
