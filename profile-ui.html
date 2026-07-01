@@ -1,294 +1,234 @@
-<!-- ১. প্রোফাইল এডিট মডাল -->
-<div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[160] flex items-center justify-center hidden-custom p-4">
-    <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
-        <button onclick="window.toggleEditProfile(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-        <h3 class="text-lg font-bold text-gray-800 mb-5 border-b pb-2">তথ্য পরিবর্তন করুন</h3>
-        <div class="space-y-4">
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">প্রোফাইল ছবি পরিবর্তন করুন</label><input type="file" id="edit-profile-img" accept="image/*" class="w-full bg-gray-50 border p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">নাম</label><input type="text" id="edit-name" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">ডাক নাম (Nickname)</label><input type="text" id="edit-nickname" placeholder="যেমন: রানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">ইউনিয়ন (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-union" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">গ্রাম/মহল্লা (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-village" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">বর্তমান ঠিকানা</label><input type="text" id="edit-location" placeholder="বিস্তারিত ঠিকানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
+<!-- Tag Friends Modal -->
+    <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
+        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+            <button onclick="closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h3 class="font-bold text-gray-800 text-lg">বন্ধুদের ট্যাগ করুন</h3>
+            <button onclick="saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
         </div>
-        <button onclick="window.saveProfileChanges()" id="btn-save-profile" class="w-full bg-green-600 text-white font-bold py-3 mt-6 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">সংরক্ষণ করুন</button>
+        <div id="tag-friends-list" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50 pb-20">
+            <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
+        </div>
     </div>
-</div>
 
-<!-- স্মার্ট প্রোফাইল কার্ড মডাল -->
-<div id="profile-card-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-    <div class="w-full max-w-[380px] relative transform transition-all duration-300 scale-100">
-        <!-- Close Button -->
-        <button onclick="window.closeProfileCard()" class="absolute -top-12 right-0 bg-white bg-opacity-20 hover:bg-opacity-40 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md z-50">
-            <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
+    <!-- Feeling Modal -->
+    <div id="feeling-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
+        <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+            <button onclick="closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-gray-50 pb-20">
+            <div onclick="selectFeeling('Happy', '😊')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😊</span> <span class="font-semibold text-sm text-gray-700">Happy</span></div>
+            <div onclick="selectFeeling('Loved', '🥰')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🥰</span> <span class="font-semibold text-sm text-gray-700">Loved</span></div>
+            <div onclick="selectFeeling('Sad', '😔')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😔</span> <span class="font-semibold text-sm text-gray-700">Sad</span></div>
+            <div onclick="selectFeeling('Excited', '🤩')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤩</span> <span class="font-semibold text-sm text-gray-700">Excited</span></div>
+            <div onclick="selectFeeling('Angry', '😠')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😠</span> <span class="font-semibold text-sm text-gray-700">Angry</span></div>
+            <div onclick="selectFeeling('Blessed', '😇')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😇</span> <span class="font-semibold text-sm text-gray-700">Blessed</span></div>
+            <div onclick="selectFeeling('Tired', '😫')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😫</span> <span class="font-semibold text-sm text-gray-700">Tired</span></div>
+            <div onclick="selectFeeling('Sleepy', '😴')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😴</span> <span class="font-semibold text-sm text-gray-700">Sleepy</span></div>
+            <div onclick="selectFeeling('Cool', '😎')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😎</span> <span class="font-semibold text-sm text-gray-700">Cool</span></div>
+            <div onclick="selectFeeling('Crazy', '🤪')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤪</span> <span class="font-semibold text-sm text-gray-700">Crazy</span></div>
+            <div onclick="selectFeeling('Sick', '🤒')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤒</span> <span class="font-semibold text-sm text-gray-700">Sick</span></div>
+            <div onclick="selectFeeling('Celebrating', '🎉')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🎉</span> <span class="font-semibold text-sm text-gray-700">Celebrating</span></div>
+        </div>
+    </div>
 
-        <!-- The ID Card -->
-        <div id="capture-card-area" class="w-full h-[240px] bg-gradient-to-br from-green-600 to-teal-700 relative overflow-hidden shadow-2xl rounded-xl text-white border border-white/20">
-            
-            <!-- Watermark -->
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 text-[3.5rem] font-extrabold text-white/5 whitespace-nowrap pointer-events-none z-0 leading-none">
-                পাথরঘাটা ডিজিটাল<br>পাথরঘাটা ডিজিটাল
-            </div>
-
-            <!-- Top Header -->
-            <div class="bg-white/10 backdrop-blur-md px-4 py-2 flex justify-between items-center relative z-10 border-b border-white/20">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
-                        <i class="fa-solid fa-map-location-dot text-sm"></i>
-                    </div>
-                    <div class="leading-tight">
-                        <h2 class="text-sm font-bold tracking-wide">পাথরঘাটা ডিজিটাল</h2>
-                        <p class="text-[9px] font-medium tracking-widest uppercase text-green-100">Smart ID Card</p>
-                    </div>
-                </div>
-                <i class="fa-solid fa-microchip text-2xl text-yellow-300 opacity-80"></i>
-            </div>
-
-            <!-- Body Content -->
-            <div class="px-4 py-3 h-full relative z-10 flex items-start gap-4">
-                
-                <!-- Left Side: Image & QR -->
-                <div class="flex flex-col items-center gap-3 shrink-0">
-                    <div class="relative">
-                        <div id="card-user-img" class="w-20 h-20 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center overflow-hidden">
-                            <!-- Image will be injected here -->
-                        </div>
-                        <div id="card-verify-badge" class="hidden absolute -bottom-2 -right-2 bg-blue-500 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm" title="Verified">
-                            <i class="fa-solid fa-check text-[10px] text-white"></i>
-                        </div>
-                    </div>
-                    <!-- QR Code Container -->
-                    <div class="bg-white p-1 rounded-md shadow-sm">
-                        <img id="card-qr-code" src="" alt="QR Code" class="w-12 h-12">
-                    </div>
-                </div>
-
-                <!-- Right Side: Details Information -->
-                <div class="flex-1 min-w-0 mt-1">
-                    <h3 id="card-user-name" class="font-bold text-xl leading-tight truncate border-b border-white/20 pb-1 mb-2">...</h3>
-                    
-                    <div class="space-y-1.5 text-xs text-white">
-                        <div class="flex items-start gap-2">
-                            <i class="fa-solid fa-phone w-3 mt-1 text-green-200"></i>
-                            <span id="card-user-phone" class="font-mono tracking-widest leading-tight">...</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <i class="fa-solid fa-location-dot w-3 mt-1 text-green-200"></i>
-                            <span id="card-user-address" class="leading-tight">...</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <i class="fa-solid fa-briefcase w-3 mt-1 text-green-200"></i>
-                            <span id="card-user-profession" class="leading-tight font-medium">...</span>
-                        </div>
-                    </div>
-
-                    <!-- Codes Section -->
-                    <div class="flex gap-2 mt-3 pt-2 border-t border-white/20">
-                        <div class="bg-black/20 rounded px-2 py-1 flex-1 text-center">
-                            <p class="text-[8px] text-green-200 uppercase tracking-widest mb-0.5">UID / Ref Code</p>
-                            <p id="card-user-uid" class="font-mono font-bold text-xs text-yellow-300">...</p>
-                        </div>
-                    </div>
-                </div>
+    <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
+            <button onclick="toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <div class="flex-1 relative">
+                <input type="text" id="global-search-input" onkeyup="debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
+                <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg"></i>
             </div>
         </div>
         
-        <!-- Action Button below card -->
-        <button onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
-            <i class="fa-solid fa-download"></i> কার্ড সেভ করুন
-        </button>
-    </div>
-</div>
+        <div class="flex-1 overflow-y-auto bg-gray-50 pb-20 relative">
+            <!-- 1. Trending Explore View (Instagram Style) -->
+            <div id="trending-explore-view" class="w-full">
+                <!-- Grid Container -->
+                <div id="trending-explore-grid" class="grid grid-cols-3 gap-0.5 bg-white">
+                    <div class="col-span-3 text-center py-10"><i class="fa-solid fa-spinner fa-spin text-gray-400"></i></div>
+                </div>
+            </div>
 
-<!-- ২. নিজের প্রোফাইল পেজ (UPDATED DESIGN) -->
-<div id="page-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-0">
-    <div class="relative bg-white shadow-sm mb-3 pb-4">
-        
-        <!-- Cover Photo -->
-        <div id="profile-cover" class="h-48 w-full cover-photo-gradient relative overflow-hidden">
-            <img id="profile-cover-img" class="w-full h-full object-cover hidden">
-            <button onclick="document.getElementById('cover-upload').click()" class="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md text-gray-700 hover:text-green-600 active:scale-95 transition z-10">
-                <i class="fa-solid fa-camera"></i>
-            </button>
-            <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
+            <!-- 2. Search Results View (Hidden by default) -->
+            <div id="search-results-list" class="p-4 space-y-4 hidden-custom">
+                <!-- Search results will load here -->
+            </div>
         </div>
+    </div>
 
-        <!-- Profile Info Section (Facebook Style) -->
-        <div class="px-4 relative">
-            <div class="flex items-end justify-between -mt-16 mb-4">
-                <!-- Profile Avatar (Left Aligned, Overlapping Cover) -->
-                <div class="relative z-10">
-                    <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg">
-                        <div id="profile-avatar-container" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-5xl overflow-hidden"><i class="fa-solid fa-user"></i></div>
+    <!-- COMMENTS UI CONTAINER -->
+    <div id="comments-ui-container"></div>
+
+    <!-- SINGLE POST MODAL -->
+    <div id="single-post-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
+        <div class="flex items-center gap-2 p-4 border-b bg-white shadow-sm z-10 sticky top-0 pt-safe">
+            <button onclick="document.getElementById('single-post-modal').classList.add('hidden-custom')" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            <h3 class="font-bold text-gray-800 text-lg">পোস্ট</h3>
+        </div>
+        <div id="single-post-content" class="flex-1 overflow-y-auto p-4 bg-gray-100 pb-20">
+            <!-- Post content injected here -->
+        </div>
+    </div>
+
+    <!-- UPDATED PROFESSIONAL POST MODAL -->
+    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-[500px] rounded-2xl shadow-2xl transform transition-all scale-100 overflow-hidden relative">
+            <!-- Header -->
+            <div class="flex justify-between items-center px-4 py-3 border-b bg-white relative z-10">
+                <h3 class="font-bold text-lg text-gray-800 text-center flex-1">পোস্ট তৈরি করুন</h3>
+                <button onclick="togglePostModal(false)" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition absolute right-3">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="max-h-[80vh] overflow-y-auto">
+                <!-- User Info & Privacy -->
+                <div class="px-4 py-3 flex items-center gap-3">
+                    <div id="post-modal-user-img" class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
+                        <i class="fa-solid fa-user text-gray-400 text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-1">
+                            <h4 id="post-modal-user-name" class="font-bold text-gray-800 text-base leading-tight inline">User Name</h4>
+                            <span id="post-modal-tagged-info" class="text-sm text-gray-600 hidden inline"></span>
+                        </div>
+                        <select id="post-privacy" class="mt-1 bg-gray-100 text-xs font-semibold text-gray-600 px-2 py-1 rounded-md border-0 focus:ring-0 cursor-pointer">
+                            <option value="public">🌍 Public</option>
+                            <option value="friends">👥 Friends</option>
+                            <option value="only_me">🔒 Only Me</option>
+                        </select>
                     </div>
                 </div>
-                
-                <!-- Action Buttons: Edit Profile & My Card -->
-                <div class="flex gap-1.5 mb-1.5 relative z-10">
-                    <button onclick="window.openProfileCard()" class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-3 py-1.5 rounded-md font-bold text-xs hover:opacity-90 flex items-center justify-center gap-1.5 transition shadow-sm active:scale-95 whitespace-nowrap">
-                        <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
-                    </button>
-                    <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md font-bold text-xs hover:bg-gray-200 flex items-center justify-center gap-1.5 transition shadow-sm active:scale-95 whitespace-nowrap">
-                        <i class="fa-solid fa-pen text-sm"></i> এডিট
-                    </button>
+
+                <!-- Text Area -->
+                <div class="px-4">
+                    <textarea id="post-text" class="w-full min-h-[150px] text-lg lg:text-xl placeholder-gray-500 border-none focus:ring-0 resize-none p-0" placeholder="আপনার মনে কী আছে? (ভিডিও লিংক এখানে দিন)"></textarea>
                 </div>
-            </div>
 
-            <!-- Name and Bio -->
-            <div class="mb-4">
-                <h2 id="profile-name" class="text-2xl font-bold text-gray-900 flex items-center gap-1">...</h2>
-                <div class="flex gap-2 items-center mt-1">
-                    <span id="profile-union-badge" class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">---</span>
-                    <span class="text-gray-400 text-xs">•</span>
-                    <p id="profile-village-badge" class="text-sm text-gray-500"><i class="fa-solid fa-location-dot"></i> <span id="profile-village-text">...</span></p>
+                <!-- Background Color Options -->
+                <div class="px-4 py-2" id="color-picker-wrapper">
+                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide items-center" id="color-picker-container">
+                        <!-- Default White (Clear Background) -->
+                        <div onclick="selectPostColor('')" class="post-color-dot bg-white border border-gray-300 shadow-sm shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform flex items-center justify-center" title="Default">
+                            <i class="fa-solid fa-ban text-gray-400 text-xs"></i>
+                        </div>
+                        
+                        <!-- Solid Colors (FB Style) -->
+                        <div onclick="selectPostColor('#1877F2')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #1877F2;" title="Blue"></div>
+                        <div onclick="selectPostColor('#E42C64')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #E42C64;" title="Pink"></div>
+                        <div onclick="selectPostColor('#00A400')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #00A400;" title="Green"></div>
+                        <div onclick="selectPostColor('#FF8C00')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #FF8C00;" title="Orange"></div>
+                        <div onclick="selectPostColor('#242526')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #242526;" title="Dark"></div>
+
+                        <!-- Professional Linear Gradients -->
+                        <div onclick="selectPostColor('linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(135deg, #ff0844 0%, #ffb199 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #43e97b 0%, #38f9d7 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #fa709a 0%, #fee140 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #fa709a 0%, #fee140 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #000000 0%, #434343 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #000000 0%, #434343 100%);"></div>
+
+                        <!-- Radial / Aesthetic Gradients -->
+                        <div onclick="selectPostColor('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle at top right, #f6d365 0%, #fda085 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle at top right, #f6d365 0%, #fda085 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);"></div>
+                    </div>
+                    <input type="hidden" id="selected-post-color" value="">
                 </div>
-                <p id="profile-bio" class="text-sm text-gray-600 mt-2 italic">...</p>
-            </div>
 
-            <!-- Stats (Friends, Posts, Joined Date) -->
-            <div class="flex items-center justify-start gap-6 border-t border-gray-100 pt-4">
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-lg" id="stats-friends-count">0</p>
-                    <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Friends</p>
-                </div>
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-lg" id="stats-posts-count">0</p>
-                    <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Posts</p>
-                </div>
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-sm mt-1" id="stats-join-date">---</p>
-                    <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Joined</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Details Section -->
-    <div class="bg-white p-4 shadow-sm mb-3">
-        <h3 class="font-bold text-lg text-gray-800 mb-3">বিস্তারিত</h3>
-        <div class="space-y-3">
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-briefcase w-6 text-center text-gray-400 text-lg"></i><span class="text-base">পেশা: <strong id="profile-profession" class="text-gray-800 ml-1">---</strong></span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-location-dot w-6 text-center text-gray-400 text-lg"></i><span class="text-base">ঠিকানা: <strong id="profile-location" class="text-gray-800 ml-1">---</strong></span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-phone w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="profile-phone">---</span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-envelope w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="profile-email">---</span></div>
-        </div>
-    </div>
-
-    <!-- Friends Preview Section -->
-    <div class="bg-white p-4 shadow-sm mb-3">
-        <div class="flex justify-between items-center mb-3">
-            <div>
-                <h3 class="font-bold text-lg text-gray-800">বন্ধুবান্ধব</h3>
-                <p class="text-sm text-gray-500" id="friends-count-me">0 জন বন্ধু</p>
-            </div>
-            <button onclick="window.showAllFriends('me')" class="text-green-600 text-sm font-bold hover:bg-gray-100 px-3 py-1.5 rounded transition">সব দেখুন</button>
-        </div>
-        <div id="profile-friends-preview-me" class="grid grid-cols-3 gap-2">
-            <p class="col-span-3 text-center text-sm text-gray-400 py-4">লোড হচ্ছে...</p>
-        </div>
-    </div>
-
-    <!-- Posts Section -->
-    <div class="px-0">
-        <div class="bg-white p-3 mb-2 shadow-sm flex items-center gap-2">
-            <h3 class="font-bold text-gray-700 text-lg">আমার পোস্টসমূহ</h3>
-        </div>
-        <div id="my-posts-feed" class="space-y-3 pb-10">
-            <p class="text-center text-gray-400 text-sm py-6">লোড হচ্ছে...</p>
-        </div>
-    </div>
-</div>
-
-<!-- ৩. অন্যের প্রোফাইল দেখার পেজ (UPDATED DESIGN) -->
-<div id="page-view-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-50 absolute top-0 left-0 w-full">
-    <div class="bg-white p-2 sticky top-0 z-30 shadow-sm flex items-center gap-2 pt-safe">
-        <button onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-        <h2 class="font-bold text-lg text-gray-800" id="view-profile-header-name">প্রোফাইল</h2>
-    </div>
-
-    <div class="relative bg-white shadow-sm mb-3 pb-4">
-        <!-- Cover Photo -->
-        <div class="h-48 w-full bg-gradient-to-r from-blue-500 to-indigo-600 relative overflow-hidden">
-            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden">
-        </div>
-
-        <!-- Profile Info Section (Facebook Style) -->
-        <div class="px-4 relative">
-            <div class="flex items-end justify-between -mt-16 mb-4">
-                <!-- Profile Avatar -->
-                <div class="relative z-10">
-                    <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg">
-                        <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-5xl overflow-hidden font-bold" id="view-profile-avatar-container"><span id="view-profile-initial">U</span></div>
+                <!-- Image/Video Preview Area -->
+                <div id="image-preview-area" class="px-4 mb-2 hidden">
+                    <div class="relative rounded-xl overflow-hidden border border-gray-200" id="preview-container-inner">
+                        <!-- Image or Video will be injected here -->
+                        <div id="preview-grid" class="w-full"></div>
+                        <button onclick="removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Name and Bio -->
-            <div class="mb-4">
-                <h2 id="view-profile-name" class="text-2xl font-bold text-gray-900 flex items-center gap-1">...</h2>
-                <div class="flex gap-2 items-center mt-1">
-                    <span id="view-profile-union-badge" class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">---</span>
-                    <span class="text-gray-400 text-xs">•</span>
-                    <p class="text-sm text-gray-500"><i class="fa-solid fa-location-dot"></i> <span id="view-profile-village-text">...</span></p>
-                </div>
-                <p id="view-profile-bio" class="text-sm text-gray-600 mt-2 italic">---</p>
-            </div>
+                <!-- Voice Recording UI -->
+                <div id="voice-record-area" class="px-4 mb-2 hidden">
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col items-center justify-center gap-3">
+                        <p id="record-status" class="text-xs font-bold text-red-600 animate-pulse hidden">🔴 Recording... <span id="record-timer">00:00</span></p>
 
-            <!-- Stats (Friends, Posts, Joined Date) -->
-            <div class="flex items-center justify-start gap-6 border-t border-gray-100 pt-4 mb-4">
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-lg" id="view-stats-friends-count">0</p>
-                    <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Friends</p>
+                        <!-- Controls -->
+                        <div class="flex items-center gap-4">
+                            <button onclick="startRecording()" id="btn-record-start" class="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition"><i class="fa-solid fa-microphone"></i></button>
+                            <button onclick="stopRecording()" id="btn-record-stop" class="hidden w-12 h-12 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition"><i class="fa-solid fa-stop"></i></button>
+                        </div>
+
+                        <!-- Preview Player -->
+                        <div id="audio-preview-container" class="w-full hidden mt-2 flex items-center gap-2">
+                            <audio id="audio-preview" controls class="w-full h-8"></audio>
+                            <button onclick="cancelRecording()" class="text-red-500 hover:bg-red-100 p-2 rounded-full"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-lg" id="view-stats-posts-count">0</p>
-                    <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Posts</p>
+
+                <!-- Add to Post Options -->
+                <div class="px-4 pb-2">
+                    <div class="border border-gray-300 rounded-lg p-3 flex justify-between items-center shadow-sm">
+                        <span class="text-sm font-semibold text-gray-700">Add to your post</span>
+                        <div class="flex gap-4">
+                            <div onclick="document.getElementById('post-image-file').click()" class="cursor-pointer text-green-500 hover:bg-green-50 p-1.5 rounded-full transition" title="Photo">
+                                <i class="fa-solid fa-images text-2xl"></i>
+                            </div>
+                            <!-- Voice Icon -->
+                            <div onclick="toggleVoiceRecorder()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Voice Record">
+                                <i class="fa-solid fa-microphone text-2xl"></i>
+                            </div>
+                            <div onclick="openTagModal()" class="cursor-pointer text-blue-500 hover:bg-blue-50 p-1.5 rounded-full transition" title="Tag People">
+                                <i class="fa-solid fa-user-tag text-xl"></i>
+                            </div>
+                            <div onclick="openFeelingModal()" class="cursor-pointer text-yellow-500 hover:bg-yellow-50 p-1.5 rounded-full transition" title="Feeling/Activity">
+                                <i class="fa-regular fa-face-smile text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-sm mt-1" id="view-stats-join-date">---</p>
-                    <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Joined</p>
+
+                <!-- Extra Fields (Collapsible or just small) -->
+                <div class="px-4 py-2 flex gap-2">
+                    <input type="tel" id="post-mobile" placeholder="মোবাইল (কল বাটন)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
+                    <input type="url" id="post-social-link" placeholder="সোশ্যাল লিংক (WhatsApp)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
+                </div>
+
+                <!-- Hidden File Input (Updated for Multiple Images) -->
+                <input type="file" id="post-image-file" accept="image/*" class="hidden" multiple onchange="previewPostImage(this)">
+
+                <!-- Submit Button -->
+                <div class="p-4">
+                    <button onclick="submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                        পোস্ট করুন
+                    </button>
                 </div>
             </div>
-
-            <!-- Action Buttons (Add Friend, Message) -->
-            <div id="view-profile-actions" class="flex gap-3 mt-2"></div>
         </div>
     </div>
 
-    <!-- Details Section -->
-    <div class="bg-white p-4 shadow-sm mb-3">
-        <h3 class="font-bold text-lg text-gray-800 mb-3">বিস্তারিত</h3>
-        <div class="space-y-3">
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-briefcase w-6 text-center text-gray-400 text-lg"></i><span class="text-base">পেশা: <strong id="view-profile-profession" class="text-gray-800 ml-1">---</strong></span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-location-dot w-6 text-center text-gray-400 text-lg"></i><span class="text-base">ঠিকানা: <strong id="view-profile-location" class="text-gray-800 ml-1">---</strong></span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-phone w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="view-profile-phone">---</span></div>
+    <div id="edit-post-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[110] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl">
+            <h3 class="font-bold text-lg text-gray-700 mb-4">পোস্ট এডিট করুন</h3>
+            <input type="hidden" id="edit-post-id">
+            <textarea id="edit-post-text" class="w-full h-32 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white resize-none text-base"></textarea>
+            <div class="flex gap-2 mt-4"><button onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button onclick="submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
         </div>
     </div>
 
-    <!-- Friends Preview Section -->
-    <div class="bg-white p-4 shadow-sm mb-3">
-        <div class="flex justify-between items-center mb-3">
-            <div>
-                <h3 class="font-bold text-lg text-gray-800">বন্ধুবান্ধব</h3>
-                <p class="text-sm text-gray-500" id="friends-count-other">0 জন বন্ধু</p>
+    <div id="poll-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button onclick="togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <button id="btn-view-friends-other" class="text-blue-600 text-sm font-bold hover:bg-gray-100 px-3 py-1.5 rounded transition">সব দেখুন</button>
-        </div>
-        <div id="profile-friends-preview-other" class="grid grid-cols-3 gap-2">
-            <p class="col-span-3 text-center text-sm text-gray-400 py-4">লোড হচ্ছে...</p>
-        </div>
-    </div>
-
-    <!-- Posts Section -->
-    <div class="px-0">
-        <div class="bg-white p-3 mb-2 shadow-sm border-t border-b border-gray-100">
-            <h3 id="view-profile-posts-title" class="font-bold text-gray-700 text-lg">পোস্টসমূহ</h3>
-        </div>
-        <div id="view-profile-posts-feed" class="space-y-3 pb-10">
-            <p class="text-center text-gray-400 text-sm">লোড হচ্ছে...</p>
+            <div class="space-y-3">
+                <input type="text" id="poll-question" placeholder="প্রশ্ন লিখুন (যেমন: সেরা খেলা কোনটি?)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm font-bold">
+                <input type="text" id="poll-opt-1" placeholder="অপশন ১" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                <input type="text" id="poll-opt-2" placeholder="অপশন ২" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                <input type="text" id="poll-opt-3" placeholder="অপশন ৩ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                <input type="text" id="poll-opt-4" placeholder="অপশন ৪ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+            </div>
+            <button onclick="submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
         </div>
     </div>
-</div>
