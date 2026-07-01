@@ -1,5 +1,3 @@
---- START OF FILE Paste July 01, 2026 - 8:05PM ---
-
 import { ref, push, set, get, update, remove, query, limitToLast, runTransaction, startAt, endAt, orderByChild, orderByKey, limitToFirst, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const getDb = () => window.db;
