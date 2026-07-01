@@ -108,7 +108,17 @@ window.resetPostForm = () => {
     ta.style.textAlign = 'left';
     ta.style.fontSize = '18px';
     ta.style.paddingTop = '0px';
-    document.querySelectorAll('.post-color-dot').forEach(el => el.classList.remove('selected'));
+    
+    document.querySelectorAll('.post-color-dot').forEach((el, index) => {
+        if(index === 0) {
+            el.classList.add('selected', 'border-gray-800');
+            el.classList.remove('border-transparent');
+        } else {
+            el.classList.remove('selected', 'border-gray-800');
+            el.classList.add('border-transparent');
+        }
+    });
+
     document.getElementById('color-picker-wrapper').style.display = 'block';
 
     document.getElementById('post-image-file').value = "";
@@ -120,10 +130,12 @@ window.resetPostForm = () => {
 
     window.taggedUsers = [];
     window.selectedFeeling = null;
+    window.selectedLocation = null;
     if(typeof window.updatePostHeaderUI === 'function') window.updatePostHeaderUI(); 
     document.getElementById('post-mobile').value = "";
     document.getElementById('post-social-link').value = "";
     document.getElementById('post-privacy').value = "public";
+    document.getElementById('post-ephemeral').checked = false; // Reset 24-hour checkbox
 };
 
 window.submitPost = async () => {
@@ -133,6 +145,7 @@ window.submitPost = async () => {
     const privacy = document.getElementById('post-privacy').value;
     const mobile = document.getElementById('post-mobile').value.trim();
     const socialLink = document.getElementById('post-social-link').value.trim();
+    const isEphemeral = document.getElementById('post-ephemeral').checked; // 24-hour check
 
     if (!text && files.length === 0 && !window.selectedFeeling && !audioBlob) {
         return window.showToast("কিছু লিখুন অথবা রেকর্ড করুন!", 'error');
@@ -167,6 +180,7 @@ window.submitPost = async () => {
             authorPic: window.userDetails.profile_pic || null,
             content: text,
             images: mediaUrls,
+            expiresAt: isEphemeral ? Date.now() + (24 * 60 * 60 * 1000) : null, // 24 hours from now
             image: mediaUrls[0] || "",
             audio: voiceUrl,
             type: postType,
@@ -184,7 +198,8 @@ window.submitPost = async () => {
             socialLink: socialLink || null,
             adminScore: 0,
             taggedFriends: window.taggedUsers,
-            feeling: window.selectedFeeling
+            feeling: window.selectedFeeling,
+            checkInLocation: window.selectedLocation
         };
 
         await push(ref(getDb(), 'posts'), newPostData);
@@ -368,7 +383,17 @@ window.loadFeed = (type, isInitial = false) => {
             window.hasMorePosts = false;
             if(loaderArea) loaderArea.classList.add('hidden');
         } else {
-            let postsArr = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+            let postsArr = [];
+            Object.entries(data).forEach(([key, val]) => {
+                // চেক: পোস্টের মেয়াদ শেষ হয়েছে কিনা?
+                if (val.expiresAt && val.expiresAt < Date.now()) {
+                    // ডিলিট না করে শুধু স্কিপ করে যাবো (অ্যাপে দেখাবে না, কিন্তু ডাটাবেসে থাকবে)
+                    return; 
+                } else {
+                    postsArr.push({ id: key, ...val });
+                }
+            });
+
             postsArr.sort((a, b) => {
                 if (a.id < b.id) return -1;
                 if (a.id > b.id) return 1;
@@ -457,25 +482,37 @@ window.setupInfiniteScroll = () => {
     if (sentinel) observer.observe(sentinel);
 };
 
-window.selectPostColor = (color) => {
+window.selectPostColor = (color, element) => {
     const ta = document.getElementById('post-text');
-    if(ta) {
+    if (ta) {
         document.getElementById('selected-post-color').value = color;
-        document.querySelectorAll('.post-color-dot').forEach(el => el.classList.remove('selected'));
-        if (event && event.target) event.target.classList.add('selected');
+        
+        document.querySelectorAll('.post-color-dot').forEach(el => {
+            el.classList.remove('selected', 'border-gray-800');
+            el.classList.add('border-transparent');
+        });
+        
+        if (element) {
+            element.classList.add('selected', 'border-gray-800');
+            element.classList.remove('border-transparent');
+        }
+
         ta.style.background = color;
         ta.style.color = color ? 'white' : 'black';
         ta.style.fontWeight = color ? 'bold' : 'normal';
         ta.style.textAlign = color ? 'center' : 'left';
-        ta.style.fontSize = color ? '20px' : '18px';
-        ta.style.paddingTop = color ? '40px' : '0px';
+        ta.style.fontSize = color ? '24px' : '18px'; 
+        ta.style.paddingTop = color ? '50px' : '0px'; 
     }
 };
 
 window.previewPostImage = (input) => {
     const previewGrid = document.getElementById('preview-grid');
     const imgArea = document.getElementById('image-preview-area');
-    window.selectPostColor('');
+    
+    const defaultDot = document.querySelector('.post-color-dot');
+    window.selectPostColor('', defaultDot);
+    
     document.getElementById('color-picker-wrapper').style.display = 'none';
 
     if (input.files && input.files.length > 0) {
@@ -658,9 +695,21 @@ window.createPostHTML = function(post, id) {
     }
     let locationTag = (post.union ? `<span class="bg-gray-100 text-[10px] px-2 py-0.5 rounded-full text-gray-500 ml-2">${post.union}</span>` : '') + (post.village ? `<span class="bg-green-50 text-[10px] px-2 py-0.5 rounded-full text-green-600 ml-1 border border-green-100">${post.village}</span>` : '');
 
+    // 24 Hour Timer Badge Logic
+    let ephemeralBadge = '';
+    if (post.expiresAt) {
+        const timeLeft = post.expiresAt - Date.now();
+        if (timeLeft <= 0) return ''; // মেয়াদ শেষ হলে দেখাবে না
+        const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const timeText = hoursLeft > 0 ? `${hoursLeft} ঘণ্টা` : `${minsLeft} মিনিট`;
+        ephemeralBadge = `<div class="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-b-xl absolute top-0 left-1/2 transform -translate-x-1/2 shadow-md flex items-center gap-1 z-10"><i class="fa-solid fa-stopwatch animate-pulse"></i> মুছে যাবে ${timeText} পর</div>`;
+    }
+
     let headerText = `<h4 onclick="window.openUserProfile('${post.uid}')" class="font-bold text-base text-gray-800 cursor-pointer hover:underline inline">${window.escapeHTML(post.author)}${badge}</h4> ${topContributorTag}`;
 
-    if (post.feeling) headerText += ` <span class="text-gray-600 text-sm">is feeling ${post.feeling.emoji} ${window.escapeHTML(post.feeling.text)}</span>`;
+    if (post.feeling) headerText += ` <span class="text-gray-600 text-sm font-normal">is feeling ${post.feeling.emoji} ${window.escapeHTML(post.feeling.text)}</span>`;
+    if (post.checkInLocation) headerText += ` <span class="text-gray-600 text-sm font-normal">at <span class="font-bold text-red-600"><i class="fa-solid fa-location-dot text-xs"></i> ${window.escapeHTML(post.checkInLocation)}</span></span>`;
     if (post.taggedFriends && post.taggedFriends.length > 0) {
         headerText += ` <span class="text-gray-600 text-sm">with <span class="font-bold text-gray-800">${window.escapeHTML(post.taggedFriends[0].name)}</span>`;
         if (post.taggedFriends.length > 1) headerText += ` and ${post.taggedFriends.length - 1} others`;
@@ -734,7 +783,9 @@ window.createPostHTML = function(post, id) {
         ${suggestions.map(s => `<button onclick="window.autoPostSuggestion('${id}', '${s}', this)" class="shrink-0 bg-gray-100 hover:bg-green-50 hover:text-green-700 hover:border-green-200 border border-transparent text-gray-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 shadow-sm">${s}</button>`).join('')}
     </div>` : '';
 
-    return `<div id="post-card-${id}" class="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100 relative max-w-lg mx-auto ${post.authorRole === 'journalist' ? 'journalist-post' : ''}" style="${displayStyle}" data-union="${post.union||''}" data-village="${post.village||''}"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-3">${avatarHtml}<div>${headerText}<p class="text-[11px] text-gray-400 flex flex-wrap gap-1 items-center font-medium">${window.timeAgo(post.timestamp)} ${privacyIcon} ${locationTag}</p></div></div><div class="relative"><button onclick="window.togglePostMenu(event)" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button><div id="post-menu-${id}" class="post-menu-dropdown hidden absolute right-0 top-8 w-48 bg-white shadow-xl rounded-lg z-20 border border-gray-100 py-1 text-sm text-gray-700"><ul>${menuOptions}</ul></div></div></div>${contentHTML}${mediaHtml}${actionButtons}<div class="grid grid-cols-3 border-t border-b border-gray-100 py-2 mt-2"><button id="like-btn-${id}" onclick="window.toggleLike('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i id="like-icon-${id}" class="${isLiked ? 'fa-solid text-green-600' : 'fa-regular'} fa-thumbs-up text-lg"></i> <span id="like-cnt-${id}" class="text-sm ${isLiked ? 'font-bold text-green-600' : ''}">${likeCount}</span></button><button onclick="window.openFullCommentModal('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-regular fa-comment text-lg"></i> <span id="comment-cnt-${id}" class="text-sm">${commentCount}</span></button><button onclick="window.repost('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-solid fa-share text-lg"></i> <span class="text-sm">${post.repostCount||0}</span></button></div><div class="mt-2"><div id="comments-preview-${id}">${post.comments ? Object.entries(post.comments).slice(-2).map(([_, c]) => `<div class="bg-gray-50 px-3 py-1.5 rounded-lg mt-1 text-xs border border-gray-100 truncate"><span class="font-bold text-gray-800 mr-1">${window.escapeHTML(c.author)}</span>${window.escapeHTML(c.text)}</div>`).join('') : ''}</div>${commentCount > 0 ? `<button onclick="window.openFullCommentModal('${id}')" class="text-xs text-green-600 font-bold mt-2 hover:underline w-full text-left">সকল কমেন্ট দেখুন (${commentCount})</button>` : ''} ${suggestionsHtml} <div class="mt-3 flex gap-2 items-center">${myInlineAvatar}<input type="text" id="inline-comment-input-${id}" onkeydown="window.handleEnter(event, 'comment', '${id}')" placeholder="আপনার মতামত..." class="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-green-500"><button onclick="window.submitInlineComment('${id}')" class="text-green-600 w-9 h-9 flex items-center justify-center bg-green-50 rounded-full hover:bg-green-100"><i class="fa-solid fa-paper-plane text-sm"></i></button></div></div></div>`;
+    return `<div id="post-card-${id}" class="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100 relative max-w-lg mx-auto pt-6 ${post.authorRole === 'journalist' ? 'journalist-post' : ''}" style="${displayStyle}" data-union="${post.union||''}" data-village="${post.village||''}">
+                ${ephemeralBadge}
+                <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-3">${avatarHtml}<div>${headerText}<p class="text-[11px] text-gray-400 flex flex-wrap gap-1 items-center font-medium">${window.timeAgo(post.timestamp)} ${privacyIcon} ${locationTag}</p></div></div><div class="relative"><button onclick="window.togglePostMenu(event)" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button><div id="post-menu-${id}" class="post-menu-dropdown hidden absolute right-0 top-8 w-48 bg-white shadow-xl rounded-lg z-20 border border-gray-100 py-1 text-sm text-gray-700"><ul>${menuOptions}</ul></div></div></div>${contentHTML}${mediaHtml}${actionButtons}<div class="grid grid-cols-3 border-t border-b border-gray-100 py-2 mt-2"><button id="like-btn-${id}" onclick="window.toggleLike('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i id="like-icon-${id}" class="${isLiked ? 'fa-solid text-green-600' : 'fa-regular'} fa-thumbs-up text-lg"></i> <span id="like-cnt-${id}" class="text-sm ${isLiked ? 'font-bold text-green-600' : ''}">${likeCount}</span></button><button onclick="window.openFullCommentModal('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-regular fa-comment text-lg"></i> <span id="comment-cnt-${id}" class="text-sm">${commentCount}</span></button><button onclick="window.repost('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-solid fa-share text-lg"></i> <span class="text-sm">${post.repostCount||0}</span></button></div><div class="mt-2"><div id="comments-preview-${id}">${post.comments ? Object.entries(post.comments).slice(-2).map(([_, c]) => `<div class="bg-gray-50 px-3 py-1.5 rounded-lg mt-1 text-xs border border-gray-100 truncate"><span class="font-bold text-gray-800 mr-1">${window.escapeHTML(c.author)}</span>${window.escapeHTML(c.text)}</div>`).join('') : ''}</div>${commentCount > 0 ? `<button onclick="window.openFullCommentModal('${id}')" class="text-xs text-green-600 font-bold mt-2 hover:underline w-full text-left">সকল কমেন্ট দেখুন (${commentCount})</button>` : ''} ${suggestionsHtml} <div class="mt-3 flex gap-2 items-center">${myInlineAvatar}<input type="text" id="inline-comment-input-${id}" onkeydown="window.handleEnter(event, 'comment', '${id}')" placeholder="আপনার মতামত..." class="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-green-500"><button onclick="window.submitInlineComment('${id}')" class="text-green-600 w-9 h-9 flex items-center justify-center bg-green-50 rounded-full hover:bg-green-100"><i class="fa-solid fa-paper-plane text-sm"></i></button></div></div></div>`;
 }
 
 window.openSinglePostModal = (postId) => {
@@ -819,6 +870,7 @@ window.updatePostHeaderUI = () => {
     if (!tagInfo) return;
     let html = '';
     if (window.selectedFeeling) html += ` <span class="text-gray-600 font-normal">is feeling ${window.selectedFeeling.emoji} <b class="text-gray-800">${window.selectedFeeling.text}</b></span>`;
+    if (window.selectedLocation) html += ` <span class="text-gray-600 font-normal">at <b class="text-red-600"><i class="fa-solid fa-location-dot text-[10px]"></i> ${window.escapeHTML(window.selectedLocation)}</b></span>`;
     if (window.taggedUsers && window.taggedUsers.length > 0) {
         html += ` <span class="text-gray-600 font-normal">with <b class="text-gray-800">${window.escapeHTML(window.taggedUsers[0].name)}</b>`;
         if (window.taggedUsers.length > 1) html += ` and <b class="text-gray-800">আরও ${window.taggedUsers.length - 1} জন</b>`;
@@ -846,11 +898,41 @@ window.closeFeelingModal = (fromHistory = false) => {
         if (!fromHistory && history.state?.modal === 'feeling-modal') history.back();
     }, 300);
 };
-window.selectFeeling = (text, emoji) => {
-    window.selectedFeeling = { text, emoji };
-    window.closeFeelingModal();
+// Location Check-in Logic
+window.openLocationModal = () => {
+    if(window.openModalWithHistory) window.openModalWithHistory('location-modal', "#location");
+    const lm = document.getElementById('location-modal');
+    if(lm) {
+        lm.classList.remove('hidden-custom');
+        setTimeout(() => lm.classList.add('open'), 10);
+        document.getElementById('location-modal').style.transform = 'translateY(0)';
+    }
+};
+
+window.closeLocationModal = (fromHistory = false) => {
+    const lm = document.getElementById('location-modal');
+    if(lm) {
+        lm.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+            lm.classList.add('hidden-custom');
+            lm.classList.remove('open');
+            if (!fromHistory && history.state?.modal === 'location-modal') history.back();
+        }, 300);
+    }
+};
+
+window.selectLocation = (locName) => {
+    window.selectedLocation = locName;
+    window.closeLocationModal();
     if(window.updatePostHeaderUI) window.updatePostHeaderUI();
-    window.showToast(`Feeling ${text} যুক্ত করা হয়েছে`);
+    window.showToast(`লোকেশন সেট করা হয়েছে: ${locName}`);
+};
+
+window.selectCustomLocation = () => {
+    const customLoc = document.getElementById('custom-location-input').value.trim();
+    if (!customLoc) return window.showToast("অনুগ্রহ করে লোকেশনের নাম লিখুন", "error");
+    window.selectLocation(customLoc);
+    document.getElementById('custom-location-input').value = "";
 };
 
 // --- ALERTS & DOUBLE TAP ---
