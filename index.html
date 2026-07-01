@@ -2539,7 +2539,7 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
         if(window.loadFriendsPreview) window.loadFriendsPreview(user.uid, 'me');
         loadSettingsData();
                         if (document.getElementById('setting-privacy-toggle')) document.getElementById('setting-privacy-toggle').checked = userDetails.privacy_hide_contact || false;
-                        checkMonetizationStatus();
+                        if(window.checkMonetizationStatus) window.checkMonetizationStatus();
                     } else {
                         console.log("Database data missing, attempting recovery from Auth...");
                         const recoveredData = {
@@ -2582,8 +2582,8 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
     window.AndroidBridge.startBackgroundListener(user.uid);
 }
 
-loadMyComplaints();
-                loadEmergencyAlerts();
+if(window.loadMyComplaints) window.loadMyComplaints();
+                if(window.loadEmergencyAlerts) window.loadEmergencyAlerts();
 
                 loadAds();
                 loadFeed('all', true);
@@ -4553,7 +4553,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                 });
                 userDetails.monetization_status = 'pending';
                 showToast("আবেদন সফলভাবে জমা হয়েছে!");
-                checkMonetizationStatus();
+                if(window.checkMonetizationStatus) window.checkMonetizationStatus();
             } catch (e) {
                 showToast("সমস্যা হয়েছে: " + e.message, "error");
                 btn.innerHTML = 'আবেদন করুন';
@@ -4602,7 +4602,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                     userDetails.total_points -= amount; // Update local state
                     document.getElementById('withdraw-amount').value = "";
                     showToast("উত্তলন রিকোয়েস্ট সফল হয়েছে!", "success");
-                    checkMonetizationStatus(); // Refresh Dashboard UI
+                    if(window.checkMonetizationStatus) window.checkMonetizationStatus(); // Refresh Dashboard UI
                 } else {
                     showToast("আপনার পর্যাপ্ত পয়েন্ট নেই!", "error");
                 }
@@ -5674,6 +5674,7 @@ let isPulling = false;
 const peoplePage = document.getElementById('page-people');
 const ptrIndicator = document.getElementById('pull-to-refresh-indicator');
 
+if (peoplePage && ptrIndicator) {
 peoplePage.addEventListener('touchstart', (e) => {
     // শুধু তখনই কাজ করবে যখন পেজটি একদম উপরে থাকবে (স্ক্রল করা অবস্থায় নয়)
     if (window.scrollY === 0) {
@@ -5719,6 +5720,7 @@ peoplePage.addEventListener('touchend', (e) => {
         ptrIndicator.style.height = '0px';
     }
 });
+} // End of if condition
 
 // ১. অ্যাডমিনের হোয়াটসঅ্যাপ লিংক ডাটাবেস থেকে আনা
 window.addEventListener('fetchWhatsAppLink', () => {
