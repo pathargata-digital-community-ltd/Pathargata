@@ -1,9 +1,9 @@
 <!-- Tag Friends Modal -->
     <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
         <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button onclick="window.closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-lg">বন্ধুদের ট্যাগ করুন</h3>
-            <button onclick="saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
+            <button onclick="window.saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
         </div>
         <div id="tag-friends-list" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50 pb-20">
             <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
@@ -13,51 +13,51 @@
     <!-- Feeling Modal -->
     <div id="feeling-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
         <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button onclick="window.closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
         </div>
         <div class="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-gray-50 pb-20">
-            <div onclick="selectFeeling('Happy', '😊')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😊</span> <span class="font-semibold text-sm text-gray-700">Happy</span></div>
-            <div onclick="selectFeeling('Loved', '🥰')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🥰</span> <span class="font-semibold text-sm text-gray-700">Loved</span></div>
-            <div onclick="selectFeeling('Sad', '😔')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😔</span> <span class="font-semibold text-sm text-gray-700">Sad</span></div>
-            <div onclick="selectFeeling('Excited', '🤩')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤩</span> <span class="font-semibold text-sm text-gray-700">Excited</span></div>
-            <div onclick="selectFeeling('Angry', '😠')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😠</span> <span class="font-semibold text-sm text-gray-700">Angry</span></div>
-            <div onclick="selectFeeling('Blessed', '😇')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😇</span> <span class="font-semibold text-sm text-gray-700">Blessed</span></div>
-            <div onclick="selectFeeling('Tired', '😫')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😫</span> <span class="font-semibold text-sm text-gray-700">Tired</span></div>
-            <div onclick="selectFeeling('Sleepy', '😴')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😴</span> <span class="font-semibold text-sm text-gray-700">Sleepy</span></div>
-            <div onclick="selectFeeling('Cool', '😎')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😎</span> <span class="font-semibold text-sm text-gray-700">Cool</span></div>
-            <div onclick="selectFeeling('Crazy', '🤪')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤪</span> <span class="font-semibold text-sm text-gray-700">Crazy</span></div>
-            <div onclick="selectFeeling('Sick', '🤒')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤒</span> <span class="font-semibold text-sm text-gray-700">Sick</span></div>
-            <div onclick="selectFeeling('Celebrating', '🎉')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🎉</span> <span class="font-semibold text-sm text-gray-700">Celebrating</span></div>
+            <div onclick="window.selectFeeling('Happy', '😊')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😊</span> <span class="font-semibold text-sm text-gray-700">Happy</span></div>
+            <div onclick="window.selectFeeling('Loved', '🥰')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🥰</span> <span class="font-semibold text-sm text-gray-700">Loved</span></div>
+            <div onclick="window.selectFeeling('Sad', '😔')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😔</span> <span class="font-semibold text-sm text-gray-700">Sad</span></div>
+            <div onclick="window.selectFeeling('Excited', '🤩')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤩</span> <span class="font-semibold text-sm text-gray-700">Excited</span></div>
+            <div onclick="window.selectFeeling('Angry', '😠')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😠</span> <span class="font-semibold text-sm text-gray-700">Angry</span></div>
+            <div onclick="window.selectFeeling('Blessed', '😇')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😇</span> <span class="font-semibold text-sm text-gray-700">Blessed</span></div>
+            <div onclick="window.selectFeeling('Tired', '😫')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😫</span> <span class="font-semibold text-sm text-gray-700">Tired</span></div>
+            <div onclick="window.selectFeeling('Sleepy', '😴')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😴</span> <span class="font-semibold text-sm text-gray-700">Sleepy</span></div>
+            <div onclick="window.selectFeeling('Cool', '😎')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😎</span> <span class="font-semibold text-sm text-gray-700">Cool</span></div>
+            <div onclick="window.selectFeeling('Crazy', '🤪')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤪</span> <span class="font-semibold text-sm text-gray-700">Crazy</span></div>
+            <div onclick="window.selectFeeling('Sick', '🤒')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤒</span> <span class="font-semibold text-sm text-gray-700">Sick</span></div>
+            <div onclick="window.selectFeeling('Celebrating', '🎉')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🎉</span> <span class="font-semibold text-sm text-gray-700">Celebrating</span></div>
         </div>
     </div>
 
     <!-- Check-in / Location Modal -->
     <div id="location-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom" style="transition: transform 0.3s ease-in-out; transform: translateY(100%);">
         <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="closeLocationModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button onclick="window.closeLocationModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <div class="flex-1">
                 <input type="text" id="custom-location-input" placeholder="কোথায় আছেন? (লিখুন)" class="w-full bg-gray-100 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-red-500 outline-none border-none">
             </div>
-            <button onclick="selectCustomLocation()" class="text-red-600 font-bold text-sm px-2">সেট</button>
+            <button onclick="window.selectCustomLocation()" class="text-red-600 font-bold text-sm px-2">সেট</button>
         </div>
         <div class="flex-1 overflow-y-auto p-3 bg-gray-50 pb-20">
             <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase ml-1">জনপ্রিয় স্থানসমূহ</h4>
             <div class="space-y-2">
-                <div onclick="selectLocation('পাথরঘাটা গোলচত্বর')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">পাথরঘাটা গোলচত্বর</span></div>
-                <div onclick="selectLocation('পাথরঘাটা লঞ্চঘাট')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">পাথরঘাটা লঞ্চঘাট</span></div>
-                <div onclick="selectLocation('হরিণঘাটা পর্যটন কেন্দ্র')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">হরিণঘাটা পর্যটন কেন্দ্র</span></div>
-                <div onclick="selectLocation('লালদিয়া সমুদ্র সৈকত')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">লালদিয়া সমুদ্র সৈকত</span></div>
-                <div onclick="selectLocation('বিএফডিসি মৎস্য অবতরণ কেন্দ্র')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">বিএফডিসি মৎস্য অবতরণ কেন্দ্র</span></div>
+                <div onclick="window.selectLocation('পাথরঘাটা গোলচত্বর')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">পাথরঘাটা গোলচত্বর</span></div>
+                <div onclick="window.selectLocation('পাথরঘাটা লঞ্চঘাট')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">পাথরঘাটা লঞ্চঘাট</span></div>
+                <div onclick="window.selectLocation('হরিণঘাটা পর্যটন কেন্দ্র')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">হরিণঘাটা পর্যটন কেন্দ্র</span></div>
+                <div onclick="window.selectLocation('লালদিয়া সমুদ্র সৈকত')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">লালদিয়া সমুদ্র সৈকত</span></div>
+                <div onclick="window.selectLocation('বিএফডিসি মৎস্য অবতরণ কেন্দ্র')" class="bg-white p-3 rounded-lg border border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-red-50 transition"><div class="w-8 h-8 bg-red-100 text-red-600 rounded-full flex justify-center items-center"><i class="fa-solid fa-location-dot"></i></div> <span class="font-bold text-sm text-gray-700">বিএফডিসি মৎস্য অবতরণ কেন্দ্র</span></div>
             </div>
         </div>
     </div>
 
     <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
         <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
-            <button onclick="toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button onclick="window.toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <div class="flex-1 relative">
-                <input type="text" id="global-search-input" onkeyup="debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
+                <input type="text" id="global-search-input" onkeyup="window.debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
                 <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg"></i>
             </div>
         </div>
@@ -98,7 +98,7 @@
             <!-- Header -->
             <div class="flex justify-between items-center px-4 py-3 border-b bg-white relative z-10">
                 <h3 class="font-bold text-lg text-gray-800 text-center flex-1">পোস্ট তৈরি করুন</h3>
-                <button onclick="togglePostModal(false)" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition absolute right-3">
+                <button onclick="window.togglePostModal(false)" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition absolute right-3">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -131,29 +131,29 @@
                 <div class="px-4 py-2" id="color-picker-wrapper">
                     <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide items-center" id="color-picker-container">
                         <!-- Default White (Clear Background) -->
-                        <div onclick="selectPostColor('', this)" class="post-color-dot bg-gray-100 border-2 border-gray-800 shadow-sm shrink-0 selected" title="Default">
+                        <div onclick="window.selectPostColor('', this)" class="post-color-dot bg-gray-100 border-2 border-gray-800 shadow-sm shrink-0 selected" title="Default">
                             <i class="fa-solid fa-ban text-gray-500 text-sm"></i>
                         </div>
                         
                         <!-- Solid Colors (FB Style) -->
-                        <div onclick="selectPostColor('#1877F2', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #1877F2;" title="Blue"></div>
-                        <div onclick="selectPostColor('#E42C64', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #E42C64;" title="Pink"></div>
-                        <div onclick="selectPostColor('#00A400', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #00A400;" title="Green"></div>
-                        <div onclick="selectPostColor('#FF8C00', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #FF8C00;" title="Orange"></div>
-                        <div onclick="selectPostColor('#242526', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #242526;" title="Dark"></div>
+                        <div onclick="window.selectPostColor('#1877F2', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #1877F2;" title="Blue"></div>
+                        <div onclick="window.selectPostColor('#E42C64', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #E42C64;" title="Pink"></div>
+                        <div onclick="window.selectPostColor('#00A400', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #00A400;" title="Green"></div>
+                        <div onclick="window.selectPostColor('#FF8C00', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #FF8C00;" title="Orange"></div>
+                        <div onclick="window.selectPostColor('#242526', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #242526;" title="Dark"></div>
 
                         <!-- Professional Linear Gradients -->
-                        <div onclick="selectPostColor('linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(135deg, #ff0844 0%, #ffb199 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #43e97b 0%, #38f9d7 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #fa709a 0%, #fee140 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #fa709a 0%, #fee140 100%);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #000000 0%, #434343 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #000000 0%, #434343 100%);"></div>
+                        <div onclick="window.selectPostColor('linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);"></div>
+                        <div onclick="window.selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div onclick="window.selectPostColor('linear-gradient(135deg, #ff0844 0%, #ffb199 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);"></div>
+                        <div onclick="window.selectPostColor('linear-gradient(to right, #43e97b 0%, #38f9d7 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%);"></div>
+                        <div onclick="window.selectPostColor('linear-gradient(to right, #fa709a 0%, #fee140 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #fa709a 0%, #fee140 100%);"></div>
+                        <div onclick="window.selectPostColor('linear-gradient(to right, #000000 0%, #434343 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #000000 0%, #434343 100%);"></div>
 
                         <!-- Radial / Aesthetic Gradients -->
-                        <div onclick="selectPostColor('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%);"></div>
-                        <div onclick="selectPostColor('radial-gradient(circle at top right, #f6d365 0%, #fda085 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at top right, #f6d365 0%, #fda085 100%);"></div>
-                        <div onclick="selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);"></div>
+                        <div onclick="window.selectPostColor('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%);"></div>
+                        <div onclick="window.selectPostColor('radial-gradient(circle at top right, #f6d365 0%, #fda085 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at top right, #f6d365 0%, #fda085 100%);"></div>
+                        <div onclick="window.selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);"></div>
                     </div>
                     <input type="hidden" id="selected-post-color" value="">
                 </div>
@@ -163,7 +163,7 @@
                     <div class="relative rounded-xl overflow-hidden border border-gray-200" id="preview-container-inner">
                         <!-- Image or Video will be injected here -->
                         <div id="preview-grid" class="w-full"></div>
-                        <button onclick="removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
+                        <button onclick="window.removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -176,14 +176,14 @@
 
                         <!-- Controls -->
                         <div class="flex items-center gap-4">
-                            <button onclick="startRecording()" id="btn-record-start" class="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition"><i class="fa-solid fa-microphone"></i></button>
-                            <button onclick="stopRecording()" id="btn-record-stop" class="hidden w-12 h-12 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition"><i class="fa-solid fa-stop"></i></button>
+                            <button onclick="window.startRecording()" id="btn-record-start" class="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition"><i class="fa-solid fa-microphone"></i></button>
+                            <button onclick="window.stopRecording()" id="btn-record-stop" class="hidden w-12 h-12 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition"><i class="fa-solid fa-stop"></i></button>
                         </div>
 
                         <!-- Preview Player -->
                         <div id="audio-preview-container" class="w-full hidden mt-2 flex items-center gap-2">
                             <audio id="audio-preview" controls class="w-full h-8"></audio>
-                            <button onclick="cancelRecording()" class="text-red-500 hover:bg-red-100 p-2 rounded-full"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="window.cancelRecording()" class="text-red-500 hover:bg-red-100 p-2 rounded-full"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
@@ -197,17 +197,17 @@
                                 <i class="fa-solid fa-images text-2xl"></i>
                             </div>
                             <!-- Voice Icon -->
-                            <div onclick="toggleVoiceRecorder()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Voice Record">
+                            <div onclick="window.toggleVoiceRecorder()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Voice Record">
                                 <i class="fa-solid fa-microphone text-2xl"></i>
                             </div>
-                            <div onclick="openTagModal()" class="cursor-pointer text-blue-500 hover:bg-blue-50 p-1.5 rounded-full transition" title="Tag People">
+                            <div onclick="window.openTagModal()" class="cursor-pointer text-blue-500 hover:bg-blue-50 p-1.5 rounded-full transition" title="Tag People">
                                 <i class="fa-solid fa-user-tag text-xl"></i>
                             </div>
-                            <div onclick="openFeelingModal()" class="cursor-pointer text-yellow-500 hover:bg-yellow-50 p-1.5 rounded-full transition" title="Feeling/Activity">
+                            <div onclick="window.openFeelingModal()" class="cursor-pointer text-yellow-500 hover:bg-yellow-50 p-1.5 rounded-full transition" title="Feeling/Activity">
                                 <i class="fa-regular fa-face-smile text-xl"></i>
                             </div>
                             <!-- Check-in Icon -->
-                            <div onclick="openLocationModal()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Check In">
+                            <div onclick="window.openLocationModal()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Check In">
                                 <i class="fa-solid fa-location-dot text-xl"></i>
                             </div>
                         </div>
@@ -229,11 +229,11 @@
                 </div>
 
                 <!-- Hidden File Input (Updated for Multiple Images) -->
-                <input type="file" id="post-image-file" accept="image/*" class="hidden" multiple onchange="previewPostImage(this)">
+                <input type="file" id="post-image-file" accept="image/*" class="hidden" multiple onchange="window.previewPostImage(this)">
 
                 <!-- Submit Button -->
                 <div class="p-4">
-                    <button onclick="submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                    <button onclick="window.submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
                         পোস্ট করুন
                     </button>
                 </div>
@@ -246,14 +246,14 @@
             <h3 class="font-bold text-lg text-gray-700 mb-4">পোস্ট এডিট করুন</h3>
             <input type="hidden" id="edit-post-id">
             <textarea id="edit-post-text" class="w-full h-32 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white resize-none text-base"></textarea>
-            <div class="flex gap-2 mt-4"><button onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button onclick="submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
+            <div class="flex gap-2 mt-4"><button onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button onclick="window.submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
         </div>
     </div>
 
     <div id="poll-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl transform transition-all scale-100">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button onclick="togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
+                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button onclick="window.togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="space-y-3">
                 <input type="text" id="poll-question" placeholder="প্রশ্ন লিখুন (যেমন: সেরা খেলা কোনটি?)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm font-bold">
@@ -262,6 +262,6 @@
                 <input type="text" id="poll-opt-3" placeholder="অপশন ৩ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
                 <input type="text" id="poll-opt-4" placeholder="অপশন ৪ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
             </div>
-            <button onclick="submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
+            <button onclick="window.submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
         </div>
     </div>
