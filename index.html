@@ -2887,44 +2887,7 @@ loadMyComplaints();
                     return `<div onclick="${onclick}" class="cursor-pointer group transform active:scale-95 transition bg-white border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md aspect-[4/3]"><div class="w-14 h-14 ${cat.bg} ${cat.color} rounded-full flex items-center justify-center mb-2"><i class="fa-solid ${cat.icon} text-2xl"></i></div><p class="text-base font-bold text-gray-700 text-center">${cat.title}</p></div>`;
                 }).join('');
             });
-        }
-
-                recordingTimerInterval = setInterval(() => {
-                    recordingSeconds++;
-                    const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
-                    const secs = (recordingSeconds % 60).toString().padStart(2, '0');
-                    if (timerElem) timerElem.innerText = `${mins}:${secs}`;
-                }, 1000);
-
-            } catch (err) {
-                console.error("Mic Error:", err);
-                // অ্যাপের ভেতরে পারমিশন ডিনাই হলে বা না থাকলে এই অ্যালার্ট আসবে
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    alert("অ্যাপের পারমিশন ব্লক করা আছে। দয়া করে ফোনের Settings > Apps > [App Name] > Permissions -এ গিয়ে Microphone 'Allow' করে দিন।");
-                } else {
-                    showToast("মাইক্রোফোন চালু করা যায়নি: " + err.message, "error");
-                }
-            }
-        };
-
-        // Stop & Cancel
-        window.stopRecording = () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                clearInterval(recordingTimerInterval);
-                mediaRecorder.stream.getTracks().forEach(t => t.stop());
-            }
-        };
-        window.cancelRecording = () => {
-            audioBlob = null;
-            audioChunks = [];
-            document.getElementById('audio-preview').src = "";
-            document.getElementById('audio-preview-container')?.classList.add('hidden');
-            document.getElementById('record-status')?.classList.add('hidden');
-            document.getElementById('btn-record-start')?.classList.remove('hidden');
-            document.getElementById('btn-record-stop')?.classList.add('hidden');
-            clearInterval(recordingTimerInterval);
-        };        
+        }                    
                 
         function renderPeopleList(users, isSearch) {
             const div = document.getElementById('users-list');
