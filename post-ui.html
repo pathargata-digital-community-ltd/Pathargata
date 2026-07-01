@@ -108,13 +108,31 @@
 
                 <!-- Background Color Options -->
                 <div class="px-4 py-2" id="color-picker-wrapper">
-                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="color-picker-container">
-                        <div onclick="selectPostColor('')" class="post-color-dot bg-white border-gray-300 shadow-sm shrink-0" title="Default"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #ff5f6d, #ffc371)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #ff5f6d, #ffc371);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #2193b0, #6dd5ed)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #2193b0, #6dd5ed);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #cc2b5e, #753a88)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #cc2b5e, #753a88);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #000000, #434343)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #000000, #434343);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #11998e, #38ef7d)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #11998e, #38ef7d);"></div>
+                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide items-center" id="color-picker-container">
+                        <!-- Default White (Clear Background) -->
+                        <div onclick="selectPostColor('')" class="post-color-dot bg-white border border-gray-300 shadow-sm shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform flex items-center justify-center" title="Default">
+                            <i class="fa-solid fa-ban text-gray-400 text-xs"></i>
+                        </div>
+                        
+                        <!-- Solid Colors (FB Style) -->
+                        <div onclick="selectPostColor('#1877F2')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #1877F2;" title="Blue"></div>
+                        <div onclick="selectPostColor('#E42C64')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #E42C64;" title="Pink"></div>
+                        <div onclick="selectPostColor('#00A400')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #00A400;" title="Green"></div>
+                        <div onclick="selectPostColor('#FF8C00')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #FF8C00;" title="Orange"></div>
+                        <div onclick="selectPostColor('#242526')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border border-black/5" style="background: #242526;" title="Dark"></div>
+
+                        <!-- Professional Linear Gradients -->
+                        <div onclick="selectPostColor('linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(135deg, #ff0844 0%, #ffb199 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #43e97b 0%, #38f9d7 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #fa709a 0%, #fee140 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #fa709a 0%, #fee140 100%);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #000000 0%, #434343 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: linear-gradient(to right, #000000 0%, #434343 100%);"></div>
+
+                        <!-- Radial / Aesthetic Gradients -->
+                        <div onclick="selectPostColor('radial-gradient(circle, #5c0067 0%, #00d4ff 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle, #5c0067 0%, #00d4ff 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle at top right, #f6d365 0%, #fda085 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle at top right, #f6d365 0%, #fda085 100%);"></div>
+                        <div onclick="selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)')" class="post-color-dot shrink-0 w-8 h-8 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);"></div>
                     </div>
                     <input type="hidden" id="selected-post-color" value="">
                 </div>
