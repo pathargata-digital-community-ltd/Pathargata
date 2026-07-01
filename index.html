@@ -1119,7 +1119,220 @@
         <img id="full-image-view" class="max-w-full max-h-screen object-contain p-2 transition-transform duration-300">
     </div>
 
-    <!-- POST UI CONTAINER -->
+    <!-- Tag Friends Modal -->
+    <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
+        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+            <button onclick="closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h3 class="font-bold text-gray-800 text-lg">বন্ধুদের ট্যাগ করুন</h3>
+            <button onclick="saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
+        </div>
+        <div id="tag-friends-list" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50 pb-20">
+            <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <!-- Feeling Modal -->
+    <div id="feeling-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
+        <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
+            <button onclick="closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
+        </div>
+        <div class="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-gray-50 pb-20">
+            <div onclick="selectFeeling('Happy', '😊')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😊</span> <span class="font-semibold text-sm text-gray-700">Happy</span></div>
+            <div onclick="selectFeeling('Loved', '🥰')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🥰</span> <span class="font-semibold text-sm text-gray-700">Loved</span></div>
+            <div onclick="selectFeeling('Sad', '😔')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😔</span> <span class="font-semibold text-sm text-gray-700">Sad</span></div>
+            <div onclick="selectFeeling('Excited', '🤩')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤩</span> <span class="font-semibold text-sm text-gray-700">Excited</span></div>
+            <div onclick="selectFeeling('Angry', '😠')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😠</span> <span class="font-semibold text-sm text-gray-700">Angry</span></div>
+            <div onclick="selectFeeling('Blessed', '😇')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😇</span> <span class="font-semibold text-sm text-gray-700">Blessed</span></div>
+            <div onclick="selectFeeling('Tired', '😫')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😫</span> <span class="font-semibold text-sm text-gray-700">Tired</span></div>
+            <div onclick="selectFeeling('Sleepy', '😴')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😴</span> <span class="font-semibold text-sm text-gray-700">Sleepy</span></div>
+            <div onclick="selectFeeling('Cool', '😎')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😎</span> <span class="font-semibold text-sm text-gray-700">Cool</span></div>
+            <div onclick="selectFeeling('Crazy', '🤪')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤪</span> <span class="font-semibold text-sm text-gray-700">Crazy</span></div>
+            <div onclick="selectFeeling('Sick', '🤒')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤒</span> <span class="font-semibold text-sm text-gray-700">Sick</span></div>
+            <div onclick="selectFeeling('Celebrating', '🎉')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🎉</span> <span class="font-semibold text-sm text-gray-700">Celebrating</span></div>
+        </div>
+    </div>
+
+    <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
+            <button onclick="toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <div class="flex-1 relative">
+                <input type="text" id="global-search-input" onkeyup="debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
+                <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg"></i>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto bg-gray-50 pb-20 relative">
+            <!-- 1. Trending Explore View (Instagram Style) -->
+            <div id="trending-explore-view" class="w-full">
+                <!-- Grid Container -->
+                <div id="trending-explore-grid" class="grid grid-cols-3 gap-0.5 bg-white">
+                    <div class="col-span-3 text-center py-10"><i class="fa-solid fa-spinner fa-spin text-gray-400"></i></div>
+                </div>
+            </div>
+
+            <!-- 2. Search Results View (Hidden by default) -->
+            <div id="search-results-list" class="p-4 space-y-4 hidden-custom">
+                <!-- Search results will load here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMENTS UI CONTAINER -->
+    <div id="comments-ui-container"></div>
+
+    <!-- SINGLE POST MODAL -->
+    <div id="single-post-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
+        <div class="flex items-center gap-2 p-4 border-b bg-white shadow-sm z-10 sticky top-0 pt-safe">
+            <button onclick="document.getElementById('single-post-modal').classList.add('hidden-custom')" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            <h3 class="font-bold text-gray-800 text-lg">পোস্ট</h3>
+        </div>
+        <div id="single-post-content" class="flex-1 overflow-y-auto p-4 bg-gray-100 pb-20">
+            <!-- Post content injected here -->
+        </div>
+    </div>
+
+    <!-- UPDATED PROFESSIONAL POST MODAL -->
+    <div id="post-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-[500px] rounded-2xl shadow-2xl transform transition-all scale-100 overflow-hidden relative">
+            <!-- Header -->
+            <div class="flex justify-between items-center px-4 py-3 border-b bg-white relative z-10">
+                <h3 class="font-bold text-lg text-gray-800 text-center flex-1">পোস্ট তৈরি করুন</h3>
+                <button onclick="togglePostModal(false)" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition absolute right-3">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="max-h-[80vh] overflow-y-auto">
+                <!-- User Info & Privacy -->
+                <div class="px-4 py-3 flex items-center gap-3">
+                    <div id="post-modal-user-img" class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
+                        <i class="fa-solid fa-user text-gray-400 text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-1">
+                            <h4 id="post-modal-user-name" class="font-bold text-gray-800 text-base leading-tight inline">User Name</h4>
+                            <span id="post-modal-tagged-info" class="text-sm text-gray-600 hidden inline"></span>
+                        </div>
+                        <select id="post-privacy" class="mt-1 bg-gray-100 text-xs font-semibold text-gray-600 px-2 py-1 rounded-md border-0 focus:ring-0 cursor-pointer">
+                            <option value="public">🌍 Public</option>
+                            <option value="friends">👥 Friends</option>
+                            <option value="only_me">🔒 Only Me</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Text Area -->
+                <div class="px-4">
+                    <textarea id="post-text" class="w-full min-h-[150px] text-lg lg:text-xl placeholder-gray-500 border-none focus:ring-0 resize-none p-0" placeholder="আপনার মনে কী আছে? (ভিডিও লিংক এখানে দিন)"></textarea>
+                </div>
+
+                <!-- Background Color Options -->
+                <div class="px-4 py-2" id="color-picker-wrapper">
+                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="color-picker-container">
+                        <div onclick="selectPostColor('')" class="post-color-dot bg-white border-gray-300 shadow-sm shrink-0" title="Default"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #ff5f6d, #ffc371)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #ff5f6d, #ffc371);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #2193b0, #6dd5ed)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #2193b0, #6dd5ed);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #cc2b5e, #753a88)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #cc2b5e, #753a88);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #000000, #434343)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #000000, #434343);"></div>
+                        <div onclick="selectPostColor('linear-gradient(to right, #11998e, #38ef7d)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #11998e, #38ef7d);"></div>
+                    </div>
+                    <input type="hidden" id="selected-post-color" value="">
+                </div>
+
+                <!-- Image/Video Preview Area -->
+                <div id="image-preview-area" class="px-4 mb-2 hidden">
+                    <div class="relative rounded-xl overflow-hidden border border-gray-200" id="preview-container-inner">
+                        <!-- Image or Video will be injected here -->
+                        <div id="preview-grid" class="w-full"></div>
+                        <button onclick="removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Voice Recording UI -->
+                <div id="voice-record-area" class="px-4 mb-2 hidden">
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col items-center justify-center gap-3">
+                        <p id="record-status" class="text-xs font-bold text-red-600 animate-pulse hidden">🔴 Recording... <span id="record-timer">00:00</span></p>
+
+                        <!-- Controls -->
+                        <div class="flex items-center gap-4">
+                            <button onclick="startRecording()" id="btn-record-start" class="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition"><i class="fa-solid fa-microphone"></i></button>
+                            <button onclick="stopRecording()" id="btn-record-stop" class="hidden w-12 h-12 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition"><i class="fa-solid fa-stop"></i></button>
+                        </div>
+
+                        <!-- Preview Player -->
+                        <div id="audio-preview-container" class="w-full hidden mt-2 flex items-center gap-2">
+                            <audio id="audio-preview" controls class="w-full h-8"></audio>
+                            <button onclick="cancelRecording()" class="text-red-500 hover:bg-red-100 p-2 rounded-full"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add to Post Options -->
+                <div class="px-4 pb-2">
+                    <div class="border border-gray-300 rounded-lg p-3 flex justify-between items-center shadow-sm">
+                        <span class="text-sm font-semibold text-gray-700">Add to your post</span>
+                        <div class="flex gap-4">
+                            <div onclick="document.getElementById('post-image-file').click()" class="cursor-pointer text-green-500 hover:bg-green-50 p-1.5 rounded-full transition" title="Photo">
+                                <i class="fa-solid fa-images text-2xl"></i>
+                            </div>
+                            <!-- Voice Icon -->
+                            <div onclick="toggleVoiceRecorder()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Voice Record">
+                                <i class="fa-solid fa-microphone text-2xl"></i>
+                            </div>
+                            <div onclick="openTagModal()" class="cursor-pointer text-blue-500 hover:bg-blue-50 p-1.5 rounded-full transition" title="Tag People">
+                                <i class="fa-solid fa-user-tag text-xl"></i>
+                            </div>
+                            <div onclick="openFeelingModal()" class="cursor-pointer text-yellow-500 hover:bg-yellow-50 p-1.5 rounded-full transition" title="Feeling/Activity">
+                                <i class="fa-regular fa-face-smile text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extra Fields (Collapsible or just small) -->
+                <div class="px-4 py-2 flex gap-2">
+                    <input type="tel" id="post-mobile" placeholder="মোবাইল (কল বাটন)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
+                    <input type="url" id="post-social-link" placeholder="সোশ্যাল লিংক (WhatsApp)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
+                </div>
+
+                <!-- Hidden File Input (Updated for Multiple Images) -->
+                <input type="file" id="post-image-file" accept="image/*" class="hidden" multiple onchange="previewPostImage(this)">
+
+                <!-- Submit Button -->
+                <div class="p-4">
+                    <button onclick="submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                        পোস্ট করুন
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-post-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[110] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl">
+            <h3 class="font-bold text-lg text-gray-700 mb-4">পোস্ট এডিট করুন</h3>
+            <input type="hidden" id="edit-post-id">
+            <textarea id="edit-post-text" class="w-full h-32 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white resize-none text-base"></textarea>
+            <div class="flex gap-2 mt-4"><button onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button onclick="submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
+        </div>
+    </div>
+
+    <div id="poll-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button onclick="togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3">
+                <input type="text" id="poll-question" placeholder="প্রশ্ন লিখুন (যেমন: সেরা খেলা কোনটি?)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm font-bold">
+                <input type="text" id="poll-opt-1" placeholder="অপশন ১" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                <input type="text" id="poll-opt-2" placeholder="অপশন ২" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                <input type="text" id="poll-opt-3" placeholder="অপশন ৩ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                <input type="text" id="poll-opt-4" placeholder="অপশন ৪ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+            </div>
+            <!-- POST UI CONTAINER -->
     <div id="post-ui-container"></div>       
   
     <!-- EMERGENCY ALERT MODAL -->
@@ -2097,7 +2310,7 @@
             globalMarketItems = [],
             globalDirectory = {};
             
-          let allAds = [];
+          window.allAds = [];
         
         // --- NEW GLOBALS FOR MONETIZATION & POINTS ---
         window.dynamicPoints = {
@@ -2409,51 +2622,6 @@ if (refUid) {
         </div>`;
         }
 
-       // --- ALGORITHMIC SCORING FUNCTION (LIVELY FEED) ---
-        function calculatePostScore(post) {
-            const now = Date.now();
-            // 1. Time Decay (Hours since posted) - নতুন পোস্টের গুরুত্ব সবচেয়ে বেশি
-            const hoursAge = (now - post.timestamp) / (1000 * 60 * 60);
-
-            // 2. Engagement Points (মানুষ যা পছন্দ করছে)
-            const likeCount = post.likes ? Object.keys(post.likes).length : 0;
-            const commentCount = post.comments ? Object.keys(post.comments).length : 0;
-            let points = (likeCount * 5) + (commentCount * 15); // কমেন্টকে বেশি গুরুত্ব দেওয়া হলো
-
-            // 3. Affinity (বন্ধুদের পোস্ট - মাইক্রো বুস্ট)
-            if (myFriends && myFriends.includes(post.uid)) {
-                points += 30; // বন্ধুদের পোস্টে ছোট বুস্ট
-            }
-
-            // 4. Proximity (লোকেশন - মাইক্রো বুস্ট)
-            if (userDetails && userDetails.village && post.village === userDetails.village) {
-                points += 20; // নিজের গ্রামের পোস্টকে হালকা বুস্ট
-            } else if (userDetails && userDetails.union && post.union === userDetails.union) {
-                points += 10; // নিজের ইউনিয়নের পোস্টে সামান্য বুস্ট
-            }
-
-            // 5. Authority (অ্যাডমিন বা সাংবাদিক)
-            if (['admin', 'journalist'].includes(post.authorRole)) {
-                points += 40;
-            }
-
-            // 6. Database Boost
-            if (post.adminScore) {
-                points += parseInt(post.adminScore);
-            }
-
-            // 7. Randomness (সারপ্রাইজ এলিমেন্ট)
-            // ০ থেকে ১৫ এর মধ্যে একটি র‍্যান্ডম পয়েন্ট যোগ হবে, যাতে ফিডটি রোবটিক মনে না হয়।
-            const randomBoost = Math.floor(Math.random() * 15);
-            points += randomBoost;
-
-            // Formula: (Points + 1) / (Age + 1.5)^Gravity
-            // Gravity 1.5 ব্যবহার করা হলো যাতে কিছুটা পুরনো কিন্তু জনপ্রিয় পোস্টও ফিডে টিকে থাকতে পারে।
-            const score = (points + 1) / Math.pow((hoursAge + 1.5), 1.5);
-
-            return score;
-        }
-
         onAuthStateChanged(auth, (user) => {
             const authScreen = document.getElementById('auth-screen');
             const mainApp = document.getElementById('main-app');
@@ -2539,7 +2707,7 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
         if(window.loadFriendsPreview) window.loadFriendsPreview(user.uid, 'me');
         loadSettingsData();
                         if (document.getElementById('setting-privacy-toggle')) document.getElementById('setting-privacy-toggle').checked = userDetails.privacy_hide_contact || false;
-                        if(window.checkMonetizationStatus) window.checkMonetizationStatus();
+                        checkMonetizationStatus();
                     } else {
                         console.log("Database data missing, attempting recovery from Auth...");
                         const recoveredData = {
@@ -2582,8 +2750,8 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
     window.AndroidBridge.startBackgroundListener(user.uid);
 }
 
-if(window.loadMyComplaints) window.loadMyComplaints();
-                if(window.loadEmergencyAlerts) window.loadEmergencyAlerts();
+loadMyComplaints();
+                loadEmergencyAlerts();
 
                 loadAds();
                 loadFeed('all', true);
@@ -2721,68 +2889,6 @@ if(window.loadMyComplaints) window.loadMyComplaints();
             });
         }
 
-        // --- VOICE RECORDING GLOBALS ---
-        let mediaRecorder;
-        let audioChunks = [];
-        let audioBlob = null;
-        let recordingTimerInterval;
-        let recordingSeconds = 0;
-
-        // UI Toggle
-        window.toggleVoiceRecorder = () => {
-            const area = document.getElementById('voice-record-area');
-            area.classList.toggle('hidden');
-            document.getElementById('color-picker-wrapper').style.display = 'none';
-            window.cancelRecording();
-        }
-
-        // Start Recording (Capacitor & Browser Compatible)
-        window.startRecording = async () => {
-
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                return showToast("আপনার ডিভাইসে অডিও রেকর্ড সাপোর্ট করছে না।", "error");
-            }
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true
-                });
-
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    audioBlob = new Blob(audioChunks, {
-                        type: 'audio/mp3'
-                    });
-                    const audioUrl = URL.createObjectURL(audioBlob);
-
-                    const audioPreview = document.getElementById('audio-preview');
-                    if (audioPreview) audioPreview.src = audioUrl;
-
-                    document.getElementById('audio-preview-container').classList.remove('hidden');
-                    document.getElementById('btn-record-start').classList.remove('hidden');
-                    document.getElementById('btn-record-stop').classList.add('hidden');
-                    document.getElementById('record-status').classList.add('hidden');
-                };
-
-                mediaRecorder.start();
-
-                document.getElementById('btn-record-start').classList.add('hidden');
-                document.getElementById('btn-record-stop').classList.remove('hidden');
-                document.getElementById('record-status').classList.remove('hidden');
-                document.getElementById('audio-preview-container').classList.add('hidden');
-
-                // Timer Reset
-                recordingSeconds = 0;
-                const timerElem = document.getElementById('record-timer');
-                if (timerElem) timerElem.innerText = "00:00";
-
-                clearInterval(recordingTimerInterval);
                 recordingTimerInterval = setInterval(() => {
                     recordingSeconds++;
                     const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
@@ -2837,467 +2943,7 @@ if(window.loadMyComplaints) window.loadMyComplaints();
             }).join('');
             div.innerHTML = html;
             users.forEach(u => checkRequestStatus(u.uid));
-        }
-
-        // --- পোস্ট ফর্ম সম্পূর্ণ ক্লিয়ার করার ফাংশন ---
-        window.resetPostForm = () => {
-            // ১. টেক্সট ক্লিয়ার করা
-            document.getElementById('post-text').value = "";
-
-            // ২. ব্যাকগ্রাউন্ড কালার রিসেট করা
-            document.getElementById('selected-post-color').value = "";
-            const ta = document.getElementById('post-text');
-            ta.style.background = 'transparent';
-            ta.style.color = 'black';
-            ta.style.fontWeight = 'normal';
-            ta.style.textAlign = 'left';
-            ta.style.fontSize = '18px';
-            ta.style.paddingTop = '0px';
-            document.querySelectorAll('.post-color-dot').forEach(el => el.classList.remove('selected'));
-            document.getElementById('color-picker-wrapper').style.display = 'block';
-
-            // ৩. ছবি ক্লিয়ার করা
-            document.getElementById('post-image-file').value = "";
-            document.getElementById('image-preview-area').classList.add('hidden');
-            document.getElementById('preview-grid').innerHTML = "";
-            window.selectedImages = [];
-
-            // ৪. ভয়েস রেকর্ড ক্লিয়ার করা
-            window.cancelRecording();
-            document.getElementById('voice-record-area').classList.add('hidden');
-
-            // ৫. অন্যান্য অপশন ক্লিয়ার করা
-            window.taggedUsers = [];
-            window.selectedFeeling = null;
-            if(typeof window.updatePostHeaderUI === 'function') window.updatePostHeaderUI(); // UI ক্লিয়ার
-            document.getElementById('post-mobile').value = "";
-            document.getElementById('post-social-link').value = "";
-            document.getElementById('post-privacy').value = "public";
-        };
-
-        // --- UPDATED SUBMIT POST ---
-        window.submitPost = async () => {
-            const text = document.getElementById('post-text').value.trim();
-            const files = window.selectedImages || [];
-            const bgColor = document.getElementById('selected-post-color').value;
-            const privacy = document.getElementById('post-privacy').value;
-            const mobile = document.getElementById('post-mobile').value.trim();
-            const socialLink = document.getElementById('post-social-link').value.trim();
-
-            if (!text && files.length === 0 && !window.selectedFeeling && !audioBlob) {
-                return showToast("কিছু লিখুন অথবা রেকর্ড করুন!", 'error');
-            }
-
-            const btn = document.getElementById('btn-post-submit');
-            const originalBtnText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> আপলোড হচ্ছে...';
-            btn.disabled = true;
-
-            try {
-                let mediaUrls = [];
-                let voiceUrl = null;
-                let postType = 'text';
-
-                if (files.length > 0) {
-                    const uploadPromises = files.map(file => uploadMediaToCloudinary(file));
-                    const results = await Promise.all(uploadPromises);
-                    mediaUrls = results.map(res => res.url);
-                }
-
-                if (audioBlob) {
-                    const audioFile = new File([audioBlob], "voice_record.mp3", {
-                        type: 'audio/mp3'
-                    });
-                    const res = await uploadMediaToCloudinary(audioFile);
-                    voiceUrl = res.url;
-                    postType = 'voice';
-                }
-
-                const newPostData = {
-                    uid: window.currentUser.uid,
-                    author: userDetails.name || "Unknown",
-                    authorPic: userDetails.profile_pic || null,
-                    content: text,
-                    images: mediaUrls,
-                    image: mediaUrls[0] || "",
-                    audio: voiceUrl,
-                    type: postType,
-                    timestamp: Date.now(),
-                    likes: {},
-                    comments: {},
-                    repostCount: 0,
-                    bgColor: bgColor,
-                    privacy: privacy,
-                    union: userDetails.union || '',
-                    village: userDetails.village || '',
-                    authorRole: userDetails.role || 'user',
-                    authorVerified: !!(userDetails.isVerified),
-                    mobile: mobile || null,
-                    socialLink: socialLink || null,
-                    adminScore: 0,
-                    taggedFriends: window.taggedUsers,
-                    feeling: window.selectedFeeling
-                };
-
-                await push(ref(db, 'posts'), newPostData);
-                // Award Points for Post
-                await window.awardPoints('post');
-
-                // মডাল সম্পূর্ণ রিসেট এবং বন্ধ করা
-                window.resetPostForm();
-                togglePostModal(false);
-                window.playSound('send'); // সেন্ড সাউন্ড
-                showToast("পোস্ট করা হয়েছে!", "success");
-
-                if (privacy !== 'only_me') notifyFriends(newPostData.uid, userDetails.name);
-                loadFeed(currentFeedFilter, true);
-
-            } catch (error) {
-                console.error(error);
-                showToast("সমস্যা হয়েছে: " + error.message, 'error');
-            } finally {
-                btn.innerHTML = originalBtnText;
-                btn.disabled = false;
-            }
-        };
-
-
-        window.repost = (postId) => {
-            const card = document.getElementById(`post-card-${postId}`);
-            const textElem = card.querySelector('.post-text-content') || card.querySelector('h4');
-            const text = textElem ? textElem.innerText : "";
-            runTransaction(ref(db, `posts/${postId}/repostCount`), (c) => (c || 0) + 1);
-            togglePostModal(true);
-            document.getElementById('post-text').value = `[রিপোস্ট] ${text}\n\n`;
-        };
-
-        window.toggleLike = (postId) => {
-            const btns = document.querySelectorAll(`[id^="like-btn-${postId}"]`),
-                icons = document.querySelectorAll(`[id^="like-icon-${postId}"]`),
-                countSpans = document.querySelectorAll(`[id^="like-cnt-${postId}"]`);
-            if (icons.length === 0) return;
-            
-            const isLiked = icons[0].classList.contains('fa-solid');
-            let newCount = parseInt(countSpans[0].innerText) + (isLiked ? -1 : 1);
-            
-            icons.forEach(i => {
-                // রঙ এবং আইকন পরিবর্তন
-                i.classList[isLiked ? 'remove' : 'add']('fa-solid', 'text-green-600');
-                i.classList[isLiked ? 'add' : 'remove']('fa-regular');
-                
-                // যদি নতুন করে লাইক দেয়, তবে বাউন্স অ্যানিমেশন যোগ করা
-                if (!isLiked) {
-                    i.classList.remove('small-like-animate');
-                    void i.offsetWidth; // অ্যানিমেশন রিস্টার্ট করার ট্রিক
-                    i.classList.add('small-like-animate');
-                    
-                    // মোবাইলে হালকা ভাইব্রেশন (যদি সাপোর্ট করে)
-                    if (navigator.vibrate) navigator.vibrate(40);
-                    
-                    // লাইক সাউন্ড
-                    window.playSound('like');
-                }
-            });
-            
-            countSpans.forEach(s => s.innerText = Math.max(0, newCount));
-            
-            const likeRef = ref(db, `posts/${postId}/likes/${window.currentUser.uid}`);
-            get(likeRef).then((snap) => {
-                if (snap.exists()) set(likeRef, null);
-                else {
-                    set(likeRef, true);
-                    // Award Points for Like
-                    window.awardPoints('like');
-                    get(ref(db, `posts/${postId}`)).then(postSnap => {
-                        const post = postSnap.val();
-                        if (post && post.uid !== window.currentUser.uid) push(ref(db, `notifications/${post.uid}`), {
-                            type: 'like',
-                            fromUid: window.currentUser.uid,
-                            fromName: userDetails.name,
-                            postId: postId,
-                            timestamp: Date.now(),
-                            read: false
-                        });
-                    });
-                }
-            });
-        };
-
-        window.filterFeed = (type) => {
-            currentFeedFilter = type;
-            
-            ['all', 'union', 'village', 'contest', 'fifa'].forEach(t => {
-                const el = document.getElementById(`tab-feed-${t}`);
-                if(el) {
-                    if (t === 'contest') {
-                        el.classList.toggle('border-b-2', type === t);
-                        el.classList.toggle('border-purple-500', type === t);
-                    } else if (t === 'fifa') {
-                        el.classList.toggle('border-b-2', type === t);
-                        el.classList.toggle('border-green-600', type === t);
-                    } else {
-                        el.classList.toggle('active', type === t);
-                    }
-                }
-            });
-
-            const regularFeedWrapper = document.getElementById('regular-feed-section');
-            const contestContainer = document.getElementById('contest-ui-container');
-            const fifaContainer = document.getElementById('fifa-ui-container');
-
-            if (!regularFeedWrapper || !contestContainer || !fifaContainer) return;
-
-            if (type === 'contest') {
-                regularFeedWrapper.classList.add('hidden-custom');
-                fifaContainer.classList.add('hidden-custom');
-                contestContainer.classList.remove('hidden-custom');
-                if (typeof loadContestFeed === 'function') loadContestFeed(); 
-            } else if (type === 'fifa') {
-                regularFeedWrapper.classList.add('hidden-custom');
-                contestContainer.classList.add('hidden-custom');
-                fifaContainer.classList.remove('hidden-custom');
-                // ফিফা ট্যাবে ক্লিক করলেই API কল হবে
-                if (typeof window.loadFifaApiData === 'function') window.loadFifaApiData();
-            } else {
-                contestContainer.classList.add('hidden-custom');
-                fifaContainer.classList.add('hidden-custom');
-                regularFeedWrapper.classList.remove('hidden-custom');
-                loadFeed(type, true); 
-            }
-        }
-
-        // --- REFACTORED LOAD FEED (ALGORITHMIC + ADS) ---
-        window.loadFeed = (type, isInitial = false) => {
-            if (isFeedLoading) return;
-            isFeedLoading = true;
-
-            const feedDiv = document.getElementById('news-feed');
-            const loaderArea = document.getElementById('feed-loader-area');
-            const btnLoadMore = document.getElementById('btn-load-more');
-            const spinner = document.getElementById('loader-spinner');
-
-            loaderArea.classList.remove('hidden');
-            spinner.classList.remove('hidden');
-            btnLoadMore.classList.add('hidden');
-
-            if (isInitial) {
-                lastLoadedPostKey = null;
-                hasMorePosts = true;
-                
-                // --- LocalStorage Caching Start ---
-                const cachedData = localStorage.getItem(`feed_cache_${type}`);
-                if (cachedData) {
-                    try {
-                        const cachedPosts = JSON.parse(cachedData);
-                        let cacheHtml = '';
-                        cachedPosts.forEach((post, index) => {
-                            cacheHtml += createPostHTML(post, post.id);
-                            // ক্যাশ করা ডেটাতেও অ্যাড দেখানোর লজিক
-                            if ((index + 1) % 5 === 0 && allAds && allAds.length > 0) {
-                                const adIndex = Math.floor((index + 1) / 5) % allAds.length;
-                                cacheHtml += createAdHTML(allAds[adIndex]);
-                            }
-                        });
-                        feedDiv.innerHTML = cacheHtml; // ক্যাশ থেকে সাথে সাথে লোড হবে
-                    } catch (e) {
-                        console.error("Cache parsing error", e);
-                        feedDiv.innerHTML = '<div class="flex flex-col gap-3 p-4"><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div></div>';
-                    }
-                } else {
-                    // ক্যাশে কিছু না থাকলে সুন্দর স্কেলিটন লোডার দেখাবে
-                    feedDiv.innerHTML = '<div class="flex flex-col gap-3 p-4"><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div><div class="h-40 w-full skeleton"></div></div>';
-                }
-                // --- LocalStorage Caching End ---
-            }
-
-            const pageSize = 15;
-            let postsQuery;
-
-            // Fetching Strategy: Use Timestamp for pagination to get a "batch", then sorting that batch by algorithm.
-            if (type === 'union' && userDetails.union) {
-                if (isInitial) {
-                    postsQuery = query(ref(db, 'posts'), orderByChild('union'), equalTo(userDetails.union), limitToLast(pageSize));
-                } else {
-                    hasMorePosts = false;
-                    postsQuery = null;
-                }
-            } else if (type === 'village' && userDetails.village) {
-                if (isInitial) {
-                    postsQuery = query(ref(db, 'posts'), orderByChild('village'), equalTo(userDetails.village), limitToLast(pageSize));
-                } else {
-                    hasMorePosts = false;
-                    postsQuery = null;
-                }
-            } else {
-                // ALL (Default)
-                if (isInitial) {
-                    postsQuery = query(ref(db, 'posts'), orderByKey(), limitToLast(pageSize));
-                } else {
-                    postsQuery = query(ref(db, 'posts'), orderByKey(), endAt(lastLoadedPostKey), limitToLast(pageSize + 1));
-                }
-            }
-
-            if (!postsQuery && !isInitial) {
-                isFeedLoading = false;
-                loaderArea.classList.add('hidden');
-                return;
-            }
-
-            get(postsQuery).then((snapshot) => {
-                const data = snapshot.val();
-
-                if (isInitial) feedDiv.innerHTML = '';
-
-                if (!data) {
-                    if (isInitial) feedDiv.innerHTML = '<div class="p-10 text-center text-gray-400">কোনো পোস্ট নেই</div>';
-                    hasMorePosts = false;
-                    loaderArea.classList.add('hidden');
-                } else {
-                    let postsArr = Object.entries(data).map(([key, val]) => ({
-                        id: key,
-                        ...val
-                    }));
-
-                    // Pagination Logic (Database Key based)
-                    // First, sort by Key (Time) strictly to find the next cursor
-                    postsArr.sort((a, b) => {
-                        if (a.id < b.id) return -1;
-                        if (a.id > b.id) return 1;
-                        return 0;
-                    });
-
-                    if (!isInitial) {
-                        // Remove the overlapping key (lastLoadedPostKey)
-                        postsArr = postsArr.filter(p => p.id !== lastLoadedPostKey);
-                    }
-
-                    if (postsArr.length === 0) {
-                        hasMorePosts = false;
-                    } else {
-                        lastLoadedPostKey = postsArr[0].id; // For limitToLast, the first item is the oldest in batch
-                        if (postsArr.length < pageSize && !isInitial) {
-                            hasMorePosts = false;
-                        }
-                    }
-
-                    // --- ALGORITHM START ---
-                    // 1. Calculate Score for each post
-                    postsArr.forEach(post => {
-                        post.algorithmicScore = calculatePostScore(post);
-                    });
-
-                    // 2. Author Diversity & Anti-Spam Filter (নতুন যুক্ত হলো)
-                    // একই ব্যক্তির একাধিক পোস্ট একসাথে আসা ঠেকাতে পয়েন্ট কমানো হবে
-                    const authorPostCount = {};
-                    // প্রথমে পোস্টগুলোকে স্কোর অনুযায়ী সাজিয়ে নিচ্ছি
-                    postsArr.sort((a, b) => b.algorithmicScore - a.algorithmicScore);
-                    
-                    postsArr.forEach(post => {
-                        if (!authorPostCount[post.uid]) {
-                            authorPostCount[post.uid] = 1; // এই ইউজারের প্রথম পোস্ট (১০০% পয়েন্ট পাবে)
-                        } else {
-                            authorPostCount[post.uid]++;
-                            // দ্বিতীয় পোস্ট হলে পয়েন্ট অর্ধেক (৫০%) হয়ে যাবে, তৃতীয় হলে ২৫% হয়ে যাবে
-                            // এতে করে অন্য ইউজারদের কম পয়েন্টের পোস্টও এদের মাঝখানে ঢুকে যাবে
-                            const penaltyFactor = Math.pow(0.5, authorPostCount[post.uid] - 1);
-                            post.algorithmicScore = post.algorithmicScore * penaltyFactor;
-                        }
-                    });
-
-                    // 3. Final Sort by Calculated Score (Descending)
-                    postsArr.sort((a, b) => b.algorithmicScore - a.algorithmicScore);
-                    // --- ALGORITHM END ---
-                    
-                    // --- Save Fresh Data to LocalStorage ---
-                    if (isInitial && postsArr.length > 0) {
-                        // শুধুমাত্র প্রথম ১৫টি পোস্ট ক্যাশে সেভ করব যেন স্টোরেজ ফুল না হয়
-                        localStorage.setItem(`feed_cache_${type}`, JSON.stringify(postsArr.slice(0, 15)));
-                        feedDiv.innerHTML = ''; // ফ্রেশ ডেটা বসানোর জন্য ফিড ক্লিয়ার করা
-                    }
-
-                    // Generate HTML with Ad Injection & Friend Suggestions
-                    let finalHtml = '';
-                    postsArr.forEach((post, index) => {
-                        finalHtml += createPostHTML(post, post.id);
-
-                        // Inject Ad after every 5th post
-                        if ((index + 1) % 5 === 0 && allAds.length > 0) {
-                            const adIndex = Math.floor((index + 1) / 5) % allAds.length;
-                            finalHtml += createAdHTML(allAds[adIndex]);
-                        }
-
-                        // Inject Friend Suggestions after every 7th post
-                        if ((index + 1) % 7 === 0 && suggestionPool.length > 0) {
-                            // পুল থেকে ৩ জন ইউজারকে নেওয়া হলো
-                            const suggestedUsers = suggestionPool.slice(0, 3);
-                            
-                            let suggHtml = `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-3 max-w-lg mx-auto">
-                                <h4 class="font-bold text-gray-800 text-sm mb-3">আপনার পরিচিত হতে পারে</h4>
-                                <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">`;
-                            
-                            suggestedUsers.forEach(u => {
-                                let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-16 h-16 rounded-full object-cover border border-gray-200 mx-auto mb-2">` : `<div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold text-2xl mx-auto mb-2 border border-blue-100">${escapeHTML(u.name).charAt(0)}</div>`;
-                                
-                                suggHtml += `
-                                <div class="border rounded-xl p-3 min-w-[120px] text-center shrink-0">
-                                    ${av}
-                                    <h5 class="font-bold text-gray-800 text-xs truncate">${escapeHTML(u.name).split(' ')[0]}</h5>
-                                    <p class="text-[10px] text-gray-500 truncate mb-2">${escapeHTML(u.village || u.union || 'পাথরঘাটা')}</p>
-                                    <button id="btn-feed-req-${u.uid}" onclick="sendSuggestionRequest('${u.uid}'); this.innerHTML='Sent'; this.disabled=true; this.classList.replace('bg-blue-600', 'bg-gray-200'); this.classList.replace('text-white', 'text-gray-600');" class="w-full bg-blue-600 text-white text-[10px] font-bold py-1.5 rounded-lg">Add Friend</button>
-                                </div>`;
-                            });
-                            
-                            suggHtml += `</div></div>`;
-                            finalHtml += suggHtml;
-                        }
-                    });
-
-                    feedDiv.insertAdjacentHTML('beforeend', finalHtml);
-
-                    if (hasMorePosts) {
-                        spinner.classList.add('hidden');
-                        btnLoadMore.classList.remove('hidden');
-                    } else {
-                        loaderArea.classList.add('hidden');
-                    }
-                }
-                isFeedLoading = false;
-            }).catch(err => {
-                console.error("Feed Error:", err);
-                isFeedLoading = false;
-                spinner.classList.add('hidden');
-                btnLoadMore.classList.remove('hidden');
-                btnLoadMore.innerText = "পুনরায় চেষ্টা করুন";
-            });
-        }
-        // --- LOAD MORE POSTS (MANUAL BUTTON) ---
-        window.loadMorePosts = () => {
-            if (!isFeedLoading && hasMorePosts) {
-                // বাটন লুকিয়ে স্পিনার দেখাবে
-                document.getElementById('btn-load-more').classList.add('hidden');
-                document.getElementById('loader-spinner').classList.remove('hidden');
-                
-                // পরবর্তী ডাটা লোড করবে
-                loadFeed(currentFeedFilter, false);
-            }
-        };
-
-        // --- INFINITE SCROLL OBSERVER (AUTO LOAD) ---
-        window.setupInfiniteScroll = () => {
-            const observer = new IntersectionObserver((entries) => {
-                // স্ক্রল করতে করতে নিচে পৌঁছালে অটোমেটিক লোড হবে
-                if (entries[0].isIntersecting && hasMorePosts && !isFeedLoading) {
-                    window.loadMorePosts();
-                }
-            }, { rootMargin: "100px" }); // নিচ থেকে ১০০ পিক্সেল আগেই লোড শুরু হবে
-
-            const sentinel = document.getElementById('scroll-sentinel');
-            if (sentinel) {
-                observer.observe(sentinel);
-            }
-        };
-
-        // --- END PAGINATION ---
+        }        
 
         function loadDynamicSidebar() {
             onValue(ref(db, 'admin_settings/links'), (snap) => {
@@ -3355,7 +3001,7 @@ if(window.loadMyComplaints) window.loadMyComplaints();
         window.updateSettings = (key, value) => update(ref(db, `users/${window.currentUser.uid}/settings/${key}`), value).then(() => showToast("সেটিংস আপডেট হয়েছে"));
 
                        // --- ULTRA OPTIMIZED SUGGESTIONS (LOW DATA READ, ALWAYS 20 USERS) ---
-        let suggestionPool = []; 
+        window.suggestionPool = []; 
         let displayedUsersCount = 0; 
         let lastFetchedKeyForPool = null; 
         let isFetchingPool = false; 
@@ -3924,368 +3570,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             await signOut(auth); 
             window.location.reload(); 
         };
-
-        window.selectPostColor = (color) => {
-            const ta = document.getElementById('post-text');
-            document.getElementById('selected-post-color').value = color;
-            document.querySelectorAll('.post-color-dot').forEach(el => el.classList.remove('selected'));
-            if (event) event.target.classList.add('selected');
-            ta.style.background = color;
-            ta.style.color = color ? 'white' : 'black';
-            ta.style.fontWeight = color ? 'bold' : 'normal';
-            ta.style.textAlign = color ? 'center' : 'left';
-            ta.style.fontSize = color ? '20px' : '18px';
-            ta.style.paddingTop = color ? '40px' : '0px';
-        };
-
-        // Updated Preview Image Logic for Multiple Selection
-        window.previewPostImage = (input) => {
-            const previewGrid = document.getElementById('preview-grid');
-            const imgArea = document.getElementById('image-preview-area');
-
-            // Reset color if image is selected
-            selectPostColor('');
-            document.getElementById('color-picker-wrapper').style.display = 'none';
-
-            if (input.files && input.files.length > 0) {
-                window.selectedImages = Array.from(input.files).slice(0, 2); // Limit to 2
-
-                // Generate Preview
-                let html = '';
-                const count = window.selectedImages.length;
-                const gridClass = count === 1 ? 'post-images-grid-1' : 'post-images-grid-2';
-
-                previewGrid.className = gridClass;
-                previewGrid.innerHTML = '';
-
-                window.selectedImages.forEach(file => {
-                    if (file.type.startsWith('image/')) {
-                        const r = new FileReader();
-                        r.onload = (e) => {
-                            const img = document.createElement('img');
-                            img.src = e.target.result;
-                            img.className = 'w-full h-full object-cover';
-                            previewGrid.appendChild(img);
-                        };
-                        r.readAsDataURL(file);
-                    }
-                });
-                imgArea.classList.remove('hidden');
-            }
-        }
-
-        window.removePostImage = () => {
-            document.getElementById('post-image-file').value = "";
-            document.getElementById('image-preview-area').classList.add('hidden');
-            document.getElementById('preview-grid').innerHTML = "";
-            window.selectedImages = [];
-            // Restore color picker
-            document.getElementById('color-picker-wrapper').style.display = 'block';
-        }
-
-        // Check Post Conditions (Text Length)
-        document.getElementById('post-text').addEventListener('input', function() {
-            const text = this.value;
-            const words = text.trim().split(/\s+/).length;
-            const colorWrapper = document.getElementById('color-picker-wrapper');
-
-            if (words > 40 || window.selectedImages.length > 0) {
-                selectPostColor('');
-                colorWrapper.style.display = 'none';
-            } else {
-                colorWrapper.style.display = 'block';
-            }
-        });
-
-        window.submitPoll = () => {
-            const q = document.getElementById('poll-question').value.trim(),
-                o1 = document.getElementById('poll-opt-1').value.trim(),
-                o2 = document.getElementById('poll-opt-2').value.trim();
-            if (!q || !o1 || !o2) return showToast("প্রশ্ন এবং অন্তত দুটি অপশন দিন", 'error');
-            const options = [{
-                text: o1,
-                votes: 0
-            }, {
-                text: o2,
-                votes: 0
-            }, document.getElementById('poll-opt-3').value.trim() ? {
-                text: document.getElementById('poll-opt-3').value.trim(),
-                votes: 0
-            } : null, document.getElementById('poll-opt-4').value.trim() ? {
-                text: document.getElementById('poll-opt-4').value.trim(),
-                votes: 0
-            } : null].filter(Boolean);
-            push(ref(db, 'posts'), {
-                uid: window.currentUser.uid,
-                author: userDetails.name,
-                authorPic: userDetails.profile_pic || null,
-                content: q,
-                type: 'poll',
-                options,
-                timestamp: Date.now(),
-                likes: {},
-                comments: {},
-                repostCount: 0,
-                privacy: 'public',
-                union: userDetails.union || '',
-                village: userDetails.village || '',
-                authorRole: userDetails.role || 'user',
-                authorVerified: !!(userDetails.isVerified)
-            }).then((snap) => {
-                document.getElementById('poll-question').value = "";
-                document.getElementById('poll-opt-1').value = "";
-                document.getElementById('poll-opt-2').value = "";
-                togglePollModal(false);
-                showToast("পোল তৈরি হয়েছে!");
-                notifyFriends(snap.key, userDetails.name);
-            });
-        };
-
-        function notifyFriends(postId, name) {
-            get(ref(db, `users/${window.currentUser.uid}/friends`)).then((snap) => {
-                if (snap.exists()) snap.forEach((f) => push(ref(db, `notifications/${f.key}`), {
-                    type: 'new_post',
-                    fromUid: window.currentUser.uid,
-                    fromName: name,
-                    postId,
-                    timestamp: Date.now(),
-                    read: false
-                }));
-            });
-        }
-        window.votePoll = (postId, optionIdx) => {
-            const voteRef = ref(db, `posts/${postId}/voters/${window.currentUser.uid}`);
-            get(voteRef).then(snap => {
-                if (snap.exists()) return showToast("ইতিমধ্যে ভোট দিয়েছেন", 'error');
-                runTransaction(ref(db, `posts/${postId}/options/${optionIdx}/votes`), (v) => (v || 0) + 1).then(() => {
-                    set(voteRef, optionIdx);
-                    showToast("ভোট দেওয়া হয়েছে!");
-                });
-            });
-        };
-        window.toggleReadMore = (id) => {
-            const m = document.getElementById(`more-${id}`),
-                b = event.target;
-            m.classList.toggle('hidden');
-            b.innerText = m.classList.contains('hidden') ? 'আরো পড়ুন' : 'আড়াল করুন';
-        };
-        window.openEditPostModal = (postId) => {
-            document.getElementById('edit-post-id').value = postId;
-            const card = document.querySelector(`#post-card-${postId}`);
-            document.getElementById('edit-post-text').value = card ? (card.querySelector('.post-text-content')?.innerText || "") : "";
-            document.getElementById('edit-post-modal').classList.remove('hidden-custom');
-        };
-
-        window.submitEditPost = () => {
-            const postId = document.getElementById('edit-post-id').value;
-            const newText = document.getElementById('edit-post-text').value;
-            update(ref(db, `posts/${postId}`), {
-                content: newText
-            }).then(() => {
-                showToast("পোস্ট আপডেট হয়েছে");
-                document.getElementById('edit-post-modal').classList.add('hidden-custom');
-                // ইনস্ট্যান্ট পেজ রিলোড ছাড়াই সব জায়গায় টেক্সট আপডেট করে দিবে
-                document.querySelectorAll(`#post-card-${postId}`).forEach(card => {
-                    const textElem = card.querySelector('.post-text-content');
-                    if (textElem) textElem.innerText = newText;
-                });
-            });
-        };
         
-        window.togglePostMenu = (event) => {
-            event.stopPropagation();
-            const btn = event.currentTarget;
-            const menu = btn.nextElementSibling; // বাটনের ঠিক পরের মেনুটি সিলেক্ট করবে
-            const isHidden = menu.classList.contains('hidden');
-            document.querySelectorAll('.post-menu-dropdown').forEach(el => el.classList.add('hidden'));
-            if (isHidden) menu.classList.remove('hidden');
-        };
-
-        window.hidePost = (postId) => {
-            document.querySelectorAll(`#post-card-${postId}`).forEach(card => card.style.display = 'none');
-        };
-
-        window.deletePost = async (postId) => {
-    if (confirm("পোস্ট ডিলিট করবেন?")) {
-        const cards = document.querySelectorAll(`#post-card-${postId}`);
-        cards.forEach(card => card.style.opacity = '0.5');
-
-        try {
-            // ১. পোস্টের ডাটা পড়া
-            const snap = await get(ref(db, `posts/${postId}`));
-            if (snap.exists()) {
-                const postData = snap.val();
-                
-                // ২. পোস্টটি অ্যাডমিনের trash_bin এ পাঠিয়ে দেওয়া
-                await set(ref(db, `trash_bin/${postId}`), {
-                    type: 'post',
-                    data: postData, // পোস্টের সব তথ্য (ছবি, টেক্সট, কমেন্ট) অ্যাডমিনের কাছে চলে যাবে
-                    deletedBy: window.currentUser.uid,
-                    timestamp: Date.now()
-                });
-            }
-
-            // ৩. মূল পোস্টের জায়গা থেকে মুছে ফেলা (ইউজারের কাছে মনে হবে ডিলিট হয়ে গেছে)
-            await remove(ref(db, `posts/${postId}`));
-            cards.forEach(card => card.remove());
-            showToast("পোস্টটি মুছে ফেলা হয়েছে");
-
-        } catch (e) {
-            showToast("ডিলিট হয়নি: " + e.message, 'error');
-            cards.forEach(card => card.style.opacity = '1');
-        }
-    }
-};
-
-        window.copyPostText = (id) => {
-            const card = document.querySelector(`#post-card-${id}`);
-            const text = card ? card.querySelector('.post-text-content')?.innerText || "" : "";
-            if (!text) return showToast("কপি করার মতো লেখা নেই", "error");
-            navigator.clipboard.writeText(text).then(() => showToast("টেক্সট কপি হয়েছে"));
-        };
-
-        // --- FULL SCREEN IMAGE VIEWER LOGIC ---
-        window.openImageViewer = (src) => {
-            document.getElementById('full-image-view').src = src;
-            const modal = document.getElementById('image-viewer-modal');
-            modal.classList.remove('hidden-custom');
-            setTimeout(() => modal.classList.add('open'), 10);
-        }
-
-        window.closeImageViewer = () => {
-            const modal = document.getElementById('image-viewer-modal');
-            modal.classList.remove('open');
-            setTimeout(() => {
-                modal.classList.add('hidden-custom');
-                document.getElementById('full-image-view').src = '';
-            }, 300);
-        }
-
-        // --- POST HTML GENERATOR ---
-        window.createPostHTML = function(post, id) {
-            let privacyIcon = '<i class="fa-solid fa-earth-americas text-[10px] text-gray-400"></i>';
-            if (post.privacy === 'only_me') {
-                if (post.uid !== window.currentUser.uid) return '';
-                privacyIcon = '<i class="fa-solid fa-lock text-[10px] text-gray-400"></i>';
-            } else if (post.privacy === 'friends' && post.uid !== window.currentUser.uid && !myFriends.includes(post.uid)) return '';
-            else if (post.privacy === 'friends') privacyIcon = '<i class="fa-solid fa-user-group text-[10px] text-gray-400"></i>';
-
-            let displayStyle = "";
-            let avatarHtml = post.authorPic ? `<img onclick="openUserProfile('${post.uid}')" src="${post.authorPic}" class="cursor-pointer w-10 h-10 rounded-full object-cover shadow-sm">` : `<div onclick="openUserProfile('${post.uid}')" class="cursor-pointer w-10 h-10 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 shadow-sm text-lg">${post.author ? escapeHTML(post.author).charAt(0).toUpperCase() : 'U'}</div>`;
-            let myInlineAvatar = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" class="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100">` : `<div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 shrink-0"><i class="fa-solid fa-user"></i></div>`;
-
-            const isLiked = post.likes && post.likes[window.currentUser.uid];
-            const realLikes = post.likes ? Object.keys(post.likes).length : 0;
-            const likeCount = post.likeCount ? Math.max(post.likeCount, realLikes) : realLikes;
-            const commentCount = post.comments ? Object.keys(post.comments).length : 0;
-            let badge = post.authorRole === 'journalist' ? `<i class="fa-solid fa-feather-pointed journalist-badge" title="Journalist"></i>` : (post.authorVerified ? `<i class="fa-solid fa-circle-check verified-badge" title="Verified"></i>` : "");
-            
-            // Top Contributor ট্যাগ (যদি ইউজারের অ্যাডমিন স্কোর ১০০ এর বেশি হয় বা সে সাংবাদিক হয়)
-            let topContributorTag = '';
-            if (post.authorRole === 'journalist' || (post.adminScore && parseInt(post.adminScore) >= 100)) {
-                topContributorTag = `<span class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full ml-2 shadow-sm"><i class="fa-solid fa-award mr-0.5"></i> সেরা অবদানকারী</span>`;
-            }
-            let locationTag = (post.union ? `<span class="bg-gray-100 text-[10px] px-2 py-0.5 rounded-full text-gray-500 ml-2">${post.union}</span>` : '') + (post.village ? `<span class="bg-green-50 text-[10px] px-2 py-0.5 rounded-full text-green-600 ml-1 border border-green-100">${post.village}</span>` : '');
-
-            // --- Header Text Construction (Tagged + Feeling) ---
-            let headerText = `<h4 onclick="openUserProfile('${post.uid}')" class="font-bold text-base text-gray-800 cursor-pointer hover:underline inline">${escapeHTML(post.author)}${badge}</h4> ${topContributorTag}`;
-
-            if (post.feeling) {
-                headerText += ` <span class="text-gray-600 text-sm">is feeling ${post.feeling.emoji} ${escapeHTML(post.feeling.text)}</span>`;
-            }
-
-            if (post.taggedFriends && post.taggedFriends.length > 0) {
-                headerText += ` <span class="text-gray-600 text-sm">with <span class="font-bold text-gray-800">${escapeHTML(post.taggedFriends[0].name)}</span>`;
-                if (post.taggedFriends.length > 1) {
-                    headerText += ` and ${post.taggedFriends.length - 1} others`;
-                }
-                headerText += `</span>`;
-            }
-
-            let contentHTML = '';
-            if (post.type === 'voice' && post.audio) {
-                contentHTML += `<div class="w-full bg-gray-100 rounded-full p-2 mb-3 border border-gray-200 flex items-center gap-2 shadow-sm"><div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white shrink-0"><i class="fa-solid fa-play text-xs"></i></div><audio controls src="${post.audio}" class="w-full h-8 bg-transparent"></audio></div>`;
-            }
-
-            if (post.content) {
-                if (post.bgColor && post.type === 'text') {
-                contentHTML = `<div class="colored-post-bg relative cursor-pointer" style="background: ${post.bgColor};" ondblclick="handleDoubleTapLike('${id}')">
-                                  <i id="big-heart-${id}" class="fa-solid fa-heart big-heart-pop"></i>
-                                  ${escapeHTML(post.content)}
-                               </div>`;
-            }
-                else {
-                    const ytMatch = post.content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-                    const driveMatch = post.content.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-
-                    let cleanText = escapeHTML(post.content);
-                    if (ytMatch) cleanText = cleanText.replace(ytMatch[0], '');
-                    if (driveMatch) cleanText = cleanText.replace(driveMatch[0], '[Drive Link]');
-
-                    if (cleanText.length > 150) cleanText = `<span>${cleanText.substring(0, 150)}...</span><span id="more-${id}" class="hidden">${cleanText.substring(150)}</span> <button onclick="toggleReadMore('${id}')" class="text-blue-600 text-xs font-bold">আরো পড়ুন</button>`;
-
-                    contentHTML = `<p class="post-text-content text-[15px] text-gray-800 mb-2 whitespace-pre-line leading-relaxed font-normal">${cleanText}</p>`;
-                    if (ytMatch) {
-                        contentHTML += `<div class="video-container ${post.content.includes("shorts")?'portrait':''} mb-3 shadow-sm"><iframe id="yt-${id}" class="yt-player" src="https://www.youtube.com/embed/${ytMatch[1]}?enablejsapi=1&rel=0" frameborder="0" allowfullscreen></iframe></div>`;
-                    }
-                    if (driveMatch) {
-                        const previewUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
-                        contentHTML += `<div class="mb-3 shadow-sm rounded-lg overflow-hidden border border-gray-200"><iframe src="${previewUrl}" width="100%" height="250" style="border:0;" allow="autoplay"></iframe></div>`;
-                    }
-                }
-            }
-            if (post.type === 'poll' && post.options) {
-                let totalVotes = post.options.reduce((a, b) => a + (b.votes || 0), 0);
-                contentHTML = `<h4 class="font-bold text-gray-800 mb-2">${escapeHTML(post.content)}</h4><div class="space-y-2 mb-3">` + post.options.map((opt, idx) => {
-                    const percent = totalVotes === 0 ? 0 : Math.round((opt.votes || 0) / totalVotes * 100);
-                    return `<div onclick="votePoll('${id}', ${idx})" class="poll-option relative w-full border rounded-lg h-10 overflow-hidden cursor-pointer hover:bg-gray-50"><div class="poll-fill absolute top-0 left-0 h-full bg-blue-100 z-0" style="width: ${percent}%"></div><div class="absolute inset-0 flex justify-between items-center px-3 z-10 pointer-events-none"><span class="text-sm font-semibold text-gray-700">${escapeHTML(opt.text)}</span><span class="text-xs font-bold text-gray-500">${percent}%</span></div></div>`;
-                }).join('') + `<p class="text-xs text-right text-gray-400 mt-1 font-bold">${totalVotes} ভোট</p></div>`;
-            }
-
-            // --- Image Rendering Logic (Multiple) ---
-            let mediaHtml = '';
-            const images = post.images || (post.image ? [post.image] : []);
-
-            if (images.length > 0) {
-                const bigHeartHtml = `<i id="big-heart-${id}" class="fa-solid fa-heart big-heart-pop"></i>`;
-                
-                if (images.length === 1 && (post.mediaType === 'video' || images[0].endsWith('.mp4'))) {
-                    mediaHtml = `<div class="mb-3 w-full bg-black rounded-lg overflow-hidden relative shadow-sm cursor-pointer" ondblclick="handleDoubleTapLike('${id}')">
-                                    ${bigHeartHtml}
-                                    <video src="${images[0]}" controls class="w-full h-auto max-h-[400px]" playsinline preload="metadata"></video>
-                                 </div>`;
-                } else {
-                    const gridClass = images.length === 1 ? 'post-images-grid-1' : 'post-images-grid-2';
-                    
-                    // এখানে openImageViewer এর বদলে handleSmartImageClick ব্যবহার করা হলো
-                    const imgsHtml = images.map(img => `<img src="${img}" onclick="handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
-
-                    // wrapper থেকে ondblclick মুছে দেওয়া হলো যেন ডাবল-ক্লিক ফাংশন দুইবার কল না হয়
-                    mediaHtml = `<div class="mb-3 w-full bg-gray-200 rounded-lg overflow-hidden border border-gray-200 relative ${images.length === 1 ? 'min-h-[200px]' : ''} ${gridClass}">
-                                    ${bigHeartHtml}
-                                    ${imgsHtml}
-                                 </div>`;
-                }
-            }
-
-            let menuOptions = `<li onclick="copyPostText('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-regular fa-copy w-5"></i> টেক্সট কপি করুন</li>`;
-            if (post.uid === window.currentUser.uid) {
-                menuOptions += `<li onclick="openEditPostModal('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-blue-600"><i class="fa-solid fa-pen w-5"></i> এডিট করুন</li><li onclick="deletePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-600"><i class="fa-solid fa-trash w-5"></i> ডিলিট করুন</li>`;
-            } else {
-                menuOptions += `<li onclick="reportPost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-yellow-600"><i class="fa-solid fa-triangle-exclamation w-5"></i> রিপোর্ট করুন</li><li onclick="hidePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer"><i class="fa-regular fa-eye-slash w-5"></i> পোস্ট হাইড করুন</li>`;
-            }
-
-            let actionButtons = (post.mobile || post.socialLink) ? `<div class="grid grid-cols-2 gap-2 mt-3 mb-2">${post.mobile ? `<a href="tel:${post.mobile}" class="flex items-center justify-center gap-2 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-sm hover:bg-green-100 transition border border-green-200"><i class="fa-solid fa-phone"></i> Call Now</a>` : '<div></div>'}${post.socialLink ? `<a href="${post.socialLink}" target="_blank" class="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition border border-blue-200"><i class="fa-brands fa-whatsapp"></i> Message</a>` : '<div></div>'}</div>` : '';
-
-            // --- কমেন্ট সাজেশন এইচটিএমএল জেনারেট করা ---
-            const suggestions = window.getCommentSuggestions ? window.getCommentSuggestions(post) : [];
-            const suggestionsHtml = suggestions.length > 0 ? `<div id="comment-suggestions-${id}" class="flex gap-2 mt-3 overflow-x-auto hide-scrollbar pb-1">
-                ${suggestions.map(s => `<button onclick="autoPostSuggestion('${id}', '${s}', this)" class="shrink-0 bg-gray-100 hover:bg-green-50 hover:text-green-700 hover:border-green-200 border border-transparent text-gray-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 shadow-sm">${s}</button>`).join('')}
-            </div>` : '';
-
-            return `<div id="post-card-${id}" class="bg-white p-4 rounded-xl shadow-sm mb-3 border border-gray-100 relative max-w-lg mx-auto ${post.authorRole === 'journalist' ? 'journalist-post' : ''}" style="${displayStyle}" data-union="${post.union||''}" data-village="${post.village||''}"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-3">${avatarHtml}<div>${headerText}<p class="text-[11px] text-gray-400 flex flex-wrap gap-1 items-center font-medium">${timeAgo(post.timestamp)} ${privacyIcon} ${locationTag}</p></div></div><div class="relative"><button onclick="togglePostMenu(event)" class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition"><i class="fa-solid fa-ellipsis-vertical text-lg"></i></button><div id="post-menu-${id}" class="post-menu-dropdown hidden absolute right-0 top-8 w-48 bg-white shadow-xl rounded-lg z-20 border border-gray-100 py-1 text-sm text-gray-700"><ul>${menuOptions}</ul></div></div></div>${contentHTML}${mediaHtml}${actionButtons}<div class="grid grid-cols-3 border-t border-b border-gray-100 py-2 mt-2"><button id="like-btn-${id}" onclick="toggleLike('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i id="like-icon-${id}" class="${isLiked ? 'fa-solid text-green-600' : 'fa-regular'} fa-thumbs-up text-lg"></i> <span id="like-cnt-${id}" class="text-sm ${isLiked ? 'font-bold text-green-600' : ''}">${likeCount}</span></button><button onclick="openFullCommentModal('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-regular fa-comment text-lg"></i> <span id="comment-cnt-${id}" class="text-sm">${commentCount}</span></button><button onclick="repost('${id}')" class="flex items-center justify-center gap-2 hover:bg-gray-50 py-1.5 rounded transition text-gray-500"><i class="fa-solid fa-share text-lg"></i> <span class="text-sm">${post.repostCount||0}</span></button></div><div class="mt-2"><div id="comments-preview-${id}">${post.comments ? Object.entries(post.comments).slice(-2).map(([_, c]) => `<div class="bg-gray-50 px-3 py-1.5 rounded-lg mt-1 text-xs border border-gray-100 truncate"><span class="font-bold text-gray-800 mr-1">${escapeHTML(c.author)}</span>${escapeHTML(c.text)}</div>`).join('') : ''}</div>${commentCount > 0 ? `<button onclick="openFullCommentModal('${id}')" class="text-xs text-green-600 font-bold mt-2 hover:underline w-full text-left">সকল কমেন্ট দেখুন (${commentCount})</button>` : ''} ${suggestionsHtml} <div class="mt-3 flex gap-2 items-center">${myInlineAvatar}<input type="text" id="inline-comment-input-${id}" onkeydown="handleEnter(event, 'comment', '${id}')" placeholder="আপনার মতামত..." class="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-green-500"><button onclick="submitInlineComment('${id}')" class="text-green-600 w-9 h-9 flex items-center justify-center bg-green-50 rounded-full hover:bg-green-100"><i class="fa-solid fa-paper-plane text-sm"></i></button></div></div></div>`;
-        }
-
         // --- PEOPLE SEARCH & FILTER ---
         function updatePeopleTab() {
             get(ref(db, `friend_requests/${window.currentUser.uid}`)).then(async (snap) => {
@@ -4553,7 +3838,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                 });
                 userDetails.monetization_status = 'pending';
                 showToast("আবেদন সফলভাবে জমা হয়েছে!");
-                if(window.checkMonetizationStatus) window.checkMonetizationStatus();
+                checkMonetizationStatus();
             } catch (e) {
                 showToast("সমস্যা হয়েছে: " + e.message, "error");
                 btn.innerHTML = 'আবেদন করুন';
@@ -4602,7 +3887,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                     userDetails.total_points -= amount; // Update local state
                     document.getElementById('withdraw-amount').value = "";
                     showToast("উত্তলন রিকোয়েস্ট সফল হয়েছে!", "success");
-                    if(window.checkMonetizationStatus) window.checkMonetizationStatus(); // Refresh Dashboard UI
+                    checkMonetizationStatus(); // Refresh Dashboard UI
                 } else {
                     showToast("আপনার পর্যাপ্ত পয়েন্ট নেই!", "error");
                 }
@@ -4641,14 +3926,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         function listenForFriendRequests(uid) {
             onValue(ref(db, `friend_requests/${uid}`), updatePeopleTab);
         }
-
-        window.openSinglePostModal = (postId) => {
-            const c = document.getElementById('single-post-content');
-            document.getElementById('single-post-modal').classList.remove('hidden-custom');
-            c.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
-            get(ref(db, `posts/${postId}`)).then(snap => c.innerHTML = snap.exists() ? createPostHTML(snap.val(), postId) : '<p class="text-center text-gray-400 mt-10">পোস্টটি পাওয়া যায়নি</p>');
-        };
-
+        
         window.acceptRequest = (fromUid) => update(ref(db), {
             [`users/${window.currentUser.uid}/friends/${fromUid}`]: true,
             [`users/${fromUid}/friends/${window.currentUser.uid}`]: true,
@@ -5210,132 +4488,6 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             searchResultsView.innerHTML = html || '<div class="text-center mt-10 text-gray-400"><p>কিছু পাওয়া যায়নি</p></div>';
         }, 500);
 
-        // --- New Features Logic ---
-        window.openTagModal = () => {
-            openModalWithHistory('tag-friends-modal', "#tag-friends");
-            // মডালটি স্ক্রিনের নিচ থেকে স্লাইড করে উপরে আসার অ্যানিমেশন
-            document.getElementById('tag-friends-modal').classList.remove('hidden-custom');
-            setTimeout(() => document.getElementById('tag-friends-modal').classList.add('open'), 10);
-            
-            const list = document.getElementById('tag-friends-list');
-            list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
-
-            if (!window.myFriends || window.myFriends.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-400 mt-10">আপনার কোনো বন্ধু নেই</p>';
-                return;
-            }
-
-            const promises = window.myFriends.map(uid => getUserData(uid));
-            Promise.all(promises).then(friendsData => {
-                let html = '';
-                friendsData.forEach(u => {
-                    if (u) {
-                        const isTagged = window.taggedUsers.some(t => t.uid === u.uid);
-                        // প্রোফাইল ছবি থাকলে সেটি দেখাবে, না থাকলে নামের প্রথম অক্ষর
-                        let avatar = u.profile_pic ? `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold shadow-sm">${u.name.charAt(0)}</div>`;
-                        
-                        html += `<div onclick="toggleTagUser('${u.uid}', '${escapeHTML(u.name)}')" class="bg-white p-3 mb-3 rounded-xl flex justify-between items-center cursor-pointer transition-all border-2 ${isTagged ? 'border-green-500 bg-green-50 shadow-md' : 'border-transparent shadow-sm'} tag-item-${u.uid}">
-                        <div class="flex items-center gap-3">
-                            ${avatar}
-                            <div>
-                                <span class="font-bold text-sm text-gray-800 block">${escapeHTML(u.name)}</span>
-                                <span class="text-[10px] text-gray-500">${escapeHTML(u.village || 'পাথরঘাটা')}</span>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-check-circle text-2xl ${isTagged ? 'text-green-600' : 'text-gray-200'} tag-icon-${u.uid}"></i>
-                    </div>`;
-                    }
-                });
-                list.innerHTML = html;
-            });
-        };
-
-        window.closeTagModal = (fromHistory = false) => {
-            document.getElementById('tag-friends-modal').classList.remove('open');
-            setTimeout(() => {
-                document.getElementById('tag-friends-modal').classList.add('hidden-custom');
-                if (!fromHistory && history.state?.modal === 'tag-friends-modal') history.back();
-            }, 300);
-        };
-
-        window.toggleTagUser = (uid, name) => {
-            const index = window.taggedUsers.findIndex(u => u.uid === uid);
-            const item = document.querySelector(`.tag-item-${uid}`);
-            const icon = document.querySelector(`.tag-icon-${uid}`);
-
-            if (index > -1) {
-                window.taggedUsers.splice(index, 1);
-                item.classList.remove('border-green-500', 'bg-green-50', 'shadow-md');
-                item.classList.add('border-transparent', 'shadow-sm');
-                icon.classList.remove('text-green-600');
-                icon.classList.add('text-gray-200');
-            } else {
-                window.taggedUsers.push({ uid, name });
-                item.classList.add('border-green-500', 'bg-green-50', 'shadow-md');
-                item.classList.remove('border-transparent', 'shadow-sm');
-                icon.classList.add('text-green-600');
-                icon.classList.remove('text-gray-200');
-            }
-        };
-
-        window.saveTags = () => {
-            closeTagModal();
-            updatePostHeaderUI();
-            if (window.taggedUsers.length > 0) {
-                showToast(`${window.taggedUsers.length} জনকে ট্যাগ করা হয়েছে`);
-            }
-        };
-
-        window.updatePostHeaderUI = () => {
-            const tagInfo = document.getElementById('post-modal-tagged-info');
-            if (!tagInfo) return;
-
-            let html = '';
-            
-            // ইমোজি/ফিলিংস থাকলে যোগ করা
-            if (window.selectedFeeling) {
-                html += ` <span class="text-gray-600 font-normal">is feeling ${window.selectedFeeling.emoji} <b class="text-gray-800">${window.selectedFeeling.text}</b></span>`;
-            }
-            
-            // ট্যাগ থাকলে যোগ করা
-            if (window.taggedUsers && window.taggedUsers.length > 0) {
-                html += ` <span class="text-gray-600 font-normal">with <b class="text-gray-800">${escapeHTML(window.taggedUsers[0].name)}</b>`;
-                if (window.taggedUsers.length > 1) {
-                    html += ` and <b class="text-gray-800">আরও ${window.taggedUsers.length - 1} জন</b>`;
-                }
-                html += `</span>`;
-            }
-
-            if (html !== '') {
-                tagInfo.innerHTML = html;
-                tagInfo.classList.remove('hidden');
-            } else {
-                tagInfo.innerHTML = '';
-                tagInfo.classList.add('hidden');
-            }
-        };
-
-        window.openFeelingModal = () => {
-            openModalWithHistory('feeling-modal', "#feeling");
-            document.getElementById('feeling-modal').classList.remove('hidden-custom');
-            setTimeout(() => document.getElementById('feeling-modal').classList.add('open'), 10);
-        };
-
-        window.closeFeelingModal = (fromHistory = false) => {
-            document.getElementById('feeling-modal').classList.remove('open');
-            setTimeout(() => {
-                document.getElementById('feeling-modal').classList.add('hidden-custom');
-                if (!fromHistory && history.state?.modal === 'feeling-modal') history.back();
-            }, 300);
-        };
-
-        window.selectFeeling = (text, emoji) => {
-            window.selectedFeeling = { text, emoji };
-            closeFeelingModal();
-            updatePostHeaderUI();
-            showToast(`Feeling ${text} যুক্ত করা হয়েছে`);
-        };
-
         // --- INVITE & UPDATE LOGIC ---
         let globalShareLink = "";
         let globalUpdateLink = "";
@@ -5674,7 +4826,6 @@ let isPulling = false;
 const peoplePage = document.getElementById('page-people');
 const ptrIndicator = document.getElementById('pull-to-refresh-indicator');
 
-if (peoplePage && ptrIndicator) {
 peoplePage.addEventListener('touchstart', (e) => {
     // শুধু তখনই কাজ করবে যখন পেজটি একদম উপরে থাকবে (স্ক্রল করা অবস্থায় নয়)
     if (window.scrollY === 0) {
@@ -5720,7 +4871,6 @@ peoplePage.addEventListener('touchend', (e) => {
         ptrIndicator.style.height = '0px';
     }
 });
-} // End of if condition
 
 // ১. অ্যাডমিনের হোয়াটসঅ্যাপ লিংক ডাটাবেস থেকে আনা
 window.addEventListener('fetchWhatsAppLink', () => {
@@ -5756,72 +4906,6 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         if(btn) { btn.innerHTML = 'সাবমিট করুন'; btn.disabled = false; }
     }
 });
-
-// --- REAL-TIME NEW POST ALERT LOGIC ---
-        window.refreshFeed = () => {
-            document.getElementById('new-post-alert').classList.add('hidden'); // বাটনটি লুকিয়ে ফেলা
-            window.scrollTo({ top: 0, behavior: 'smooth' }); // স্ক্রল করে একদম উপরে নিয়ে যাওয়া
-            loadFeed(currentFeedFilter, true); // নতুন করে ফিড লোড করা
-        };
-
-        function listenForNewPosts() {
-            // অ্যাপ ওপেন করার সময়টা সেভ করে রাখছি
-            const appOpenTime = Date.now();
-            
-            // ফায়ারবেসকে বলছি: "অ্যাপ ওপেন করার পর" যদি নতুন কোনো পোস্ট আসে, শুধু তখনই আমাকে জানাও
-            const recentPostsQuery = query(ref(db, 'posts'), orderByChild('timestamp'), startAt(appOpenTime));
-            
-            onChildAdded(recentPostsQuery, (snapshot) => {
-                const post = snapshot.val();
-                
-                // ইউজার নিজে পোস্ট করলে তো আর অ্যালার্ট দেখানোর দরকার নেই, তাই এই চেকটি করা হলো
-                if (window.currentUser && post.uid !== window.currentUser.uid) {
-                    const alertBtn = document.getElementById('new-post-alert');
-                    if (alertBtn && alertBtn.classList.contains('hidden')) {
-                        alertBtn.classList.remove('hidden');
-                        window.playSound('notification'); // নতুন পোস্টের সাউন্ড
-                    }
-                }
-            });
-        }
-        
-        // --- INSTAGRAM STYLE DOUBLE TAP TO LIKE ---
-        window.handleDoubleTapLike = (postId) => {
-            // মোবাইলে ডাবল ট্যাপ করলে সুন্দর ভাইব্রেশন হবে (Haptic feedback)
-            if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
-
-            // ১. বড় হার্ট অ্যানিমেশন দেখানো
-            const bigHeart = document.getElementById(`big-heart-${postId}`);
-            if (bigHeart) {
-                bigHeart.classList.remove('animate'); // আগের অ্যানিমেশন ক্লিয়ার
-                void bigHeart.offsetWidth; // রিফ্লো ট্রিগার
-                bigHeart.classList.add('animate'); // নতুন করে অ্যানিমেশন শুরু
-            }
-
-            // ২. অটোমেটিক লাইক দেওয়া (যদি আগে থেকে লাইক দেওয়া না থাকে)
-            const icon = document.getElementById(`like-icon-${postId}`);
-            if (icon && icon.classList.contains('fa-regular')) { 
-                // 'fa-regular' মানে হলো এখনো লাইক দেওয়া হয়নি, তাই toggleLike কল করা হলো
-                toggleLike(postId);
-            }
-        };
-        
-        // --- SMART CLICK HANDLER FOR IMAGES (Single vs Double Click) ---
-        let imageClickTimer = null;
-        window.handleSmartImageClick = (postId, imgSrc) => {
-            if (imageClickTimer === null) {
-                // প্রথম ক্লিক - ৩০০ মিলিসেকেন্ড অপেক্ষা করবে
-                imageClickTimer = setTimeout(() => {
-                    imageClickTimer = null;
-                    openImageViewer(imgSrc); // সিঙ্গেল ক্লিক হলে ছবি বড় হবে
-                }, 300);
-            } else {
-                // ৩০০ মিলিসেকেন্ডের মধ্যে দ্বিতীয় ক্লিক পড়লে
-                clearTimeout(imageClickTimer); // ছবি বড় হওয়া ক্যানসেল করে দিবে
-                imageClickTimer = null;
-                handleDoubleTapLike(postId); // ডাবল-ক্লিক লাইক অ্যানিমেশন চালু করবে
-            }
-        };
     </script>
 
     <script>
@@ -6099,23 +5183,6 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             }
         });
         
-        // Post UI Fetcher
-        async function loadPostUI() {
-            try {
-                const response = await fetch('post-ui.html');
-                if (!response.ok) throw new Error('Failed to load Post UI');
-                
-                const htmlText = await response.text();
-                const container = document.getElementById('post-ui-container');
-                if (container) {
-                    container.innerHTML = htmlText;
-                    console.log("Post Design Loaded Successfully!");
-                }
-            } catch (error) {
-                console.error("Error loading Post UI:", error);
-            }
-        }
-        
         // Profile HTML Fetcher
         async function loadProfileUI() {
             try {
@@ -6305,9 +5372,25 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Comments UI:", error);
             }
         }
+        
+        // Post UI Fetcher
+        async function loadPostUI() {
+            try {
+                const response = await fetch('post-ui.html');
+                if (!response.ok) throw new Error('Failed to load Post UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('post-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Post Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Post UI:", error);
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
-            loadPostUI();
             loadProfileUI();
             loadContestUI();
             loadMessagesUI();
@@ -6316,6 +5399,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadMarketUI();
             loadBloodUI();
             loadCommentsUI();
+            loadPostUI();
         });
     </script>
     
@@ -6328,6 +5412,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="market.js"></script>
     <script type="module" src="blood.js"></script>
     <script type="module" src="comments.js"></script>
+    <script type="module" src="post.js"></script>
 <!-- সাউন্ড ইফেক্টস -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
