@@ -1254,54 +1254,98 @@
                     </div>
                 </div>
 
-                <!-- Voice Recording UI -->
-                <div id="voice-record-area" class="px-4 mb-2 hidden">
-                    <div class="bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col items-center justify-center gap-3">
-                        <p id="record-status" class="text-xs font-bold text-red-600 animate-pulse hidden">🔴 Recording... <span id="record-timer">00:00</span></p>
+                <!-- Premium Voice Recording UI -->
+                <div id="voice-record-area" class="px-4 mb-4 hidden">
+                    <style>
+                        @keyframes soundWave { 0% { height: 4px; } 50% { height: 28px; } 100% { height: 4px; } }
+                        .recording-active .wave-bar { animation: soundWave 1.2s infinite ease-in-out; }
+                        .recording-active .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+                        .recording-active .wave-bar:nth-child(2) { animation-delay: 0.2s; }
+                        .recording-active .wave-bar:nth-child(3) { animation-delay: 0.4s; }
+                        .recording-active .wave-bar:nth-child(4) { animation-delay: 0.1s; }
+                        .recording-active .wave-bar:nth-child(5) { animation-delay: 0.3s; }
+                        .recording-active .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+                        .recording-active .wave-bar:nth-child(7) { animation-delay: 0.2s; }
+                        .audio-dark-filter { filter: invert(100%) hue-rotate(180deg) grayscale(100%) contrast(150%); opacity: 0.9; }
+                    </style>
+                    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl p-6 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden border border-gray-700">
+                        <div id="recording-pulse-bg" class="absolute inset-0 bg-red-600/10 opacity-0 transition-opacity duration-300 pointer-events-none"></div>
+                        <div class="z-10 text-center w-full">
+                            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex justify-center items-center gap-2"><i class="fa-solid fa-satellite-dish"></i> Voice Studio</p>
+                            
+                            <div class="flex items-center justify-center gap-2 mb-2">
+                                <div id="record-status-dot" class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse hidden shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                                <p id="record-timer" class="text-4xl font-mono font-light text-white tracking-widest drop-shadow-md">00:00</p>
+                            </div>
 
-                        <!-- Controls -->
-                        <div class="flex items-center gap-4">
-                            <button onclick="startRecording()" id="btn-record-start" class="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition"><i class="fa-solid fa-microphone"></i></button>
-                            <button onclick="stopRecording()" id="btn-record-stop" class="hidden w-12 h-12 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition"><i class="fa-solid fa-stop"></i></button>
-                        </div>
+                            <div id="css-waveform" class="flex items-center justify-center gap-1.5 h-8 mb-6 opacity-30 transition-opacity duration-300">
+                                <div class="w-1.5 bg-red-400 rounded-full h-2 transition-all duration-150 wave-bar"></div>
+                                <div class="w-1.5 bg-red-400 rounded-full h-4 transition-all duration-150 wave-bar"></div>
+                                <div class="w-1.5 bg-red-400 rounded-full h-3 transition-all duration-150 wave-bar"></div>
+                                <div class="w-1.5 bg-red-400 rounded-full h-6 transition-all duration-150 wave-bar"></div>
+                                <div class="w-1.5 bg-red-400 rounded-full h-3 transition-all duration-150 wave-bar"></div>
+                                <div class="w-1.5 bg-red-400 rounded-full h-5 transition-all duration-150 wave-bar"></div>
+                                <div class="w-1.5 bg-red-400 rounded-full h-2 transition-all duration-150 wave-bar"></div>
+                            </div>
 
-                        <!-- Preview Player -->
-                        <div id="audio-preview-container" class="w-full hidden mt-2 flex items-center gap-2">
-                            <audio id="audio-preview" controls class="w-full h-8"></audio>
-                            <button onclick="cancelRecording()" class="text-red-500 hover:bg-red-100 p-2 rounded-full"><i class="fa-solid fa-trash"></i></button>
+                            <div class="flex items-center justify-center">
+                                <button onclick="startRecording()" id="btn-record-start" class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-microphone text-2xl"></i></button>
+                                <button onclick="stopRecording()" id="btn-record-stop" class="hidden w-16 h-16 bg-white text-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-stop text-2xl"></i></button>
+                            </div>
+
+                            <div id="audio-preview-container" class="w-full hidden mt-5 bg-gray-800/80 p-2.5 rounded-xl backdrop-blur-md border border-gray-600 flex items-center gap-2 shadow-inner">
+                                <audio id="audio-preview" controls controlsList="nodownload noplaybackrate" class="w-full h-9 audio-dark-filter bg-transparent outline-none"></audio>
+                                <button onclick="cancelRecording()" class="text-gray-400 hover:text-red-400 hover:bg-gray-700 p-2 rounded-full transition" title="Delete"><i class="fa-solid fa-trash text-lg"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Add to Post Options -->
-                <div class="px-4 pb-2">
-                    <div class="border border-gray-300 rounded-lg p-3 flex justify-between items-center shadow-sm">
-                        <span class="text-sm font-semibold text-gray-700">Add to your post</span>
-                        <div class="flex gap-4">
-                            <div onclick="document.getElementById('post-image-file').click()" class="cursor-pointer text-green-500 hover:bg-green-50 p-1.5 rounded-full transition" title="Photo">
-                                <i class="fa-solid fa-images text-2xl"></i>
-                            </div>
-                            <!-- Voice Icon -->
-                            <div onclick="toggleVoiceRecorder()" class="cursor-pointer text-red-500 hover:bg-red-50 p-1.5 rounded-full transition" title="Voice Record">
-                                <i class="fa-solid fa-microphone text-2xl"></i>
-                            </div>
-                            <div onclick="openTagModal()" class="cursor-pointer text-blue-500 hover:bg-blue-50 p-1.5 rounded-full transition" title="Tag People">
-                                <i class="fa-solid fa-user-tag text-xl"></i>
-                            </div>
-                            <div onclick="openFeelingModal()" class="cursor-pointer text-yellow-500 hover:bg-yellow-50 p-1.5 rounded-full transition" title="Feeling/Activity">
-                                <i class="fa-regular fa-face-smile text-xl"></i>
-                            </div>
-                        </div>
+                <!-- Add to Post Options (Grid Layout) -->
+                <div class="px-4 py-3">
+                    <p class="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">পোস্টে যুক্ত করুন</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="document.getElementById('post-image-file').click()" class="flex justify-start items-center gap-3 bg-green-50 text-green-700 p-3 rounded-xl font-bold text-sm border border-green-200 hover:bg-green-100 shadow-sm transition">
+                            <i class="fa-solid fa-images text-xl"></i> ছবি / ভিডিও
+                        </button>
+                        <button onclick="openLocationModal()" class="flex justify-start items-center gap-3 bg-red-50 text-red-700 p-3 rounded-xl font-bold text-sm border border-red-200 hover:bg-red-100 shadow-sm transition">
+                            <i class="fa-solid fa-location-dot text-xl"></i> চেক-ইন / স্থান
+                        </button>
+                        <button onclick="openFeelingModal()" class="flex justify-start items-center gap-3 bg-yellow-50 text-yellow-700 p-3 rounded-xl font-bold text-sm border border-yellow-200 hover:bg-yellow-100 shadow-sm transition">
+                            <i class="fa-regular fa-face-smile text-xl"></i> অনুভূতি
+                        </button>
+                        <button onclick="openTagModal()" class="flex justify-start items-center gap-3 bg-blue-50 text-blue-700 p-3 rounded-xl font-bold text-sm border border-blue-200 hover:bg-blue-100 shadow-sm transition">
+                            <i class="fa-solid fa-user-tag text-xl"></i> বন্ধু ট্যাগ করুন
+                        </button>
+                        <button onclick="toggleVoiceRecorder()" class="flex justify-center items-center gap-3 bg-purple-50 text-purple-700 p-3 rounded-xl font-bold text-sm border border-purple-200 hover:bg-purple-100 shadow-sm transition col-span-2">
+                            <i class="fa-solid fa-microphone text-xl"></i> ভয়েস রেকর্ড করুন
+                        </button>
                     </div>
                 </div>
 
-                <!-- Extra Fields (Collapsible or just small) -->
+                <!-- 24 Hour Ephemeral Post Checkbox (Story System) -->
+                <div class="px-4 pb-3 mt-1">
+                    <label class="flex items-center justify-between cursor-pointer bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 p-3.5 rounded-xl text-sm font-bold text-orange-700 hover:shadow-md transition w-full shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shadow-sm">
+                                <i class="fa-solid fa-stopwatch animate-pulse text-lg"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-base">স্টোরি স্টাইল পোস্ট</span>
+                                <span class="text-[11px] text-orange-500 font-normal">২৪ ঘণ্টা পর স্বয়ংক্রিয়ভাবে মুছে যাবে</span>
+                            </div>
+                        </div>
+                        <input type="checkbox" id="post-ephemeral" class="w-6 h-6 text-orange-600 rounded-md focus:ring-orange-500 border-orange-300">
+                    </label>
+                </div>
+
+                <!-- Extra Fields -->
                 <div class="px-4 py-2 flex gap-2">
-                    <input type="tel" id="post-mobile" placeholder="মোবাইল (কল বাটন)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
-                    <input type="url" id="post-social-link" placeholder="সোশ্যাল লিংক (WhatsApp)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white">
+                    <input type="tel" id="post-mobile" placeholder="মোবাইল (কল বাটন)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white shadow-sm">
+                    <input type="url" id="post-social-link" placeholder="সোশ্যাল লিংক (WhatsApp)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white shadow-sm">
                 </div>
 
-                <!-- Hidden File Input (Updated for Multiple Images) -->
+                <!-- Hidden File Input -->
                 <input type="file" id="post-image-file" accept="image/*" class="hidden" multiple onchange="previewPostImage(this)">
 
                 <!-- Submit Button -->
