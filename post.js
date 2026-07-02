@@ -228,9 +228,9 @@ window.submitPost = async () => {
             mobile: mobile || null,
             socialLink: socialLink || null,
             adminScore: 0,
-            taggedFriends: window.taggedUsers,
-            feeling: window.selectedFeeling,
-            checkInLocation: window.selectedLocation
+            taggedFriends: window.taggedUsers || null,
+            feeling: window.selectedFeeling || null,
+            checkInLocation: window.selectedLocation || null
         };
 
         await push(ref(getDb(), 'posts'), newPostData);
@@ -547,22 +547,28 @@ window.previewPostImage = (input) => {
     document.getElementById('color-picker-wrapper').style.display = 'none';
 
     if (input.files && input.files.length > 0) {
-        window.selectedImages = Array.from(input.files).slice(0, 2);
+        window.selectedImages = Array.from(input.files).slice(0, 4); // লিমিট ৪ করা হলো
         const count = window.selectedImages.length;
         if(previewGrid) {
-            previewGrid.className = count === 1 ? 'post-images-grid-1' : 'post-images-grid-2';
+            // ছবির সংখ্যার উপর ভিত্তি করে গ্রিড ডিজাইন
+            let gridClass = count === 1 ? 'grid grid-cols-1' : (count === 3 ? 'grid grid-cols-2 gap-1' : 'grid grid-cols-2 gap-1 h-64');
+            if(count === 4) gridClass = 'grid grid-cols-2 gap-1 h-64';
+            previewGrid.className = `w-full rounded-lg overflow-hidden ${gridClass}`;
             previewGrid.innerHTML = '';
-            window.selectedImages.forEach(file => {
-                if (file.type.startsWith('image/')) {
+            
+            // সিরিয়াল ঠিক রাখার জন্য Promise ব্যবহার করা হলো
+            Promise.all(window.selectedImages.map(file => {
+                return new Promise(resolve => {
                     const r = new FileReader();
-                    r.onload = (e) => {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'w-full h-full object-cover';
-                        previewGrid.appendChild(img);
-                    };
+                    r.onload = e => resolve(e.target.result);
                     r.readAsDataURL(file);
-                }
+                });
+            })).then(urls => {
+                urls.forEach((url, index) => {
+                    let imgClass = 'w-full h-full object-cover';
+                    if (count === 3 && index === 0) imgClass += ' col-span-2 h-40'; // ৩টি ছবির ক্ষেত্রে প্রথমটি বড় হবে
+                    previewGrid.innerHTML += `<img src="${url}" class="${imgClass}">`;
+                });
             });
         }
         if(imgArea) imgArea.classList.remove('hidden');
@@ -803,9 +809,29 @@ window.createPostHTML = function(post, id) {
                             <video src="${images[0]}" controls class="w-full h-auto max-h-[400px]" playsinline preload="metadata"></video>
                          </div>`;
         } else {
-            const gridClass = images.length === 1 ? 'post-images-grid-1' : 'post-images-grid-2';
-            const imgsHtml = images.map(img => `<img src="${img}" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
-            mediaHtml = `<div class="mb-3 w-full bg-gray-200 rounded-lg overflow-hidden border border-gray-200 relative ${images.length === 1 ? 'min-h-[200px]' : ''} ${gridClass}">
+            let gridClass = '';
+            let imgsHtml = '';
+            const count = images.length;
+            
+            if (count === 1) {
+                gridClass = 'grid grid-cols-1';
+                imgsHtml = `<img src="${images[0]}" onclick="window.handleSmartImageClick('${id}', '${images[0]}')" class="w-full h-auto max-h-[400px] object-cover cursor-pointer">`;
+            } else if (count === 2) {
+                gridClass = 'grid grid-cols-2 gap-1 h-64';
+                imgsHtml = images.map(img => `<img src="${img}" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
+            } else if (count === 3) {
+                // ৩টি ছবির জন্য ফেসবুক স্টাইল (উপরে ১টি বড়, নিচে ২টি ছোট)
+                gridClass = 'grid grid-cols-2 gap-1';
+                imgsHtml = `<img src="${images[0]}" onclick="window.handleSmartImageClick('${id}', '${images[0]}')" class="w-full h-48 object-cover cursor-pointer col-span-2">` +
+                           `<img src="${images[1]}" onclick="window.handleSmartImageClick('${id}', '${images[1]}')" class="w-full h-32 object-cover cursor-pointer">` +
+                           `<img src="${images[2]}" onclick="window.handleSmartImageClick('${id}', '${images[2]}')" class="w-full h-32 object-cover cursor-pointer">`;
+            } else if (count >= 4) {
+                // ৪টি ছবির জন্য ফেসবুক স্টাইল (২x২ গ্রিড)
+                gridClass = 'grid grid-cols-2 gap-1 h-72';
+                imgsHtml = images.slice(0, 4).map(img => `<img src="${img}" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
+            }
+
+            mediaHtml = `<div class="mb-3 w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative ${gridClass}">
                             ${bigHeartHtml}
                             ${imgsHtml}
                          </div>`;
@@ -842,7 +868,6 @@ window.openSinglePostModal = (postId) => {
 
 // --- TAGS & FEELING ---
 window.openTagModal = () => {
-    if(window.openModalWithHistory) window.openModalWithHistory('tag-friends-modal', "#tag-friends");
     const tm = document.getElementById('tag-friends-modal');
     if(tm) {
         tm.classList.remove('hidden-custom');
@@ -868,12 +893,11 @@ window.openTagModal = () => {
         if(list) list.innerHTML = html;
     });
 };
-window.closeTagModal = (fromHistory = false) => {
+window.closeTagModal = () => {
     const tm = document.getElementById('tag-friends-modal');
     if(tm) tm.classList.remove('open');
     setTimeout(() => {
         if(tm) tm.classList.add('hidden-custom');
-        if (!fromHistory && history.state?.modal === 'tag-friends-modal') history.back();
     }, 300);
 };
 window.toggleTagUser = (uid, name) => {
@@ -945,28 +969,29 @@ window.clearTags = () => {
     document.querySelectorAll('[class*="tag-icon-"]').forEach(icon => { icon.classList.remove('text-green-600'); icon.classList.add('text-gray-200'); });
 };
 window.openFeelingModal = () => {
-    if(window.openModalWithHistory) window.openModalWithHistory('feeling-modal', "#feeling");
     const fm = document.getElementById('feeling-modal');
     if(fm) {
         fm.classList.remove('hidden-custom');
         setTimeout(() => fm.classList.add('open'), 10);
     }
 };
-window.closeFeelingModal = (fromHistory = false) => {
+window.closeFeelingModal = () => {
     const fm = document.getElementById('feeling-modal');
     if(fm) fm.classList.remove('open');
     setTimeout(() => {
         if(fm) fm.classList.add('hidden-custom');
-        if (!fromHistory && history.state?.modal === 'feeling-modal') history.back();
     }, 300);
+};
+window.selectFeeling = (text, emoji) => {
+    window.selectedFeeling = { text, emoji };
+    window.closeFeelingModal();
+    if(window.updatePostHeaderUI) window.updatePostHeaderUI();
 };
 // Location Check-in Logic
 window.openLocationModal = () => {
-    if(window.openModalWithHistory) window.openModalWithHistory('location-modal', "#location");
     const lm = document.getElementById('location-modal');
     if(lm) {
         lm.classList.remove('hidden-custom');
-        // রিফ্লো (Reflow) এর জন্য সামান্য ডিলে দিয়ে ট্রান্সফর্ম অ্যাড করা হলো
         setTimeout(() => {
             lm.classList.add('open');
             lm.style.transform = 'translateY(0)';
@@ -974,14 +999,13 @@ window.openLocationModal = () => {
     }
 };
 
-window.closeLocationModal = (fromHistory = false) => {
+window.closeLocationModal = () => {
     const lm = document.getElementById('location-modal');
     if(lm) {
         lm.style.transform = 'translateY(100%)';
         setTimeout(() => {
             lm.classList.add('hidden-custom');
             lm.classList.remove('open');
-            if (!fromHistory && history.state?.modal === 'location-modal') history.back();
         }, 300);
     }
 };
