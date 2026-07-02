@@ -2038,33 +2038,8 @@
                 </div>
             </div>
 
-            <!-- NEW FULL SCREEN VERIFICATION PAGE -->
-            <div id="page-verification" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
-                <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
-                    <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-                    <h2 class="text-xl font-bold text-gray-800">ভেরিফিকেশন</h2>
-                </div>
-
-                <div class="p-4" id="verification-content-area">
-                    <!-- Status Banner (Dynamic) -->
-                    <div id="verify-status-banner" class="hidden mb-6"></div>
-
-                    <!-- Main Form (Hidden if Pending/Verified) -->
-                    <div id="verify-form-container">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-blue-100 mb-6 text-center">
-                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-3xl">
-                                <i class="fa-solid fa-shield-halved"></i>
-                            </div>
-                            <h3 class="font-bold text-xl text-gray-800">ভেরিফাইড হোন</h3>
-                            <p class="text-sm text-gray-500 mt-1">আপনার প্রোফাইলে ব্লু ব্যাজ যুক্ত করুন এবং বিশ্বাসযোগ্যতা বাড়ান।</p>
-                        </div>
-
-                        <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-blue-500 pl-3">প্যাকেজ নির্বাচন করুন</h4>
-                        <div id="verification-plans-container" class="space-y-3 mb-6">
-                            <p class="text-center text-sm text-gray-400">লোড হচ্ছে...</p>
-                        </div>
-                        <input type="hidden" id="selected-plan-id">
-
+            <div id="verification-ui-container"></div>
+            
                         <!-- Payment Section -->
                         <div id="verification-payment-section" class="hidden bg-white p-4 rounded-xl shadow-sm mb-6">
                             <h4 class="font-bold text-sm text-gray-700 mb-3">পেমেন্ট মেথড:</h4>
@@ -4055,234 +4030,6 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             });
         };
 
-        // --- UPDATED VERIFICATION LOGIC (FULL SCREEN PAGE) ---
-        window.checkVerificationStatus = () => {
-            // Fetch User Data for Verification Status
-            const uid = window.currentUser.uid;
-            get(ref(db, `users/${uid}`)).then(snap => {
-                const user = snap.val();
-                const status = user.verificationStatus || 'none';
-                const expiry = user.verificationExpiry || 0;
-                const banner = document.getElementById('verify-status-banner');
-                const formContainer = document.getElementById('verify-form-container');
-                const plansContainer = document.getElementById('verification-plans-container');
-
-                // Check Expiry Logic
-                if (status === 'verified' && Date.now() > expiry) {
-                    // EXPIRED: Reset locally and show form (Ideally update DB via backend function, but client logic handles display)
-                    banner.classList.remove('hidden');
-                    banner.innerHTML = `
-                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-4">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-clock-rotate-left text-red-600 text-xl"></i>
-                            <div>
-                                <h4 class="font-bold text-red-800">মেয়াদ শেষ হয়েছে</h4>
-                                <p class="text-sm text-red-600">আপনার ভেরিফিকেশন ব্যাজের মেয়াদ শেষ হয়েছে। পুনরায় আবেদন করুন।</p>
-                            </div>
-                        </div>
-                    </div>`;
-                    formContainer.classList.remove('hidden');
-
-                    // Load Plans for Re-application
-                    loadVerificationPlans(plansContainer);
-                    return;
-                }
-
-                if (status === 'pending') {
-                    banner.classList.remove('hidden');
-                    banner.innerHTML = `
-                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-hourglass-half text-yellow-600 text-xl"></i>
-                            <div>
-                                <h4 class="font-bold text-yellow-800">আবেদন পর্যালোচনাধীন</h4>
-                                <p class="text-sm text-yellow-600">আপনার আবেদনটি এডমিন রিভিউ করছেন। দয়া করে অপেক্ষা করুন।</p>
-                              </div>
-                        </div>
-                    </div>`;
-                    formContainer.classList.add('hidden'); // পেন্ডিং থাকলে ফর্ম লুকান
-                } else if (status === 'verified') {
-                    const daysLeft = Math.ceil((expiry - Date.now()) / (1000 * 60 * 60 * 24));
-                    banner.classList.remove('hidden');
-                    banner.innerHTML = `
-                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-circle-check text-green-600 text-xl"></i>
-                            <div>
-                                <h4 class="font-bold text-green-800">ভেরিফাইড প্রোফাইল</h4>
-                                <p class="text-sm text-green-600">আপনার প্রোফাইল ভেরিফাইড। মেয়াদ আছে: <b>${daysLeft > 0 ? daysLeft : 0} দিন</b></p>
-                            </div>
-                        </div>
-                    </div>`;
-                    formContainer.classList.add('hidden'); // ভেরিফাইড থাকলে ফর্ম লুকান
-                } else if (status === 'rejected') {
-                    banner.classList.remove('hidden');
-                    banner.innerHTML = `
-                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-4">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-circle-xmark text-red-600 text-xl"></i>
-                            <div>
-                                <h4 class="font-bold text-red-800">আবেদন বাতিল হয়েছে</h4>
-                                <p class="text-sm text-red-600">আপনার আগের আবেদনটি বাতিল করা হয়েছে। দয়া করে সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।</p>
-                            </div>
-                        </div>
-                    </div>`;
-                    formContainer.classList.remove('hidden'); // রিজেক্ট হলে আবার ফর্ম দেখান
-                    loadVerificationPlans(plansContainer);
-                } else {
-                    // NONE or default status
-                    banner.classList.add('hidden');
-                    formContainer.classList.remove('hidden');
-                    loadVerificationPlans(plansContainer);
-                }
-            });
-        }
-
-        function loadVerificationPlans(container) {
-            container.innerHTML = '<p class="text-center text-sm text-gray-400">প্ল্যান লোড হচ্ছে...</p>';
-            onValue(ref(db, 'admin_settings/verification_plans'), (snap) => {
-                const plans = snap.val();
-                if (plans) {
-                    container.innerHTML = Object.entries(plans).map(([key, plan]) => {
-                        return `<div onclick="selectPlan('${key}', '${plan.price}', '${plan.duration}')" id="plan-${key}" class="plan-card bg-white p-3 rounded-xl border flex justify-between items-center cursor-pointer hover:shadow-sm mb-2">
-                        <div>
-                            <h4 class="font-bold text-gray-800">${plan.name}</h4>
-                            <p class="text-xs text-gray-500">${plan.duration} দিনের জন্য</p>
-                            ${plan.trial ? '<span class="text-[10px] bg-green-100 text-green-700 px-1 rounded font-bold">Free Trial Available</span>' : ''}
-                        </div>
-                        <span class="font-bold text-blue-600">৳ ${plan.price}</span>
-                    </div>`;
-                    }).join('');
-                } else {
-                    // Default Dummy Plans if not set by admin
-                    const defaults = [{
-                            id: 'p1',
-                            name: 'Starter',
-                            price: 100,
-                            duration: 30
-                        },
-                        {
-                            id: 'p2',
-                            name: 'Pro',
-                            price: 500,
-                            duration: 180
-                        },
-                        {
-                            id: 'p3',
-                            name: 'Yearly',
-                            price: 900,
-                            duration: 365
-                        }
-                    ];
-                    container.innerHTML = defaults.map(plan => `
-                    <div onclick="selectPlan('${plan.id}', '${plan.price}', '${plan.duration}')" id="plan-${plan.id}" class="plan-card bg-white p-3 rounded-xl border flex justify-between items-center cursor-pointer hover:shadow-sm mb-2">
-                        <div><h4 class="font-bold text-gray-800">${plan.name}</h4><p class="text-xs text-gray-500">${plan.duration} দিন</p></div>
-                        <span class="font-bold text-blue-600">৳ ${plan.price}</span>
-                    </div>`).join('');
-                }
-            });
-        }
-
-        window.selectPlan = (id, price, duration) => {
-            document.querySelectorAll('.plan-card').forEach(el => el.classList.remove('selected'));
-            document.getElementById(`plan-${id}`).classList.add('selected');
-            document.getElementById('selected-plan-id').value = id;
-            document.getElementById('verification-payment-section').classList.remove('hidden');
-            document.getElementById('verification-docs-section').classList.remove('hidden');
-            document.getElementById('btn-verify-submit').classList.remove('hidden');
-            document.getElementById('btn-verify-submit').disabled = false;
-
-            // Auto scroll to payment section
-            document.getElementById('verification-payment-section').scrollIntoView({
-                behavior: 'smooth'
-            });
-        }
-
-        window.selectPaymentMethod = (method) => {
-            // 1. ডিজাইনের কাজ (সিলেকশন হাইলাইট করা)
-            document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
-            const el = document.getElementById(`pay-${method.toLowerCase()}`);
-            if (el) el.classList.add('selected');
-
-            // 2. ইনপুট ভ্যালু সেট করা
-            document.getElementById('selected-payment-method').value = method;
-
-            // 3. লোডিং দেখানো
-            document.getElementById('admin-number').innerText = "লোডিং...";
-
-            // 4. ডাটাবেস থেকে নাম্বার আনা (সঠিক নিয়মে)
-            // এখানে method.toLowerCase() ব্যবহার করা হয়েছে যাতে 'Bkash' -> 'bkash' হয়ে যায়
-            get(ref(db, `admin_settings/payment_numbers/${method.toLowerCase()}`)).then((snap) => {
-                const num = snap.val();
-                if (num) {
-                    document.getElementById('admin-number').innerText = num;
-                    // টেক্সট কালার ঠিক করা
-                    document.getElementById('admin-number').classList.remove('text-gray-900');
-                    document.getElementById('admin-number').classList.add('text-black', 'font-bold');
-                } else {
-                    document.getElementById('admin-number').innerText = "নাম্বার সেট করা নেই";
-                }
-            }).catch((e) => {
-                console.error(e);
-                document.getElementById('admin-number').innerText = "নেটওয়ার্ক এরর";
-            });
-        }
-
-        window.submitVerification = async () => {
-            const planId = document.getElementById('selected-plan-id').value;
-            const method = document.getElementById('selected-payment-method').value;
-            const paymentNumber = document.getElementById('verify-payment-number').value;
-            const trxId = document.getElementById('verify-trx-id').value;
-            const nid = document.getElementById('verify-nid').value.trim();
-            const docFile = document.getElementById('verify-doc-img').files[0];
-            const userFile = document.getElementById('verify-user-img').files[0];
-
-            if (!planId) return showToast("প্ল্যান সিলেক্ট করুন", "error");
-            if (!method || !paymentNumber || !trxId) return showToast("পেমেন্ট তথ্য দিন", "error");
-            if (!nid || !docFile || !userFile) return showToast("ডকুমেন্টস ও ছবি দিন", "error");
-
-            const btn = document.getElementById('btn-verify-submit');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> প্রসেসিং...';
-            btn.disabled = true;
-
-            try {
-                const [docRes, userRes] = await Promise.all([uploadMediaToCloudinary(docFile), uploadMediaToCloudinary(userFile)]);
-
-                const reqData = {
-                    uid: window.currentUser.uid,
-                    name: userDetails.name,
-                    planId,
-                    paymentMethod: method,
-                    paymentNumber,
-                    trxId,
-                    nid,
-                    docImage: docRes.url,
-                    userImage: userRes.url,
-                    timestamp: Date.now(),
-                    status: 'pending' // Initial status for Admin request list
-                };
-
-                // 1. Save Request for Admin (UID as Key)
-                await set(ref(db, 'verification_requests/' + window.currentUser.uid), reqData);
-
-                // 2. Update User Profile Status to 'pending' to lock UI
-                await update(ref(db, 'users/' + window.currentUser.uid), {
-                    verificationStatus: 'pending'
-                });
-
-                showToast("আবেদন সফলভাবে জমা হয়েছে!");
-
-                // Reload the verification page view to show pending banner immediately
-                window.checkVerificationStatus();
-
-            } catch (e) {
-                console.error(e);
-                showToast("ত্রুটি: " + e.message, 'error');
-                btn.innerHTML = "সাবমিট করুন";
-                btn.disabled = false;
-            }
-        }
-
         window.togglePrivacy = (checked) => update(ref(db, 'users/' + window.currentUser.uid), {
             privacy_hide_contact: checked
         }).then(() => showToast("সেটিংস আপডেট হয়েছে"));
@@ -5386,6 +5133,23 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             }
         }
         
+        // Verification UI Fetcher
+        async function loadVerificationUI() {
+            try {
+                const response = await fetch('verification-ui.html');
+                if (!response.ok) throw new Error('Failed to load Verification UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('verification-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Verification Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Verification UI:", error);
+            }
+        }
+        
         // Post UI Fetcher
         async function loadPostUI() {
             try {
@@ -5413,6 +5177,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadBloodUI();
             loadCommentsUI();
             loadPostUI();
+            loadVerificationUI();
         });
     </script>
     
@@ -5426,6 +5191,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="blood.js"></script>
     <script type="module" src="comments.js"></script>
     <script type="module" src="post.js"></script>
+    <script type="module" src="verification.js"></script>
 <!-- সাউন্ড ইফেক্টস -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
