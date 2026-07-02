@@ -32,9 +32,19 @@ window.calculatePostScore = function(post) {
 
 window.toggleVoiceRecorder = () => {
     const area = document.getElementById('voice-record-area');
-    area.classList.toggle('hidden');
-    document.getElementById('color-picker-wrapper').style.display = 'none';
-    window.cancelRecording();
+    if (area.classList.contains('hidden')) {
+        area.classList.remove('hidden');
+        document.getElementById('color-picker-wrapper').style.display = 'none';
+    } else {
+        if (!audioBlob) {
+            area.classList.add('hidden');
+            if(!window.selectedImages || window.selectedImages.length === 0) {
+                document.getElementById('color-picker-wrapper').style.display = 'block';
+            }
+        } else {
+            window.showToast("রেকর্ডিং মুছতে চাইলে ট্র্যাশ আইকনে ক্লিক করুন", "warning");
+        }
+    }
 }
 window.startRecording = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -53,13 +63,21 @@ window.startRecording = async () => {
             document.getElementById('audio-preview-container').classList.remove('hidden');
             document.getElementById('btn-record-start').classList.remove('hidden');
             document.getElementById('btn-record-stop').classList.add('hidden');
-            document.getElementById('record-status').classList.add('hidden');
+            document.getElementById('record-status-dot')?.classList.add('hidden');
+            // Stop UI Animations
+            document.getElementById('css-waveform')?.classList.remove('recording-active');
+            document.getElementById('css-waveform')?.classList.replace('opacity-100', 'opacity-30');
+            document.getElementById('recording-pulse-bg')?.classList.remove('opacity-100');
         };
         mediaRecorder.start();
         document.getElementById('btn-record-start').classList.add('hidden');
         document.getElementById('btn-record-stop').classList.remove('hidden');
-        document.getElementById('record-status').classList.remove('hidden');
+        document.getElementById('record-status-dot')?.classList.remove('hidden');
         document.getElementById('audio-preview-container').classList.add('hidden');
+        // Start UI Animations
+        document.getElementById('css-waveform')?.classList.add('recording-active');
+        document.getElementById('css-waveform')?.classList.replace('opacity-30', 'opacity-100');
+        document.getElementById('recording-pulse-bg')?.classList.add('opacity-100');
 
         recordingSeconds = 0;
         const timerElem = document.getElementById('record-timer');
@@ -92,10 +110,23 @@ window.cancelRecording = () => {
     const preview = document.getElementById('audio-preview');
     if(preview) preview.src = "";
     document.getElementById('audio-preview-container')?.classList.add('hidden');
-    document.getElementById('record-status')?.classList.add('hidden');
+    document.getElementById('record-status-dot')?.classList.add('hidden');
     document.getElementById('btn-record-start')?.classList.remove('hidden');
     document.getElementById('btn-record-stop')?.classList.add('hidden');
+    
+    // Reset timer & animations
+    const timerElem = document.getElementById('record-timer');
+    if (timerElem) timerElem.innerText = "00:00";
+    document.getElementById('css-waveform')?.classList.remove('recording-active');
+    document.getElementById('css-waveform')?.classList.replace('opacity-100', 'opacity-30');
+    document.getElementById('recording-pulse-bg')?.classList.remove('opacity-100');
+    
     clearInterval(recordingTimerInterval);
+    
+    // Bring back color picker if no images are selected
+    if(!window.selectedImages || window.selectedImages.length === 0) {
+        document.getElementById('color-picker-wrapper').style.display = 'block';
+    }
 };
 
 window.resetPostForm = () => {
@@ -718,7 +749,16 @@ window.createPostHTML = function(post, id) {
 
     let contentHTML = '';
     if (post.type === 'voice' && post.audio) {
-        contentHTML += `<div class="w-full bg-gray-100 rounded-full p-2 mb-3 border border-gray-200 flex items-center gap-2 shadow-sm"><div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white shrink-0"><i class="fa-solid fa-play text-xs"></i></div><audio controls src="${post.audio}" class="w-full h-8 bg-transparent"></audio></div>`;
+        // controlsList="nodownload noplaybackrate" prevents downloading from feed
+        contentHTML += `<div class="w-full bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-2.5 mb-3 border border-gray-700 flex items-center gap-3 shadow-md relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-16 bg-red-500/10 z-0 rounded-l-2xl"></div>
+                            <div class="w-11 h-11 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-[0_0_15px_rgba(239,68,68,0.3)] border border-red-400/50">
+                                <i class="fa-solid fa-microphone-lines text-lg"></i>
+                            </div>
+                            <div class="flex-1 z-10 mr-1">
+                                <audio controls controlsList="nodownload noplaybackrate" src="${post.audio}" class="w-full h-9 bg-transparent outline-none filter invert hue-rotate-180 grayscale contrast-150"></audio>
+                            </div>
+                        </div>`;
     }
 
     if (post.content) {
@@ -734,7 +774,10 @@ window.createPostHTML = function(post, id) {
             if (ytMatch) cleanText = cleanText.replace(ytMatch[0], '');
             if (driveMatch) cleanText = cleanText.replace(driveMatch[0], '[Drive Link]');
             if (cleanText.length > 150) cleanText = `<span>${cleanText.substring(0, 150)}...</span><span id="more-${id}" class="hidden">${cleanText.substring(150)}</span> <button onclick="window.toggleReadMore('${id}')" class="text-blue-600 text-xs font-bold">আরো পড়ুন</button>`;
-            contentHTML = `<p class="post-text-content text-[15px] text-gray-800 mb-2 whitespace-pre-line leading-relaxed font-normal">${cleanText}</p>`;
+            
+            // Fix: Added += instead of = so audio player is not overwritten
+            contentHTML += `<p class="post-text-content text-[15px] text-gray-800 mb-2 whitespace-pre-line leading-relaxed font-normal">${cleanText}</p>`;
+            
             if (ytMatch) contentHTML += `<div class="video-container ${post.content.includes("shorts")?'portrait':''} mb-3 shadow-sm"><iframe id="yt-${id}" class="yt-player" src="https://www.youtube.com/embed/${ytMatch[1]}?enablejsapi=1&rel=0" frameborder="0" allowfullscreen></iframe></div>`;
             if (driveMatch) {
                 const previewUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
@@ -869,18 +912,37 @@ window.updatePostHeaderUI = () => {
     const tagInfo = document.getElementById('post-modal-tagged-info');
     if (!tagInfo) return;
     let html = '';
-    if (window.selectedFeeling) html += ` <span class="text-gray-600 font-normal">is feeling ${window.selectedFeeling.emoji} <b class="text-gray-800">${window.selectedFeeling.text}</b></span>`;
-    if (window.selectedLocation) html += ` <span class="text-gray-600 font-normal">at <b class="text-red-600"><i class="fa-solid fa-location-dot text-[10px]"></i> ${window.escapeHTML(window.selectedLocation)}</b></span>`;
+    
+    if (window.selectedFeeling) {
+        html += ` <span class="text-gray-600 font-normal inline-flex items-center gap-1">is feeling ${window.selectedFeeling.emoji} <b class="text-gray-800">${window.selectedFeeling.text}</b> <button onclick="window.clearFeeling()" class="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded-full w-5 h-5 flex items-center justify-center transition ml-1" title="Remove"><i class="fa-solid fa-xmark text-xs"></i></button></span>`;
+    }
+    if (window.selectedLocation) {
+        html += ` <span class="text-gray-600 font-normal inline-flex items-center gap-1">at <b class="text-red-600"><i class="fa-solid fa-location-dot text-[10px]"></i> ${window.escapeHTML(window.selectedLocation)}</b> <button onclick="window.clearLocation()" class="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded-full w-5 h-5 flex items-center justify-center transition ml-1" title="Remove"><i class="fa-solid fa-xmark text-xs"></i></button></span>`;
+    }
     if (window.taggedUsers && window.taggedUsers.length > 0) {
-        html += ` <span class="text-gray-600 font-normal">with <b class="text-gray-800">${window.escapeHTML(window.taggedUsers[0].name)}</b>`;
+        html += ` <span class="text-gray-600 font-normal inline-flex items-center gap-1">with <b class="text-gray-800">${window.escapeHTML(window.taggedUsers[0].name)}</b>`;
         if (window.taggedUsers.length > 1) html += ` and <b class="text-gray-800">আরও ${window.taggedUsers.length - 1} জন</b>`;
-        html += `</span>`;
+        html += ` <button onclick="window.clearTags()" class="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded-full w-5 h-5 flex items-center justify-center transition ml-1" title="Remove"><i class="fa-solid fa-xmark text-xs"></i></button></span>`;
     }
+
     if (html !== '') {
-        tagInfo.innerHTML = html; tagInfo.classList.remove('hidden');
+        tagInfo.innerHTML = html; 
+        tagInfo.classList.remove('hidden');
+        tagInfo.classList.add('flex', 'flex-wrap', 'items-center', 'gap-1.5', 'mt-1.5');
     } else {
-        tagInfo.innerHTML = ''; tagInfo.classList.add('hidden');
+        tagInfo.innerHTML = ''; 
+        tagInfo.classList.add('hidden');
+        tagInfo.classList.remove('flex', 'flex-wrap', 'items-center', 'gap-1.5', 'mt-1.5');
     }
+};
+
+window.clearFeeling = () => { window.selectedFeeling = null; window.updatePostHeaderUI(); };
+window.clearLocation = () => { window.selectedLocation = null; window.updatePostHeaderUI(); };
+window.clearTags = () => { 
+    window.taggedUsers = []; 
+    window.updatePostHeaderUI(); 
+    document.querySelectorAll('[class*="tag-item-"]').forEach(item => { item.classList.remove('border-green-500', 'bg-green-50', 'shadow-md'); item.classList.add('border-transparent', 'shadow-sm'); });
+    document.querySelectorAll('[class*="tag-icon-"]').forEach(icon => { icon.classList.remove('text-green-600'); icon.classList.add('text-gray-200'); });
 };
 window.openFeelingModal = () => {
     if(window.openModalWithHistory) window.openModalWithHistory('feeling-modal', "#feeling");
