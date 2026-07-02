@@ -2287,9 +2287,15 @@
             onValue(versionRef, async (snapshot) => {
                 const liveVersion = snapshot.val();
                 
-                // ডাটাবেসের ভার্সন এবং অ্যাপের ভার্সন না মিললে আপডেট হবে
-                if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
+                // লোকাল স্টোরেজ চেক করে দেখবে এই ভার্সনে আগে আপডেট নেওয়ার চেষ্টা করেছে কিনা
+                const lastAttemptedVersion = localStorage.getItem('last_updated_version');
+                
+                // ডাটাবেসের ভার্সন এবং অ্যাপের ভার্সন না মিললে এবং আগে আপডেট না হয়ে থাকলে আপডেট হবে
+                if (liveVersion && liveVersion !== LOCAL_APP_VERSION && liveVersion !== lastAttemptedVersion) {
                     console.log("New update detected. Downloading in background...");
+                    
+                    // বারবার রিলোড লুপ বন্ধ করার জন্য লোকাল স্টোরেজে নতুন ভার্সনটি সেভ করে রাখা হলো
+                    localStorage.setItem('last_updated_version', liveVersion);
                     
                     if(window.showToast) {
                         window.showToast("নতুন আপডেট ব্যাকগ্রাউন্ডে ইনস্টল হচ্ছে...", "success");
@@ -4048,10 +4054,27 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             setTimeout(() => {
                 import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
                     const { ref, get } = module;
-                    get(ref(db, 'admin_settings/app_version')).then((snap) => {
+                    get(ref(db, 'admin_settings/app_version')).then(async (snap) => {
                         const liveVersion = snap.val();
                         if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
                             showToast("নতুন ভার্সন পাওয়া গেছে! অ্যাপ আপডেট হচ্ছে...", "success");
+                            
+                            // ম্যানুয়াল আপডেটের সময় কুলডাউন টাইম মুছে ফেলা হলো
+                            localStorage.removeItem('last_update_attempt');
+                            
+                            try {
+                                if ('caches' in window) {
+                                    const cacheNames = await caches.keys();
+                                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                                }
+                                if ('serviceWorker' in navigator) {
+                                    const registrations = await navigator.serviceWorker.getRegistrations();
+                                    for (let registration of registrations) {
+                                        await registration.unregister();
+                                    }
+                                }
+                            } catch (e) { console.log(e); }
+                            
                             setTimeout(() => window.location.reload(true), 2000);
                         } else {
                             showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
