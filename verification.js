@@ -152,7 +152,6 @@ function resetVerificationFormUI() {
     const sectionsToHide = [
         'verification-plans-section',
         'verification-payment-section',
-        'verification-category-section',
         'verification-docs-section',
         'btn-verify-submit'
     ];
@@ -229,8 +228,8 @@ window.selectPlan = (id, price, duration) => {
     document.querySelectorAll('.plan-card').forEach(el => el.classList.remove('selected'));
     document.getElementById(`plan-${id}`).classList.add('selected');
     document.getElementById('selected-plan-id').value = id;
+    
     document.getElementById('verification-payment-section').classList.remove('hidden');
-    document.getElementById('verification-category-section').classList.remove('hidden');
     document.getElementById('verification-docs-section').classList.remove('hidden');
     document.getElementById('btn-verify-submit').classList.remove('hidden');
     document.getElementById('btn-verify-submit').disabled = false;
