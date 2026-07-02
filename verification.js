@@ -116,25 +116,62 @@ window.checkVerificationStatus = () => {
             </div>`;
             
             formContainer.classList.add('hidden');
-        } else if (status === 'rejected') {
+        } else if (status === 'rejected' || status === 'cancelled') {
             banner.classList.remove('hidden');
             banner.innerHTML = `
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-4">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-circle-xmark text-red-600 text-xl"></i>
                     <div>
-                        <h4 class="font-bold text-red-800">আবেদন বাতিল হয়েছে</h4>
-                        <p class="text-sm text-red-600">আপনার আগের আবেদনটি বাতিল করা হয়েছে। দয়া করে সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।</p>
+                        <h4 class="font-bold text-red-800">${status === 'cancelled' ? 'ভেরিফিকেশন বাতিল করা হয়েছে' : 'আবেদন বাতিল হয়েছে'}</h4>
+                        <p class="text-sm text-red-600">${status === 'cancelled' ? 'আপনার ভেরিফিকেশন ব্যাজটি এডমিন বাতিল করেছেন। আপনি চাইলে নতুন করে আবেদন করতে পারেন।' : 'আপনার আগের আবেদনটি বাতিল করা হয়েছে। দয়া করে সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।'}</p>
                     </div>
                 </div>
             </div>`;
-            formContainer.classList.remove('hidden'); 
+            formContainer.classList.remove('hidden');
+            resetVerificationFormUI(); // ফর্মটিকে একদম নতুন অবস্থায় ফিরিয়ে আনার ফাংশন
             loadVerificationPlans(plansContainer);
         } else {
             banner.classList.add('hidden');
+            banner.innerHTML = '';
             formContainer.classList.remove('hidden');
+            resetVerificationFormUI(); // ফর্মটিকে একদম নতুন অবস্থায় ফিরিয়ে আনার ফাংশন
             loadVerificationPlans(plansContainer);
         }
+    });
+}
+
+// ক্যানসেল বা রিজেক্ট হলে ফর্মটিকে আগের (Normal) অবস্থায় ফিরিয়ে আনার ফাংশন
+function resetVerificationFormUI() {
+    // ক্যাটাগরি সিলেকশন রিসেট
+    document.querySelectorAll('.category-card').forEach(el => el.classList.remove('selected'));
+    const selectedCategory = document.getElementById('selected-category');
+    if (selectedCategory) selectedCategory.value = '';
+    
+    // পেমেন্ট ও অন্যান্য সেকশন হাইড করা (যাতে শুধু ক্যাটাগরি অপশনগুলো দেখায়)
+    const sectionsToHide = [
+        'verification-plans-section',
+        'verification-payment-section',
+        'verification-category-section',
+        'verification-docs-section',
+        'btn-verify-submit'
+    ];
+    
+    sectionsToHide.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    // ইনপুট ফিল্ডগুলো ক্লিয়ার করা
+    const inputsToClear = [
+        'selected-plan-id', 'selected-payment-method', 
+        'verify-payment-number', 'verify-trx-id', 
+        'verify-nid', 'verify-doc-img', 'verify-user-img'
+    ];
+    
+    inputsToClear.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
     });
 }
 
