@@ -1,0 +1,85 @@
+<!-- NEW FULL SCREEN VERIFICATION PAGE -->
+<div id="page-verification" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
+    <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
+        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <h2 class="text-xl font-bold text-gray-800">ভেরিফিকেশন</h2>
+    </div>
+
+    <div class="p-4" id="verification-content-area">
+        <!-- Status Banner (Dynamic) -->
+        <div id="verify-status-banner" class="hidden mb-6"></div>
+
+        <!-- Main Form (Hidden if Pending/Verified) -->
+        <div id="verify-form-container">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-blue-100 mb-6 text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-3xl">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 class="font-bold text-xl text-gray-800">ভেরিফাইড হোন</h3>
+                <p class="text-sm text-gray-500 mt-1">আপনার প্রোফাইলে ব্লু ব্যাজ যুক্ত করুন এবং বিশ্বাসযোগ্যতা বাড়ান।</p>
+            </div>
+
+            <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-blue-500 pl-3">প্যাকেজ নির্বাচন করুন</h4>
+            <div id="verification-plans-container" class="space-y-3 mb-6">
+                <p class="text-center text-sm text-gray-400">লোড হচ্ছে...</p>
+            </div>
+            <input type="hidden" id="selected-plan-id">
+
+            <!-- Payment Section -->
+            <div id="verification-payment-section" class="hidden bg-white p-4 rounded-xl shadow-sm mb-6">
+                <h4 class="font-bold text-sm text-gray-700 mb-3">পেমেন্ট মেথড:</h4>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div onclick="selectPaymentMethod('Bkash')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-bkash">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7-3pW0rX1C7s7s7s7s7s7s7s7s7s7s7s7s7s&s" alt="Bkash" class="h-8 object-contain">
+                        <span class="text-xs font-bold mt-1">Bkash</span>
+                    </div>
+                    <div onclick="selectPaymentMethod('Nagad')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-nagad">
+                        <img src="https://downloadr2.apkmirror.com/wp-content/uploads/2019/07/5d26305f8c679.png" alt="Nagad" class="h-8 object-contain">
+                        <span class="text-xs font-bold mt-1">Nagad</span>
+                    </div>
+                    <div onclick="selectPaymentMethod('Rocket')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-rocket">
+                        <img src="https://seeklogo.com/images/D/dutch-bangla-rocket-logo-B4D1CC458D-seeklogo.com.png" alt="Rocket" class="h-8 object-contain">
+                        <span class="text-xs font-bold mt-1">Rocket</span>
+                    </div>
+                </div>
+                <input type="hidden" id="selected-payment-method">
+
+                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4">
+                    <p class="text-xs text-gray-600">দয়া করে <span id="admin-number" class="font-bold text-gray-900 text-sm">...</span> নম্বরে Send Money করুন।</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 block mb-1">সেন্ডার নম্বর</label>
+                        <input type="tel" id="verify-payment-number" placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন" class="w-full bg-gray-50 border p-3 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 block mb-1">Transaction ID</label>
+                        <input type="text" id="verify-trx-id" placeholder="TrxID (Example: 9H7D...)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm uppercase">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Section -->
+            <div id="verification-docs-section" class="hidden bg-white p-4 rounded-xl shadow-sm mb-6">
+                <h4 class="font-bold text-sm text-gray-700 mb-3">প্রয়োজনীয় কাগজপত্র:</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 block mb-1">NID / জন্ম নিবন্ধন নম্বর</label>
+                        <input type="text" id="verify-nid" placeholder="নম্বর দিন" class="w-full bg-gray-50 border p-3 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 block mb-1">কার্ডের ছবি (NID/Birth Certificate)</label>
+                        <input type="file" id="verify-doc-img" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 block mb-1">আপনার সদ্য তোলা ছবি</label>
+                        <input type="file" id="verify-user-img" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="submitVerification()" id="btn-verify-submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex justify-center items-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed hidden">সাবমিট করুন</button>
+        </div>
+    </div>
+</div>
