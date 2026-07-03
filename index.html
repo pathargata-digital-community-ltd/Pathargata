@@ -1481,6 +1481,26 @@
         </div>
     </div>
 
+    <!-- আপডেট প্রোগ্রেস স্ক্রিন -->
+    <div id="update-screen" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center hidden-custom transition-opacity duration-300">
+        <div class="w-24 h-24 mb-6 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-4xl animate-bounce shadow-lg border-4 border-blue-100">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold text-gray-800">নতুন আপডেট হচ্ছে</h2>
+        <p class="text-gray-500 mt-2 text-sm font-medium">নতুন ফিচার ইনস্টল করা হচ্ছে...</p>
+
+        <!-- Progress Bar -->
+        <div class="w-3/4 max-w-xs mt-8 bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200 shadow-inner relative">
+            <div id="update-progress-fill" class="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full w-0 transition-all duration-300 ease-out"></div>
+        </div>
+        <p id="update-progress-text" class="mt-3 font-bold text-blue-600 text-lg">0%</p>
+
+        <!-- Hide Button -->
+        <button onclick="hideUpdateScreen()" class="mt-12 px-6 py-3 bg-gray-50 border border-gray-200 text-gray-600 rounded-full text-sm font-bold hover:bg-gray-100 transition active:scale-95 flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-down-left-and-up-right-to-center"></i> ব্যাকগ্রাউন্ডে চলতে দিন
+        </button>
+    </div>
+
     <!-- ৫. মেইন অ্যাপ কন্টেইনার -->
     <div class="app-container hidden-custom" id="main-app">
         <header id="main-header" class="bg-white text-gray-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm border-b pt-safe transition-transform duration-300">
@@ -2023,7 +2043,7 @@
                             </div>
                             <div onclick="checkForUpdates()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition">
                                 <span class="text-sm text-gray-700"><i class="fa-solid fa-rotate text-blue-500 mr-2 w-5 text-center"></i> নতুন আপডেট চেক করুন</span>
-                                <span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">v3.8.1</span>
+                                <span id="display-app-version" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">লোড হচ্ছে...</span>
                             </div>
                         </div>
                     </div>
@@ -2034,7 +2054,7 @@
                         <div class="p-4"><button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button></div>
                     </div>
                     
-                    <div class="text-center text-xs text-gray-400 mt-4">ভার্সন ৩.৮.১ | সাপোর্ট: help@patharghata.com</div>
+                    <div class="text-center text-xs text-gray-400 mt-4"><span id="display-app-version-footer">ভার্সন লোড হচ্ছে...</span> | সাপোর্ট: help@patharghata.com</div>
                 </div>
             </div>
 
@@ -2287,43 +2307,78 @@
             onValue(versionRef, async (snapshot) => {
                 const liveVersion = snapshot.val();
                 
-                // লোকাল স্টোরেজ চেক করে দেখবে এই ভার্সনে আগে আপডেট নেওয়ার চেষ্টা করেছে কিনা
-                const lastAttemptedVersion = localStorage.getItem('last_updated_version');
+                const lastAttemptTime = localStorage.getItem('last_update_attempt') || 0;
+                const now = Date.now();
+                const cooldownPeriod = 30 * 60 * 1000; // ৩০ মিনিট
                 
-                // ডাটাবেসের ভার্সন এবং অ্যাপের ভার্সন না মিললে এবং আগে আপডেট না হয়ে থাকলে আপডেট হবে
-                if (liveVersion && liveVersion !== LOCAL_APP_VERSION && liveVersion !== lastAttemptedVersion) {
-                    console.log("New update detected. Downloading in background...");
+                if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
                     
-                    // বারবার রিলোড লুপ বন্ধ করার জন্য লোকাল স্টোরেজে নতুন ভার্সনটি সেভ করে রাখা হলো
-                    localStorage.setItem('last_updated_version', liveVersion);
+                    if (now - lastAttemptTime < cooldownPeriod) return;
+
+                    console.log("New update detected. Starting real cache clearance...");
+                    localStorage.setItem('last_update_attempt', now);
                     
-                    if(window.showToast) {
-                        window.showToast("নতুন আপডেট ব্যাকগ্রাউন্ডে ইনস্টল হচ্ছে...", "success");
-                    }
+                    const updateScreen = document.getElementById('update-screen');
+                    const progressFill = document.getElementById('update-progress-fill');
+                    const progressText = document.getElementById('update-progress-text');
+                    
+                    if(updateScreen) updateScreen.classList.remove('hidden-custom');
+                    
+                    const updateUI = (percent) => {
+                        if(progressFill) progressFill.style.width = percent + '%';
+                        if(progressText) progressText.innerText = Math.floor(percent) + '%';
+                    };
+                    
+                    updateUI(5);
 
                     try {
-                        // ক্যাশ ক্লিয়ার করা
+                        let totalSteps = 0;
+                        let completedSteps = 0;
+                        let cacheNames = [];
+                        let registrations = [];
+
                         if ('caches' in window) {
-                            const cacheNames = await caches.keys();
-                            await Promise.all(cacheNames.map(name => caches.delete(name)));
+                            cacheNames = await caches.keys();
+                            totalSteps += cacheNames.length;
                         }
-                        
                         if ('serviceWorker' in navigator) {
-                            const registrations = await navigator.serviceWorker.getRegistrations();
-                            for (let registration of registrations) {
-                                await registration.unregister();
+                            registrations = await navigator.serviceWorker.getRegistrations();
+                            totalSteps += registrations.length;
+                        }
+
+                        if (totalSteps === 0) {
+                            updateUI(90);
+                        } else {
+                            // রিয়েল টাইমে ক্যাশ ডিলিট এবং প্রোগ্রেস বাড়ানো
+                            for (let i = 0; i < cacheNames.length; i++) {
+                                await caches.delete(cacheNames[i]);
+                                completedSteps++;
+                                updateUI(5 + ((completedSteps / totalSteps) * 85));
+                                await new Promise(r => setTimeout(r, 100)); // ভিজ্যুয়াল এফেক্টের জন্য সামান্য দেরি
+                            }
+
+                            for (let i = 0; i < registrations.length; i++) {
+                                await registrations[i].unregister();
+                                completedSteps++;
+                                updateUI(5 + ((completedSteps / totalSteps) * 85));
+                                await new Promise(r => setTimeout(r, 100));
                             }
                         }
 
-                        // ২.৫ সেকেন্ড পর অ্যাপ রিস্টার্ট নিবে
+                        updateUI(100);
+                        if(progressText) progressText.innerText = "সম্পন্ন হয়েছে! রিস্টার্ট হচ্ছে...";
+                        
                         setTimeout(() => {
                             window.location.reload(true);
-                        }, 2500);
+                        }, 1500);
                         
-                    } catch (e) {
-                        console.log("Update cache error", e);
-                        setTimeout(() => window.location.reload(true), 2500);
+                    } catch (e) { 
+                        console.error("Update failed:", e);
+                        if(progressText) progressText.innerText = "আপডেটে সমস্যা হয়েছে!";
                     }
+                    
+                } else if (liveVersion === LOCAL_APP_VERSION) {
+                    localStorage.removeItem('last_update_attempt');
                 }
             });
         }
@@ -2432,6 +2487,11 @@ if (refUid) {
             
             // অন্যথায় সাউন্ড বাজবে
             window.playSound('message');
+        };
+
+        window.hideUpdateScreen = () => {
+            document.getElementById('update-screen').classList.add('hidden-custom');
+            showToast("আপডেট ব্যাকগ্রাউন্ডে চলছে...", "success");
         };
 
         window.escapeHTML = (str) => {
@@ -4050,38 +4110,76 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         window.checkForUpdates = () => {
             showToast("নতুন আপডেট চেক করা হচ্ছে...", "success");
             
-            // একটু লেট করে চেক করবে যাতে রিয়েল ফিল আসে
             setTimeout(() => {
                 import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
                     const { ref, get } = module;
                     get(ref(db, 'admin_settings/app_version')).then(async (snap) => {
                         const liveVersion = snap.val();
                         if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
-                            showToast("নতুন ভার্সন পাওয়া গেছে! অ্যাপ আপডেট হচ্ছে...", "success");
                             
-                            // ম্যানুয়াল আপডেটের সময় কুলডাউন টাইম মুছে ফেলা হলো
                             localStorage.removeItem('last_update_attempt');
                             
+                            const updateScreen = document.getElementById('update-screen');
+                            const progressFill = document.getElementById('update-progress-fill');
+                            const progressText = document.getElementById('update-progress-text');
+                            
+                            if(updateScreen) updateScreen.classList.remove('hidden-custom');
+                            
+                            const updateUI = (percent) => {
+                                if(progressFill) progressFill.style.width = percent + '%';
+                                if(progressText) progressText.innerText = Math.floor(percent) + '%';
+                            };
+                            
+                            updateUI(10); 
+                            
                             try {
+                                let totalSteps = 0;
+                                let completedSteps = 0;
+                                let cacheNames = [];
+                                let registrations = [];
+        
                                 if ('caches' in window) {
-                                    const cacheNames = await caches.keys();
-                                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                                    cacheNames = await caches.keys();
+                                    totalSteps += cacheNames.length;
                                 }
                                 if ('serviceWorker' in navigator) {
-                                    const registrations = await navigator.serviceWorker.getRegistrations();
-                                    for (let registration of registrations) {
-                                        await registration.unregister();
+                                    registrations = await navigator.serviceWorker.getRegistrations();
+                                    totalSteps += registrations.length;
+                                }
+        
+                                if (totalSteps === 0) {
+                                    updateUI(90);
+                                } else {
+                                    for (let i = 0; i < cacheNames.length; i++) {
+                                        await caches.delete(cacheNames[i]);
+                                        completedSteps++;
+                                        updateUI(10 + ((completedSteps / totalSteps) * 80));
+                                        await new Promise(r => setTimeout(r, 100)); 
+                                    }
+                                    for (let i = 0; i < registrations.length; i++) {
+                                        await registrations[i].unregister();
+                                        completedSteps++;
+                                        updateUI(10 + ((completedSteps / totalSteps) * 80));
+                                        await new Promise(r => setTimeout(r, 100));
                                     }
                                 }
-                            } catch (e) { console.log(e); }
-                            
-                            setTimeout(() => window.location.reload(true), 2000);
+        
+                                updateUI(100);
+                                if(progressText) progressText.innerText = "সম্পন্ন হয়েছে! রিস্টার্ট হচ্ছে...";
+                                
+                                setTimeout(() => window.location.reload(true), 1500);
+                                
+                            } catch (e) { 
+                                console.error("Manual Update failed:", e);
+                                if(progressText) progressText.innerText = "আপডেটে সমস্যা হয়েছে!";
+                            }
+
                         } else {
                             showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
                         }
                     }).catch(() => showToast("সার্ভার কানেকশন এরর", "error"));
                 });
-            }, 1500);
+            }, 1000);
         };        
 
         // --- Data Saver Logic ---
@@ -5201,6 +5299,17 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadCommentsUI();
             loadPostUI();
             loadVerificationUI();
+
+            // ডাইনামিক অ্যাপ ভার্সন সেট করা
+            const versionBadge = document.getElementById('display-app-version');
+            const versionFooter = document.getElementById('display-app-version-footer');
+            
+            if (versionBadge) {
+                versionBadge.innerText = `v${LOCAL_APP_VERSION}`;
+            }
+            if (versionFooter) {
+                versionFooter.innerText = `ভার্সন ${LOCAL_APP_VERSION}`;
+            }
         });
     </script>
     
