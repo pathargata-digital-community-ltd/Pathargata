@@ -34,7 +34,7 @@ jobs:
       - name: Setup Capacitor & Plugins
         run: |
           npm init -y
-          npm install @capacitor/core@5 @capacitor/android@5 @capacitor/app@5 @capacitor/keyboard@5 @capacitor/camera@5 @capacitor/filesystem@5
+          npm install @capacitor/core@5 @capacitor/android@5 @capacitor/app@5 @capacitor/keyboard@5 @capacitor/camera@5 @capacitor/filesystem@5 @capacitor/splash-screen@5
           npm install -D @capacitor/cli@5 @capacitor/assets@3
           npx cap init "Patharghata Digital" "com.pathargata.digital" --web-dir www
           npx cap add android
@@ -61,6 +61,13 @@ jobs:
                 "resize": "body",
                 "style": "dark",
                 "resizeOnFullScreen": true
+              },
+              "SplashScreen": {
+                "launchShowDuration": 1000,
+                "launchAutoHide": true,
+                "backgroundColor": "#16a34a",
+                "androidSplashResourceName": "splash",
+                "showSpinner": false
               }
             }
           }
@@ -82,7 +89,7 @@ jobs:
                   resolutionStrategy.eachDependency { DependencyResolveDetails details ->
                       def requested = details.requested
                       if (requested.group == 'org.jetbrains.kotlin' && requested.name.startsWith('kotlin-stdlib')) {
-                          details.useVersion '1.8.22'
+                          details.useVersion '3.8.22'
                       }
                   }
               }
