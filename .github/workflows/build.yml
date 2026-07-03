@@ -37,12 +37,6 @@ jobs:
           npm install @capacitor/core@5 @capacitor/android@5 @capacitor/app@5 @capacitor/keyboard@5 @capacitor/camera@5 @capacitor/filesystem@5 @capacitor/splash-screen@5
           npm install -D @capacitor/cli@5 @capacitor/assets@3
           npx cap init "Patharghata Digital" "com.pathargata.digital" --web-dir www
-          npx cap add android
-
-      - name: Generate App Icons and Splash Screen
-        run: |
-          mkdir -p assets
-          # Note: Add your icon.png and splash.png in the assets folder later for real icons
 
       - name: Configure Capacitor
         run: |
@@ -73,6 +67,12 @@ jobs:
           }
           EOF
 
+      - name: Add Android Platform
+        run: npx cap add android
+
+      - name: Generate App Icons and Splash Screen
+        run: npx @capacitor/assets generate
+
       - name: Sync Capacitor Files
         run: npx cap sync android
 
@@ -89,7 +89,7 @@ jobs:
                   resolutionStrategy.eachDependency { DependencyResolveDetails details ->
                       def requested = details.requested
                       if (requested.group == 'org.jetbrains.kotlin' && requested.name.startsWith('kotlin-stdlib')) {
-                          details.useVersion '1.8.22'
+                          details.useVersion '3.8.22'
                       }
                   }
               }
