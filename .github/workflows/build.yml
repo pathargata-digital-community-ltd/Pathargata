@@ -29,7 +29,7 @@ jobs:
       - name: Prepare Web Directory
         run: |
           mkdir www
-          rsync -av --exclude='www' --exclude='.git' --exclude='.github' . www/
+          rsync -av --exclude='www' --exclude='.git' --exclude='.github' --exclude='assets' . www/
 
       - name: Setup Capacitor & Plugins
         run: |
@@ -37,6 +37,11 @@ jobs:
           npm install @capacitor/core@5 @capacitor/android@5 @capacitor/app@5 @capacitor/keyboard@5 @capacitor/camera@5 @capacitor/filesystem@5 @capacitor/splash-screen@5
           npm install -D @capacitor/cli@5 @capacitor/assets@3
           npx cap init "Patharghata Digital" "com.pathargata.digital" --web-dir www
+          npx cap add android
+
+      - name: Generate App Icons and Splash Screen
+        run: |
+          npx @capacitor/assets generate
 
       - name: Configure Capacitor
         run: |
@@ -66,12 +71,6 @@ jobs:
             }
           }
           EOF
-
-      - name: Add Android Platform
-        run: npx cap add android
-
-      - name: Generate App Icons and Splash Screen
-        run: npx @capacitor/assets generate
 
       - name: Sync Capacitor Files
         run: npx cap sync android
