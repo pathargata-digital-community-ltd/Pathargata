@@ -2295,6 +2295,10 @@
         window.auth = auth;
 
         window.currentUser = null;
+        
+        // অ্যাপের বর্তমান ভার্সন এখানে ডিফাইন করে দিন
+        // যখনই নতুন আপডেট আনবেন, ডাটাবেসের পাশাপাশি এখানেও ভার্সন চেঞ্জ করবেন (যেমন: "1.0.1")
+        window.LOCAL_APP_VERSION = "3.8.4";
 
         // --- OTA UPDATE SYSTEM START ---
         function listenForSilentUpdates() {
@@ -4107,81 +4111,79 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             showToast("নতুন আপডেট চেক করা হচ্ছে...", "success");
             
             setTimeout(() => {
-                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
-                    const { ref, get } = module;
-                    get(ref(db, 'admin_settings/app_version')).then(async (snap) => {
-                        const liveVersion = snap.val();
+                // অপ্রয়োজনীয় ডাইনামিক ইমপোর্ট সরিয়ে সরাসরি get এবং ref ব্যবহার করা হয়েছে
+                get(ref(db, 'admin_settings/app_version')).then(async (snap) => {
+                    const liveVersion = snap.val();
+                    
+                    // যদি ডাটাবেস ভার্সন আর অ্যাপের ভার্সন এক হয় (আপডেট করা থাকে)
+                    if (!liveVersion || liveVersion === window.LOCAL_APP_VERSION) {
+                        showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
+                        return;
+                    }
+
+                    // যদি নতুন ভার্সন পাওয়া যায়
+                    if (liveVersion && liveVersion !== window.LOCAL_APP_VERSION) {
+                        localStorage.removeItem('last_update_attempt');
                         
-                        // যদি ডাটাবেস ভার্সন আর অ্যাপের ভার্সন এক হয় (আপডেট করা থাকে)
-                        if (!liveVersion || liveVersion === window.LOCAL_APP_VERSION) {
-                            showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
-                            return; // এখানেই থেমে যাবে, প্রোগ্রেস বার দেখাবে না বা রিলোড নিবে না
-                        }
-
-                        // যদি নতুন ভার্সন পাওয়া যায়, তবেই প্রোগ্রেস বার আসবে এবং আপডেট হবে
-                        if (liveVersion && liveVersion !== window.LOCAL_APP_VERSION) {
-                            
-                            localStorage.removeItem('last_update_attempt');
-                            
-                            const updateScreen = document.getElementById('update-screen');
-                            const progressFill = document.getElementById('update-progress-fill');
-                            const progressText = document.getElementById('update-progress-text');
-                            
-                            if(updateScreen) updateScreen.classList.remove('hidden-custom');
-                            
-                            const updateUI = (percent) => {
-                                if(progressFill) progressFill.style.width = percent + '%';
-                                if(progressText) progressText.innerText = Math.floor(percent) + '%';
-                            };
-                            
-                            updateUI(10); 
-                            
-                            try {
-                                let totalSteps = 0;
-                                let completedSteps = 0;
-                                let cacheNames = [];
-                                let registrations = [];
-        
-                                if ('caches' in window) {
-                                    cacheNames = await caches.keys();
-                                    totalSteps += cacheNames.length;
-                                }
-                                if ('serviceWorker' in navigator) {
-                                    registrations = await navigator.serviceWorker.getRegistrations();
-                                    totalSteps += registrations.length;
-                                }
-        
-                                if (totalSteps === 0) {
-                                    updateUI(90);
-                                } else {
-                                    for (let i = 0; i < cacheNames.length; i++) {
-                                        await caches.delete(cacheNames[i]);
-                                        completedSteps++;
-                                        updateUI(10 + ((completedSteps / totalSteps) * 80));
-                                        await new Promise(r => setTimeout(r, 100)); 
-                                    }
-                                    for (let i = 0; i < registrations.length; i++) {
-                                        await registrations[i].unregister();
-                                        completedSteps++;
-                                        updateUI(10 + ((completedSteps / totalSteps) * 80));
-                                        await new Promise(r => setTimeout(r, 100));
-                                    }
-                                }
-        
-                                updateUI(100);
-                                if(progressText) progressText.innerText = "সম্পন্ন হয়েছে! রিস্টার্ট হচ্ছে...";
-                                
-                                setTimeout(() => window.location.reload(true), 1500);
-                                
-                            } catch (e) { 
-                                console.error("Manual Update failed:", e);
-                                if(progressText) progressText.innerText = "আপডেটে সমস্যা হয়েছে!";
+                        const updateScreen = document.getElementById('update-screen');
+                        const progressFill = document.getElementById('update-progress-fill');
+                        const progressText = document.getElementById('update-progress-text');
+                        
+                        if(updateScreen) updateScreen.classList.remove('hidden-custom');
+                        
+                        const updateUI = (percent) => {
+                            if(progressFill) progressFill.style.width = percent + '%';
+                            if(progressText) progressText.innerText = Math.floor(percent) + '%';
+                        };
+                        
+                        updateUI(10); 
+                        
+                        try {
+                            let totalSteps = 0;
+                            let completedSteps = 0;
+                            let cacheNames = [];
+                            let registrations = [];
+    
+                            if ('caches' in window) {
+                                cacheNames = await caches.keys();
+                                totalSteps += cacheNames.length;
                             }
-
-                        } else {
-                            showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
+                            if ('serviceWorker' in navigator) {
+                                registrations = await navigator.serviceWorker.getRegistrations();
+                                totalSteps += registrations.length;
+                            }
+    
+                            if (totalSteps === 0) {
+                                updateUI(90);
+                            } else {
+                                for (let i = 0; i < cacheNames.length; i++) {
+                                    await caches.delete(cacheNames[i]);
+                                    completedSteps++;
+                                    updateUI(10 + ((completedSteps / totalSteps) * 80));
+                                    await new Promise(r => setTimeout(r, 100)); 
+                                }
+                                for (let i = 0; i < registrations.length; i++) {
+                                    await registrations[i].unregister();
+                                    completedSteps++;
+                                    updateUI(10 + ((completedSteps / totalSteps) * 80));
+                                    await new Promise(r => setTimeout(r, 100));
+                                }
+                            }
+    
+                            updateUI(100);
+                            if(progressText) progressText.innerText = "সম্পন্ন হয়েছে! রিস্টার্ট হচ্ছে...";
+                            
+                            setTimeout(() => window.location.reload(true), 1500);
+                            
+                        } catch (e) { 
+                            console.error("Manual Update failed:", e);
+                            if(progressText) progressText.innerText = "আপডেটে সমস্যা হয়েছে!";
+                            setTimeout(() => window.location.reload(true), 2000); // ফেইল করলেও রিলোড নিবে
                         }
-                    }).catch(() => showToast("সার্ভার কানেকশন এরর", "error"));
+                    }
+                }).catch((error) => {
+                    console.error(error);
+                    showToast("সার্ভার কানেকশন এরর", "error");
                 });
             }, 1000);
         };        
