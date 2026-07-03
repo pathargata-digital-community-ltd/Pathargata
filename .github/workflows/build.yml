@@ -41,7 +41,7 @@ jobs:
 
       - name: Generate App Icons and Splash Screen
         run: |
-          mkdir assets
+          mkdir -p assets
           # Note: Add your icon.png and splash.png in the assets folder later for real icons
 
       - name: Configure Capacitor
