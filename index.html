@@ -2297,10 +2297,6 @@
         window.currentUser = null;
 
         // --- OTA UPDATE SYSTEM START ---
-        // ১. আপনার অ্যাপের বর্তমান ভার্সন (গিটহাবে আপলোড করার আগে এটি চেঞ্জ করবেন)
-        const LOCAL_APP_VERSION = "3.8.1"; 
-
-        // ২. সাইলেন্ট আপডেটের ফাংশন
         function listenForSilentUpdates() {
             const versionRef = ref(db, 'admin_settings/app_version');
             
@@ -2311,7 +2307,7 @@
                 const now = Date.now();
                 const cooldownPeriod = 30 * 60 * 1000; // ৩০ মিনিট
                 
-                if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
+                if (liveVersion && liveVersion !== window.LOCAL_APP_VERSION) {
                     
                     if (now - lastAttemptTime < cooldownPeriod) return;
 
@@ -2377,7 +2373,7 @@
                         if(progressText) progressText.innerText = "আপডেটে সমস্যা হয়েছে!";
                     }
                     
-                } else if (liveVersion === LOCAL_APP_VERSION) {
+                } else if (liveVersion === window.LOCAL_APP_VERSION) {
                     localStorage.removeItem('last_update_attempt');
                 }
             });
@@ -4115,7 +4111,15 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                     const { ref, get } = module;
                     get(ref(db, 'admin_settings/app_version')).then(async (snap) => {
                         const liveVersion = snap.val();
-                        if (liveVersion && liveVersion !== LOCAL_APP_VERSION) {
+                        
+                        // যদি ডাটাবেস ভার্সন আর অ্যাপের ভার্সন এক হয় (আপডেট করা থাকে)
+                        if (!liveVersion || liveVersion === window.LOCAL_APP_VERSION) {
+                            showToast("আপনি অ্যাপের সর্বশেষ ভার্সন ব্যবহার করছেন", "success");
+                            return; // এখানেই থেমে যাবে, প্রোগ্রেস বার দেখাবে না বা রিলোড নিবে না
+                        }
+
+                        // যদি নতুন ভার্সন পাওয়া যায়, তবেই প্রোগ্রেস বার আসবে এবং আপডেট হবে
+                        if (liveVersion && liveVersion !== window.LOCAL_APP_VERSION) {
                             
                             localStorage.removeItem('last_update_attempt');
                             
@@ -5305,10 +5309,10 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             const versionFooter = document.getElementById('display-app-version-footer');
             
             if (versionBadge) {
-                versionBadge.innerText = `v${LOCAL_APP_VERSION}`;
+                versionBadge.innerText = `v${window.LOCAL_APP_VERSION}`;
             }
             if (versionFooter) {
-                versionFooter.innerText = `ভার্সন ${LOCAL_APP_VERSION}`;
+                versionFooter.innerText = `ভার্সন ${window.LOCAL_APP_VERSION}`;
             }
         });
     </script>
