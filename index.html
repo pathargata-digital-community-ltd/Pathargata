@@ -3887,16 +3887,6 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
                 });
             });
         }
-                if (snap.exists()) actionDiv.innerHTML = `<button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button><button onclick="unfriend('${targetUid}')" class="w-12 bg-red-100 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-200 flex items-center justify-center"><i class="fa-solid fa-user-xmark"></i></button>`;
-                else get(ref(db, `friend_requests/${targetUid}/${window.currentUser.uid}`)).then(reqSnap => {
-                    if (reqSnap.exists()) actionDiv.innerHTML = `<button onclick="toggleFriendRequest('${targetUid}')" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2">Cancel Request</button>`;
-                    else get(ref(db, `friend_requests/${window.currentUser.uid}/${targetUid}`)).then(incSnap => {
-                        if (incSnap.exists()) actionDiv.innerHTML = `<button onclick="acceptRequest('${targetUid}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 flex items-center justify-center gap-2">Confirm</button><button onclick="cancelRequest('${targetUid}', true)" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2">Delete</button>`;
-                        else actionDiv.innerHTML = `<button onclick="sendFriendRequest('${targetUid}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-solid fa-user-plus"></i> অ্যাড ফ্রেন্ড</button><button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-gray-200 text-black py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>`;
-                    });
-                });
-            });
-        }
 
         window.sendFriendRequest = (toUid) => set(ref(db, `friend_requests/${toUid}/${window.currentUser.uid}`), {
             fromName: userDetails.name,
