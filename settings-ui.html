@@ -1,0 +1,137 @@
+<div id="page-settings" class="hidden p-0 bg-gray-100 min-h-screen pb-20">
+    <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
+        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <h2 class="text-xl font-bold text-gray-800">সেটিংস</h2>
+    </div>
+    
+    <div class="p-4 space-y-4">
+        <!-- ১. একাউন্ট -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">একাউন্ট</div>
+            <div class="p-4 space-y-4">
+                <div onclick="toggleEditProfile(true)" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition"><span class="text-base text-gray-700">প্রোফাইল এডিট</span><i class="fa-solid fa-pen-to-square text-gray-400 text-lg"></i></div>
+                <div onclick="openPasswordChangeModal()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition"><span class="text-base text-gray-700">পাসওয়ার্ড পরিবর্তন</span><i class="fa-solid fa-key text-gray-400 text-lg"></i></div>
+                <div onclick="openAccountDetailsModal()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition"><span class="text-base text-gray-700">ইমেইল ও মোবাইল নাম্বার</span><i class="fa-solid fa-address-book text-gray-400 text-lg"></i></div>
+            </div>
+        </div>
+
+        <!-- ২. প্রাইভেসি ও সিকিউরিটি -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">প্রাইভেসি ও সিকিউরিটি</div>
+            <div class="p-4 space-y-4">
+                <div class="flex items-center justify-between p-2"><span class="text-base text-gray-700">মোবাইল/ইমেইল গোপন রাখুন</span><input type="checkbox" onchange="togglePrivacy(this.checked)" id="setting-privacy-toggle" class="w-6 h-6 text-green-600 rounded"></div>
+                <div onclick="showToast('ব্লক লিস্ট ফিচারটি শীঘ্রই আসছে!', 'success')" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition">
+                    <span class="text-base text-gray-700">ব্লকড ইউজার লিস্ট</span>
+                    <i class="fa-solid fa-user-slash text-gray-400 text-lg"></i>
+                </div>
+                <div class="flex items-center justify-between p-2">
+                    <div>
+                        <span class="text-base text-gray-700 block">অনলাইন স্ট্যাটাস দেখান</span>
+                        <span class="text-[10px] text-gray-500">অন্যরা দেখতে পাবে আপনি অনলাইনে আছেন</span>
+                    </div>
+                    <input type="checkbox" onchange="updateSettings('showOnline', this.checked)" id="setting-online-toggle" checked class="w-6 h-6 text-green-600 rounded">
+                </div>
+                <div class="flex items-center justify-between p-2">
+                    <div>
+                        <span class="text-base text-gray-700 block">ট্যাগিং পারমিশন</span>
+                        <span class="text-[10px] text-gray-500">আমাকে কে ট্যাগ করতে পারবে</span>
+                    </div>
+                    <select onchange="updateSettings('tagPermission', this.value)" id="setting-tag-permission" class="bg-gray-100 border-none text-xs text-gray-700 rounded-lg p-1.5 focus:ring-0 cursor-pointer outline-none">
+                        <option value="everyone">সবাই</option>
+                        <option value="friends">শুধু বন্ধুরা</option>
+                        <option value="none">কেউ না</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- ৩. নোটিফিকেশন ম্যানেজমেন্ট -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">নোটিফিকেশন ম্যানেজমেন্ট</div>
+            <div class="p-4 space-y-4">
+                <div class="flex items-center justify-between p-2 border-b border-gray-50 pb-3">
+                    <span class="text-base font-bold text-gray-800">অ্যাপ নোটিফিকেশন (Master)</span>
+                    <input type="checkbox" id="toggle-master-push" onchange="updateSettings('masterPush', this.checked)" checked class="w-6 h-6 text-green-600 rounded">
+                </div>
+                <div class="flex items-center justify-between p-2">
+                    <span class="text-sm text-gray-700">রক্তদান ও জরুরী অ্যালার্ট</span>
+                    <input type="checkbox" id="toggle-blood-alert" onchange="updateSettings('bloodAlert', this.checked)" class="w-5 h-5 text-green-600 rounded">
+                </div>
+                <div class="flex items-center justify-between p-2">
+                    <span class="text-sm text-gray-700">বাজার দর আপডেট</span>
+                    <input type="checkbox" id="toggle-market-alert" onchange="updateSettings('marketAlert', this.checked)" class="w-5 h-5 text-green-600 rounded">
+                </div>
+                <div class="flex items-center justify-between p-2">
+                    <span class="text-sm text-gray-700">মেসেজ ও চ্যাট সাউন্ড</span>
+                    <input type="checkbox" id="toggle-message-alert" onchange="updateSettings('messageAlert', this.checked)" checked class="w-5 h-5 text-green-600 rounded">
+                </div>
+                <div class="flex items-center justify-between p-2">
+                    <span class="text-sm text-gray-700">লাইক ও কমেন্ট অ্যালার্ট</span>
+                    <input type="checkbox" id="toggle-post-alert" onchange="updateSettings('postAlert', this.checked)" checked class="w-5 h-5 text-green-600 rounded">
+                </div>
+            </div>
+        </div>
+
+        <!-- ৪. ডিসপ্লে ও থিম -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">ডিসপ্লে ও থিম</div>
+            <div class="flex items-center justify-between p-4 border-b">
+                <span class="text-base text-gray-700 font-bold"><i class="fa-solid fa-moon text-gray-500 mr-2"></i> ডার্ক মোড</span>
+                <input type="checkbox" onchange="toggleDarkMode(this.checked)" id="setting-dark-mode-toggle" class="w-6 h-6 text-green-600 rounded">
+            </div>
+            <div class="p-4 flex gap-4">
+                <button onclick="changeFontSize('small')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-sm font-medium">ছোট</button>
+                <button onclick="changeFontSize('normal')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-base font-bold bg-gray-100">স্বাভাবিক</button>
+                <button onclick="changeFontSize('large')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-lg font-medium">বড়</button>
+            </div>
+        </div>
+
+        <!-- ৫. ডেটা ও স্টোরেজ -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">ডেটা ও স্টোরেজ</div>
+            <div class="p-4 space-y-4">
+                <div class="flex items-center justify-between p-2 border-b border-gray-50 pb-4">
+                    <div>
+                        <span class="text-base text-gray-700 font-bold block">ডাটা সেভার মোড</span>
+                        <span class="text-[10px] text-gray-500">ভিডিও অটো-প্লে বন্ধ থাকবে এবং ডাটা কম খরচ হবে</span>
+                    </div>
+                    <input type="checkbox" onchange="toggleDataSaver(this.checked)" id="setting-data-saver-toggle" class="w-6 h-6 text-green-600 rounded">
+                </div>
+                <div onclick="clearAppCache(event)" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition">
+                    <div>
+                        <span class="text-base text-gray-700 font-bold block">মেমোরি ক্যাশ ক্লিয়ার</span>
+                        <span class="text-[10px] text-gray-500">অ্যাপ ধীরগতির হলে এটি ব্যবহার করুন</span>
+                    </div>
+                    <i class="fa-solid fa-broom text-gray-400 text-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- ৬. অ্যাবাউট ও সাপোর্ট -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">অ্যাবাউট ও সাপোর্ট</div>
+            <div class="p-4 space-y-2">
+                <div onclick="window.openRules()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition border-b border-gray-50">
+                    <span class="text-sm text-gray-700"><i class="fa-solid fa-scale-balanced text-gray-400 mr-2 w-5 text-center"></i> ব্যবহার বিধি ও নীতিমালা</span>
+                    <i class="fa-solid fa-angle-right text-gray-300"></i>
+                </div>
+                <div id="admin-wa-btn-settings" onclick="window.open(globalUpdateLink || 'https://wa.me/', '_blank')" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition border-b border-gray-50">
+                    <span class="text-sm text-gray-700"><i class="fa-brands fa-whatsapp text-green-500 mr-2 w-5 text-center"></i> অ্যাডমিনের সাথে যোগাযোগ</span>
+                    <i class="fa-solid fa-angle-right text-gray-300"></i>
+                </div>
+                <div onclick="checkForUpdates()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-3 rounded transition">
+                    <span class="text-sm text-gray-700"><i class="fa-solid fa-rotate text-blue-500 mr-2 w-5 text-center"></i> নতুন আপডেট চেক করুন</span>
+                    <span id="display-app-version" class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-bold">লোড হচ্ছে...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ৭. ডেঞ্জার জোন -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
+            <div class="p-3 bg-red-50 border-b font-bold text-red-700 text-sm">ডেঞ্জার জোন</div>
+            <div class="p-4"><button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button></div>
+        </div>
+        
+        <div class="text-center text-xs text-gray-400 mt-4"><span id="display-app-version-footer">ভার্সন লোড হচ্ছে...</span> | সাপোর্ট: help@patharghata.com</div>
+    </div>
+</div>
