@@ -1021,7 +1021,7 @@
                 <div class="flex items-start gap-2 pt-2 bg-gray-50 p-3 rounded-lg border">
                     <input type="checkbox" id="reg-privacy-agree" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500 mt-0.5">
                     <label for="reg-privacy-agree" class="text-xs text-gray-600 font-medium">
-                        আমি <a href="#" id="reg-privacy-link" target="_blank" class="text-green-600 font-bold hover:underline">গোপনীয়তা ও নীতিমালা</a> এর সাথে একমত।
+                        আমি <a href="#" onclick="openPrivacyPolicy(event)" class="text-green-600 font-bold hover:underline">গোপনীয়তা ও নীতিমালা</a> এর সাথে একমত।
                     </label>
                 </div>
                 
@@ -1199,194 +1199,24 @@
         </div>
     </div>
 
-    <!-- UPDATED PROFESSIONAL POST MODAL (FULL SCREEN) -->
-    <div id="post-modal" class="fixed inset-0 bg-white z-[200] flex flex-col hidden-custom">
-        <div class="bg-white w-full h-full flex flex-col relative">
-            <!-- Header (Full Screen Style) -->
-            <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-                <button onclick="togglePostModal(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
-                    <i class="fa-solid fa-arrow-left text-xl"></i>
-                </button>
-                <h3 class="font-bold text-gray-800 text-lg flex-1">পোস্ট তৈরি করুন</h3>
+    <!-- IN-APP WEBVIEW / BROWSER MODAL -->
+    <div id="webview-modal" class="fixed inset-0 bg-white z-[300] hidden-custom flex flex-col transition-transform duration-300 transform translate-y-full">
+        <div class="flex items-center justify-between p-3 border-b bg-gray-50 pt-safe shadow-sm">
+            <div class="flex items-center gap-3">
+                <button onclick="closeWebview()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+                <h3 id="webview-title" class="font-bold text-gray-800 text-base truncate max-w-[200px]">লোডিং...</h3>
             </div>
-
-            <!-- Scrollable Content Area -->
-            <div class="flex-1 overflow-y-auto pb-safe">
-                <!-- User Info & Privacy -->
-                <div class="px-4 py-3 flex items-center gap-3">
-                    <div id="post-modal-user-img" class="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border border-gray-100 shrink-0">
-                        <i class="fa-solid fa-user text-gray-400 text-xl"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="flex flex-wrap items-center gap-1">
-                            <h4 id="post-modal-user-name" class="font-bold text-gray-800 text-base leading-tight inline">User Name</h4>
-                            <span id="post-modal-tagged-info" class="text-sm text-gray-600 hidden inline"></span>
-                        </div>
-                        <select id="post-privacy" class="mt-1 bg-gray-100 text-xs font-semibold text-gray-600 px-2 py-1 rounded-md border-0 focus:ring-0 cursor-pointer">
-                            <option value="public">🌍 Public</option>
-                            <option value="friends">👥 Friends</option>
-                            <option value="only_me">🔒 Only Me</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Text Area -->
-                <div class="px-4">
-                    <textarea id="post-text" class="w-full min-h-[150px] text-lg lg:text-xl placeholder-gray-500 border-none focus:ring-0 resize-none p-0" placeholder="আপনার মনে কী আছে? (ভিডিও লিংক এখানে দিন)"></textarea>
-                </div>
-
-                <!-- Background Color Options -->
-                <div class="px-4 py-2" id="color-picker-wrapper">
-                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" id="color-picker-container">
-                        <div onclick="selectPostColor('')" class="post-color-dot bg-white border-gray-300 shadow-sm shrink-0" title="Default"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #ff5f6d, #ffc371)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #ff5f6d, #ffc371);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #2193b0, #6dd5ed)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #2193b0, #6dd5ed);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #cc2b5e, #753a88)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #cc2b5e, #753a88);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #000000, #434343)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #000000, #434343);"></div>
-                        <div onclick="selectPostColor('linear-gradient(to right, #11998e, #38ef7d)')" class="post-color-dot shrink-0" style="background: linear-gradient(to right, #11998e, #38ef7d);"></div>
-                    </div>
-                    <input type="hidden" id="selected-post-color" value="">
-                </div>
-
-                <!-- Image/Video Preview Area -->
-                <div id="image-preview-area" class="px-4 mb-2 hidden">
-                    <div class="relative rounded-xl overflow-hidden border border-gray-200" id="preview-container-inner">
-                        <!-- Image or Video will be injected here -->
-                        <div id="preview-grid" class="w-full"></div>
-                        <button onclick="removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Premium Voice Recording UI -->
-                <div id="voice-record-area" class="px-4 mb-4 hidden">
-                    <style>
-                        @keyframes soundWave { 0% { height: 4px; } 50% { height: 28px; } 100% { height: 4px; } }
-                        .recording-active .wave-bar { animation: soundWave 1.2s infinite ease-in-out; }
-                        .recording-active .wave-bar:nth-child(1) { animation-delay: 0.0s; }
-                        .recording-active .wave-bar:nth-child(2) { animation-delay: 0.2s; }
-                        .recording-active .wave-bar:nth-child(3) { animation-delay: 0.4s; }
-                        .recording-active .wave-bar:nth-child(4) { animation-delay: 0.1s; }
-                        .recording-active .wave-bar:nth-child(5) { animation-delay: 0.3s; }
-                        .recording-active .wave-bar:nth-child(6) { animation-delay: 0.5s; }
-                        .recording-active .wave-bar:nth-child(7) { animation-delay: 0.2s; }
-                        .audio-dark-filter { filter: invert(100%) hue-rotate(180deg) grayscale(100%) contrast(150%); opacity: 0.9; }
-                    </style>
-                    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl p-6 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden border border-gray-700">
-                        <div id="recording-pulse-bg" class="absolute inset-0 bg-red-600/10 opacity-0 transition-opacity duration-300 pointer-events-none"></div>
-                        <div class="z-10 text-center w-full">
-                            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex justify-center items-center gap-2"><i class="fa-solid fa-satellite-dish"></i> Voice Studio</p>
-                            
-                            <div class="flex items-center justify-center gap-2 mb-2">
-                                <div id="record-status-dot" class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse hidden shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
-                                <p id="record-timer" class="text-4xl font-mono font-light text-white tracking-widest drop-shadow-md">00:00</p>
-                            </div>
-
-                            <div id="css-waveform" class="flex items-center justify-center gap-1.5 h-8 mb-6 opacity-30 transition-opacity duration-300">
-                                <div class="w-1.5 bg-red-400 rounded-full h-2 transition-all duration-150 wave-bar"></div>
-                                <div class="w-1.5 bg-red-400 rounded-full h-4 transition-all duration-150 wave-bar"></div>
-                                <div class="w-1.5 bg-red-400 rounded-full h-3 transition-all duration-150 wave-bar"></div>
-                                <div class="w-1.5 bg-red-400 rounded-full h-6 transition-all duration-150 wave-bar"></div>
-                                <div class="w-1.5 bg-red-400 rounded-full h-3 transition-all duration-150 wave-bar"></div>
-                                <div class="w-1.5 bg-red-400 rounded-full h-5 transition-all duration-150 wave-bar"></div>
-                                <div class="w-1.5 bg-red-400 rounded-full h-2 transition-all duration-150 wave-bar"></div>
-                            </div>
-
-                            <div class="flex items-center justify-center">
-                                <button onclick="startRecording()" id="btn-record-start" class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-microphone text-2xl"></i></button>
-                                <button onclick="stopRecording()" id="btn-record-stop" class="hidden w-16 h-16 bg-white text-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-stop text-2xl"></i></button>
-                            </div>
-
-                            <div id="audio-preview-container" class="w-full hidden mt-5 bg-gray-800/80 p-2.5 rounded-xl backdrop-blur-md border border-gray-600 flex items-center gap-2 shadow-inner">
-                                <audio id="audio-preview" controls controlsList="nodownload noplaybackrate" class="w-full h-9 audio-dark-filter bg-transparent outline-none"></audio>
-                                <button onclick="cancelRecording()" class="text-gray-400 hover:text-red-400 hover:bg-gray-700 p-2 rounded-full transition" title="Delete"><i class="fa-solid fa-trash text-lg"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add to Post Options (Grid Layout) -->
-                <div class="px-4 py-3">
-                    <p class="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">পোস্টে যুক্ত করুন</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="document.getElementById('post-image-file').click()" class="flex justify-start items-center gap-3 bg-green-50 text-green-700 p-3 rounded-xl font-bold text-sm border border-green-200 hover:bg-green-100 shadow-sm transition">
-                            <i class="fa-solid fa-images text-xl"></i> ছবি / ভিডিও
-                        </button>
-                        <button onclick="openLocationModal()" class="flex justify-start items-center gap-3 bg-red-50 text-red-700 p-3 rounded-xl font-bold text-sm border border-red-200 hover:bg-red-100 shadow-sm transition">
-                            <i class="fa-solid fa-location-dot text-xl"></i> চেক-ইন / স্থান
-                        </button>
-                        <button onclick="openFeelingModal()" class="flex justify-start items-center gap-3 bg-yellow-50 text-yellow-700 p-3 rounded-xl font-bold text-sm border border-yellow-200 hover:bg-yellow-100 shadow-sm transition">
-                            <i class="fa-regular fa-face-smile text-xl"></i> অনুভূতি
-                        </button>
-                        <button onclick="openTagModal()" class="flex justify-start items-center gap-3 bg-blue-50 text-blue-700 p-3 rounded-xl font-bold text-sm border border-blue-200 hover:bg-blue-100 shadow-sm transition">
-                            <i class="fa-solid fa-user-tag text-xl"></i> বন্ধু ট্যাগ করুন
-                        </button>
-                        <button onclick="toggleVoiceRecorder()" class="flex justify-center items-center gap-3 bg-purple-50 text-purple-700 p-3 rounded-xl font-bold text-sm border border-purple-200 hover:bg-purple-100 shadow-sm transition col-span-2">
-                            <i class="fa-solid fa-microphone text-xl"></i> ভয়েস রেকর্ড করুন
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 24 Hour Ephemeral Post Checkbox (Story System) -->
-                <div class="px-4 pb-3 mt-1">
-                    <label class="flex items-center justify-between cursor-pointer bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 p-3.5 rounded-xl text-sm font-bold text-orange-700 hover:shadow-md transition w-full shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shadow-sm">
-                                <i class="fa-solid fa-stopwatch animate-pulse text-lg"></i>
-                            </div>
-                            <div class="flex flex-col">
-                                <span class="text-base">স্টোরি স্টাইল পোস্ট</span>
-                                <span class="text-[11px] text-orange-500 font-normal">২৪ ঘণ্টা পর স্বয়ংক্রিয়ভাবে মুছে যাবে</span>
-                            </div>
-                        </div>
-                        <input type="checkbox" id="post-ephemeral" class="w-6 h-6 text-orange-600 rounded-md focus:ring-orange-500 border-orange-300">
-                    </label>
-                </div>
-
-                <!-- Extra Fields -->
-                <div class="px-4 py-2 flex gap-2">
-                    <input type="tel" id="post-mobile" placeholder="মোবাইল (কল বাটন)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white shadow-sm">
-                    <input type="url" id="post-social-link" placeholder="সোশ্যাল লিংক (WhatsApp)" class="w-1/2 bg-gray-50 border border-gray-200 p-2.5 rounded-lg text-sm focus:bg-white shadow-sm">
-                </div>
-
-                <!-- Hidden File Input -->
-                <input type="file" id="post-image-file" accept="image/*" class="hidden" multiple onchange="previewPostImage(this)">
-
-                <!-- Submit Button -->
-                <div class="p-4">
-                    <button onclick="submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
-                        পোস্ট করুন
-                    </button>
-                </div>
+            <button id="webview-external-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full px-4 py-1.5 text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-up-right-from-square"></i> ব্রাউজারে</button>
+        </div>
+        <div class="flex-1 w-full bg-gray-100 relative">
+            <div id="webview-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-4 border-green-600 mb-3"></div>
+                <p class="text-xs text-gray-500 font-bold">লোড হচ্ছে...</p>
             </div>
+            <iframe id="webview-frame" class="w-full h-full border-0 hidden" onload="document.getElementById('webview-loader').classList.add('hidden'); this.classList.remove('hidden');" onerror="document.getElementById('webview-loader').innerHTML='<p class=\'text-red-500\'>লোড করতে সমস্যা হচ্ছে। উপরের বাটন দিয়ে ব্রাউজারে খুলুন।</p>'"></iframe>
         </div>
     </div>
-
-    <div id="edit-post-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[110] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl">
-            <h3 class="font-bold text-lg text-gray-700 mb-4">পোস্ট এডিট করুন</h3>
-            <input type="hidden" id="edit-post-id">
-            <textarea id="edit-post-text" class="w-full h-32 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white resize-none text-base"></textarea>
-            <div class="flex gap-2 mt-4"><button onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button onclick="submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
-        </div>
-    </div>
-
-    <div id="poll-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl transform transition-all scale-100">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button onclick="togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="space-y-3">
-                <input type="text" id="poll-question" placeholder="প্রশ্ন লিখুন (যেমন: সেরা খেলা কোনটি?)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm font-bold">
-                <input type="text" id="poll-opt-1" placeholder="অপশন ১" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
-                <input type="text" id="poll-opt-2" placeholder="অপশন ২" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
-                <input type="text" id="poll-opt-3" placeholder="অপশন ৩ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
-                <input type="text" id="poll-opt-4" placeholder="অপশন ৪ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
-            </div>
-        </div> 
-    </div>
-    
+       
     <!-- POST UI CONTAINER -->
     <div id="post-ui-container"></div>       
   
@@ -2445,6 +2275,8 @@ if (refUid) {
 
         window.checkUserBadge = function(user) {
             if (!user) return "";
+            if (user.status === 'deactivated') return `<span class="ml-2 text-[9px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">Deactivated</span>`;
+            
             const role = user.role ? user.role.toLowerCase() : '';
             if (role === 'journalist') return `<i class="fa-solid fa-feather-pointed journalist-badge"></i>`;
             if (user.isVerified || ['chairman', 'member', 'admin', 'doctor', 'uno', 'oc'].includes(role)) return `<i class="fa-solid fa-circle-check verified-badge"></i>`;
@@ -2670,6 +2502,13 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
                         userDetails = data;
 window.userDetails = userDetails;
 window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
+                        // Reactivation Logic (ডিএক্টিভ থাকলে লগইন করার সাথে সাথে একটিভ হবে)
+                        if (data.status === 'deactivated') {
+                            update(ref(db, 'users/' + user.uid), { status: 'user' });
+                            data.status = 'user';
+                            showToast("স্বাগতম! আপনার একাউন্ট পুনরায় একটিভ করা হয়েছে।", "success");
+                        }
+
                         if(data.status === 'pending' || data.status === 'pending_review') {
                             window.ADVANCED_FEATURES.showLockScreen(data); 
                             return; 
@@ -2847,11 +2686,11 @@ loadMyComplaints();
                             onclick = `switchPage('${key}')`;
                         }
                     } else if (key === 'birth_reg') {
-                        onclick = `window.open('https://bdris.gov.bd/', '_blank')`;
+                        onclick = `window.openInAppWebview('${cat.title}', 'https://bdris.gov.bd/')`;
                     } else if (key === 'tin_cert') {
-                        onclick = `window.open('https://secure.incometax.gov.bd/TINHome', '_blank')`;
+                        onclick = `window.openInAppWebview('${cat.title}', 'https://secure.incometax.gov.bd/TINHome')`;
                     } else if (key === 'result') {
-                        onclick = `window.open('https://eboardresults.com/v2/home', '_blank')`;
+                        onclick = `window.openInAppWebview('${cat.title}', 'https://eboardresults.com/v2/home')`;
                     } else if (key === 'agriculture') {
                         onclick = `openDirectoryCategory('agriculture', '${cat.title}')`;
                     } else {
@@ -2891,14 +2730,17 @@ loadMyComplaints();
                 };
             });
 
-            // Load Privacy Policy Link for Registration Form
+            }
+        
+        // Load Privacy Policy Link inside In-App Browser
+        window.openPrivacyPolicy = (e) => {
+            e.preventDefault();
             onValue(ref(db, 'admin_settings/privacy_link'), (snap) => {
                 const link = snap.val();
-                if (link) {
-                    document.getElementById('reg-privacy-link').href = link;
-                }
+                if (link) window.openInAppWebview('গোপনীয়তা ও নীতিমালা', link);
+                else showToast("প্রাইভেসি লিংক পাওয়া যায়নি", "error");
             });
-        }
+        };
 
         window.loadVillagesForUnion = (unionName, targetId) => {
             const select = document.getElementById(targetId);
@@ -3839,13 +3681,23 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         window.checkFriendshipStatus = function(targetUid, targetName) {
             const actionDiv = document.getElementById('view-profile-actions');
             actionDiv.innerHTML = '<button class="w-full bg-gray-200 py-2 rounded-lg text-sm font-bold">Checking...</button>';
-            get(ref(db, `users/${window.currentUser.uid}/friends/${targetUid}`)).then(snap => {
-                if (snap.exists()) actionDiv.innerHTML = `<button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button><button onclick="unfriend('${targetUid}')" class="w-12 bg-red-100 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-200 flex items-center justify-center"><i class="fa-solid fa-user-xmark"></i></button>`;
-                else get(ref(db, `friend_requests/${targetUid}/${window.currentUser.uid}`)).then(reqSnap => {
-                    if (reqSnap.exists()) actionDiv.innerHTML = `<button onclick="toggleFriendRequest('${targetUid}')" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2">Cancel Request</button>`;
-                    else get(ref(db, `friend_requests/${window.currentUser.uid}/${targetUid}`)).then(incSnap => {
-                        if (incSnap.exists()) actionDiv.innerHTML = `<button onclick="acceptRequest('${targetUid}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 flex items-center justify-center gap-2">Confirm</button><button onclick="cancelRequest('${targetUid}', true)" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2">Delete</button>`;
-                        else actionDiv.innerHTML = `<button onclick="sendFriendRequest('${targetUid}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-solid fa-user-plus"></i> অ্যাড ফ্রেন্ড</button><button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-gray-200 text-black py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>`;
+            
+            // প্রথমে চেক করবে ইউজার ডিএক্টিভ কিনা
+            get(ref(db, `users/${targetUid}/status`)).then(statusSnap => {
+                if (statusSnap.val() === 'deactivated') {
+                    actionDiv.innerHTML = `<button class="w-full bg-gray-200 text-gray-500 py-2 rounded-lg font-bold text-sm cursor-not-allowed">একাউন্টটি বর্তমানে ডিএক্টিভ রয়েছে</button>`;
+                    return;
+                }
+                
+                // ডিএক্টিভ না থাকলে নরমাল রিকোয়েস্ট/মেসেজ লজিক কাজ করবে
+                get(ref(db, `users/${window.currentUser.uid}/friends/${targetUid}`)).then(snap => {
+                    if (snap.exists()) actionDiv.innerHTML = `<button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button><button onclick="unfriend('${targetUid}')" class="w-12 bg-red-100 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-200 flex items-center justify-center"><i class="fa-solid fa-user-xmark"></i></button>`;
+                    else get(ref(db, `friend_requests/${targetUid}/${window.currentUser.uid}`)).then(reqSnap => {
+                        if (reqSnap.exists()) actionDiv.innerHTML = `<button onclick="toggleFriendRequest('${targetUid}')" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2">Cancel Request</button>`;
+                        else get(ref(db, `friend_requests/${window.currentUser.uid}/${targetUid}`)).then(incSnap => {
+                            if (incSnap.exists()) actionDiv.innerHTML = `<button onclick="acceptRequest('${targetUid}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 flex items-center justify-center gap-2">Confirm</button><button onclick="cancelRequest('${targetUid}', true)" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2">Delete</button>`;
+                            else actionDiv.innerHTML = `<button onclick="sendFriendRequest('${targetUid}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-solid fa-user-plus"></i> অ্যাড ফ্রেন্ড</button><button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-gray-200 text-black py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>`;
+                        });
                     });
                 });
             });
@@ -4130,7 +3982,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         window.openRules = () => {
             onValue(ref(db, 'admin_settings/rules_link'), (snap) => {
                 const link = snap.val();
-                if (link) window.open(link, '_blank');
+                if (link) window.openInAppWebview('রুলস ও নীতিমালা', link);
                 else showToast("রুলস লিংক পাওয়া যায়নি", "error");
             });
         }
@@ -4180,9 +4032,39 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             }
         };
 
-        window.closeAccountDetailsModal = () => {
-            document.getElementById('account-details-modal').classList.add('hidden-custom');
-            if (history.state?.modal === 'account-details-modal') history.back();
+        // --- IN-APP WEBVIEW LOGIC ---
+        window.openInAppWebview = function(title, url) {
+            const modal = document.getElementById('webview-modal');
+            modal.classList.remove('hidden-custom');
+            
+            // এনিমেশনের জন্য সামান্য সময় দেওয়া হলো
+            setTimeout(() => {
+                modal.classList.remove('translate-y-full');
+            }, 10);
+
+            document.getElementById('webview-title').innerText = title;
+            document.getElementById('webview-loader').classList.remove('hidden');
+            document.getElementById('webview-loader').innerHTML = '<div class="animate-spin rounded-full h-10 w-10 border-b-4 border-green-600 mb-3"></div><p class="text-xs text-gray-500 font-bold">লোড হচ্ছে...</p>';
+            
+            const frame = document.getElementById('webview-frame');
+            frame.classList.add('hidden');
+            frame.src = url; // সাইট লোড হওয়া শুরু করবে
+
+            // ফেইল-সেফ: ব্রাউজারে ওপেন করার বাটন
+            document.getElementById('webview-external-btn').onclick = () => window.open(url, '_blank');
+            
+            history.pushState({ modal: 'webview-modal' }, null, "#browser");
+        };
+
+        window.closeWebview = function() {
+            const modal = document.getElementById('webview-modal');
+            modal.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden-custom');
+                document.getElementById('webview-frame').src = ''; // মেমোরি ক্লিয়ার
+            }, 300);
+            
+            if(history.state?.modal === 'webview-modal') history.back();
         };
 
         window.saveAccountDetails = async () => {
@@ -4641,6 +4523,11 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     window.loadNotifications(true);
                 }
             }
+            
+            // সেটিংস পেজ ওপেন হলে ভ্যালুগুলো আপডেট হওয়ার লজিক
+            if (id === 'settings') {
+                if (window.initSettingsPage) window.initSettingsPage();
+            }
 
             // Push History
             if (addHistory) history.pushState({
@@ -4732,10 +4619,16 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 document.getElementById('edit-profile-modal').classList.add('hidden-custom');
                 return;
             }
-            if (!document.getElementById('account-details-modal').classList.contains('hidden-custom')) {
-                closeAccountDetailsModal();
+            if (!document.getElementById('webview-modal').classList.contains('hidden-custom')) {
+                closeWebview();
                 return;
             }
+            
+            if (!document.getElementById('blocked-users-modal').classList.contains('hidden-custom')) {
+                closeBlockedUsersModal();
+                return;
+            }
+            
             // Verification modal removed in this update, handled by page
 
             if (document.getElementById('search-modal').classList.contains('open')) {
