@@ -1021,7 +1021,7 @@
                 <div class="flex items-start gap-2 pt-2 bg-gray-50 p-3 rounded-lg border">
                     <input type="checkbox" id="reg-privacy-agree" class="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500 mt-0.5">
                     <label for="reg-privacy-agree" class="text-xs text-gray-600 font-medium">
-                        আমি <a href="#" id="reg-privacy-link" target="_blank" class="text-green-600 font-bold hover:underline">গোপনীয়তা ও নীতিমালা</a> এর সাথে একমত।
+                        আমি <a href="#" onclick="openPrivacyPolicy(event)" class="text-green-600 font-bold hover:underline">গোপনীয়তা ও নীতিমালা</a> এর সাথে একমত।
                     </label>
                 </div>
                 
@@ -1199,8 +1199,23 @@
         </div>
     </div>
 
-    <!-- UPDATED PROFESSIONAL POST MODAL (FULL SCREEN) -->
-    <div id="post-modal" class="fixed inset-0 bg-white z-[200] flex flex-col hidden-custom">
+    <!-- IN-APP WEBVIEW / BROWSER MODAL -->
+    <div id="webview-modal" class="fixed inset-0 bg-white z-[300] hidden-custom flex flex-col transition-transform duration-300 transform translate-y-full">
+        <div class="flex items-center justify-between p-3 border-b bg-gray-50 pt-safe shadow-sm">
+            <div class="flex items-center gap-3">
+                <button onclick="closeWebview()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+                <h3 id="webview-title" class="font-bold text-gray-800 text-base truncate max-w-[200px]">লোডিং...</h3>
+            </div>
+            <button id="webview-external-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full px-4 py-1.5 text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-up-right-from-square"></i> ব্রাউজারে</button>
+        </div>
+        <div class="flex-1 w-full bg-gray-100 relative">
+            <div id="webview-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-10">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-4 border-green-600 mb-3"></div>
+                <p class="text-xs text-gray-500 font-bold">লোড হচ্ছে...</p>
+            </div>
+            <iframe id="webview-frame" class="w-full h-full border-0 hidden" onload="document.getElementById('webview-loader').classList.add('hidden'); this.classList.remove('hidden');" onerror="document.getElementById('webview-loader').innerHTML='<p class=\'text-red-500\'>লোড করতে সমস্যা হচ্ছে। উপরের বাটন দিয়ে ব্রাউজারে খুলুন।</p>'"></iframe>
+        </div>
+    </div>
         <div class="bg-white w-full h-full flex flex-col relative">
             <!-- Header (Full Screen Style) -->
             <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
@@ -2445,6 +2460,8 @@ if (refUid) {
 
         window.checkUserBadge = function(user) {
             if (!user) return "";
+            if (user.status === 'deactivated') return `<span class="ml-2 text-[9px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full border border-red-200">Deactivated</span>`;
+            
             const role = user.role ? user.role.toLowerCase() : '';
             if (role === 'journalist') return `<i class="fa-solid fa-feather-pointed journalist-badge"></i>`;
             if (user.isVerified || ['chairman', 'member', 'admin', 'doctor', 'uno', 'oc'].includes(role)) return `<i class="fa-solid fa-circle-check verified-badge"></i>`;
@@ -2670,6 +2687,13 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
                         userDetails = data;
 window.userDetails = userDetails;
 window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
+                        // Reactivation Logic (ডিএক্টিভ থাকলে লগইন করার সাথে সাথে একটিভ হবে)
+                        if (data.status === 'deactivated') {
+                            update(ref(db, 'users/' + user.uid), { status: 'user' });
+                            data.status = 'user';
+                            showToast("স্বাগতম! আপনার একাউন্ট পুনরায় একটিভ করা হয়েছে।", "success");
+                        }
+
                         if(data.status === 'pending' || data.status === 'pending_review') {
                             window.ADVANCED_FEATURES.showLockScreen(data); 
                             return; 
@@ -2847,11 +2871,11 @@ loadMyComplaints();
                             onclick = `switchPage('${key}')`;
                         }
                     } else if (key === 'birth_reg') {
-                        onclick = `window.open('https://bdris.gov.bd/', '_blank')`;
+                        onclick = `window.openInAppWebview('${cat.title}', 'https://bdris.gov.bd/')`;
                     } else if (key === 'tin_cert') {
-                        onclick = `window.open('https://secure.incometax.gov.bd/TINHome', '_blank')`;
+                        onclick = `window.openInAppWebview('${cat.title}', 'https://secure.incometax.gov.bd/TINHome')`;
                     } else if (key === 'result') {
-                        onclick = `window.open('https://eboardresults.com/v2/home', '_blank')`;
+                        onclick = `window.openInAppWebview('${cat.title}', 'https://eboardresults.com/v2/home')`;
                     } else if (key === 'agriculture') {
                         onclick = `openDirectoryCategory('agriculture', '${cat.title}')`;
                     } else {
@@ -2891,14 +2915,17 @@ loadMyComplaints();
                 };
             });
 
-            // Load Privacy Policy Link for Registration Form
+            }
+        
+        // Load Privacy Policy Link inside In-App Browser
+        window.openPrivacyPolicy = (e) => {
+            e.preventDefault();
             onValue(ref(db, 'admin_settings/privacy_link'), (snap) => {
                 const link = snap.val();
-                if (link) {
-                    document.getElementById('reg-privacy-link').href = link;
-                }
+                if (link) window.openInAppWebview('গোপনীয়তা ও নীতিমালা', link);
+                else showToast("প্রাইভেসি লিংক পাওয়া যায়নি", "error");
             });
-        }
+        };
 
         window.loadVillagesForUnion = (unionName, targetId) => {
             const select = document.getElementById(targetId);
@@ -3839,7 +3866,27 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         window.checkFriendshipStatus = function(targetUid, targetName) {
             const actionDiv = document.getElementById('view-profile-actions');
             actionDiv.innerHTML = '<button class="w-full bg-gray-200 py-2 rounded-lg text-sm font-bold">Checking...</button>';
-            get(ref(db, `users/${window.currentUser.uid}/friends/${targetUid}`)).then(snap => {
+            
+            // প্রথমে চেক করবে ইউজার ডিএক্টিভ কিনা
+            get(ref(db, `users/${targetUid}/status`)).then(statusSnap => {
+                if (statusSnap.val() === 'deactivated') {
+                    actionDiv.innerHTML = `<button class="w-full bg-gray-200 text-gray-500 py-2 rounded-lg font-bold text-sm cursor-not-allowed">একাউন্টটি বর্তমানে ডিএক্টিভ রয়েছে</button>`;
+                    return;
+                }
+                
+                // ডিএক্টিভ না থাকলে নরমাল রিকোয়েস্ট/মেসেজ লজিক কাজ করবে
+                get(ref(db, `users/${window.currentUser.uid}/friends/${targetUid}`)).then(snap => {
+                    if (snap.exists()) actionDiv.innerHTML = `<button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button><button onclick="unfriend('${targetUid}')" class="w-12 bg-red-100 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-200 flex items-center justify-center"><i class="fa-solid fa-user-xmark"></i></button>`;
+                    else get(ref(db, `friend_requests/${targetUid}/${window.currentUser.uid}`)).then(reqSnap => {
+                        if (reqSnap.exists()) actionDiv.innerHTML = `<button onclick="toggleFriendRequest('${targetUid}')" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2">Cancel Request</button>`;
+                        else get(ref(db, `friend_requests/${window.currentUser.uid}/${targetUid}`)).then(incSnap => {
+                            if (incSnap.exists()) actionDiv.innerHTML = `<button onclick="acceptRequest('${targetUid}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-green-700 flex items-center justify-center gap-2">Confirm</button><button onclick="cancelRequest('${targetUid}', true)" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2">Delete</button>`;
+                            else actionDiv.innerHTML = `<button onclick="sendFriendRequest('${targetUid}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-solid fa-user-plus"></i> অ্যাড ফ্রেন্ড</button><button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-gray-200 text-black py-2 rounded-lg font-bold text-sm hover:bg-gray-300 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>`;
+                        });
+                    });
+                });
+            });
+        }
                 if (snap.exists()) actionDiv.innerHTML = `<button onclick="startChat('${targetUid}', '${escapeHTML(targetName)}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button><button onclick="unfriend('${targetUid}')" class="w-12 bg-red-100 text-red-600 py-2 rounded-lg font-bold text-sm hover:bg-red-200 flex items-center justify-center"><i class="fa-solid fa-user-xmark"></i></button>`;
                 else get(ref(db, `friend_requests/${targetUid}/${window.currentUser.uid}`)).then(reqSnap => {
                     if (reqSnap.exists()) actionDiv.innerHTML = `<button onclick="toggleFriendRequest('${targetUid}')" class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2">Cancel Request</button>`;
@@ -4130,7 +4177,7 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
         window.openRules = () => {
             onValue(ref(db, 'admin_settings/rules_link'), (snap) => {
                 const link = snap.val();
-                if (link) window.open(link, '_blank');
+                if (link) window.openInAppWebview('রুলস ও নীতিমালা', link);
                 else showToast("রুলস লিংক পাওয়া যায়নি", "error");
             });
         }
@@ -4180,9 +4227,39 @@ if (document.getElementById('qual-refer')) document.getElementById('qual-refer')
             }
         };
 
-        window.closeAccountDetailsModal = () => {
-            document.getElementById('account-details-modal').classList.add('hidden-custom');
-            if (history.state?.modal === 'account-details-modal') history.back();
+        // --- IN-APP WEBVIEW LOGIC ---
+        window.openInAppWebview = function(title, url) {
+            const modal = document.getElementById('webview-modal');
+            modal.classList.remove('hidden-custom');
+            
+            // এনিমেশনের জন্য সামান্য সময় দেওয়া হলো
+            setTimeout(() => {
+                modal.classList.remove('translate-y-full');
+            }, 10);
+
+            document.getElementById('webview-title').innerText = title;
+            document.getElementById('webview-loader').classList.remove('hidden');
+            document.getElementById('webview-loader').innerHTML = '<div class="animate-spin rounded-full h-10 w-10 border-b-4 border-green-600 mb-3"></div><p class="text-xs text-gray-500 font-bold">লোড হচ্ছে...</p>';
+            
+            const frame = document.getElementById('webview-frame');
+            frame.classList.add('hidden');
+            frame.src = url; // সাইট লোড হওয়া শুরু করবে
+
+            // ফেইল-সেফ: ব্রাউজারে ওপেন করার বাটন
+            document.getElementById('webview-external-btn').onclick = () => window.open(url, '_blank');
+            
+            history.pushState({ modal: 'webview-modal' }, null, "#browser");
+        };
+
+        window.closeWebview = function() {
+            const modal = document.getElementById('webview-modal');
+            modal.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden-custom');
+                document.getElementById('webview-frame').src = ''; // মেমোরি ক্লিয়ার
+            }, 300);
+            
+            if(history.state?.modal === 'webview-modal') history.back();
         };
 
         window.saveAccountDetails = async () => {
@@ -4641,6 +4718,11 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     window.loadNotifications(true);
                 }
             }
+            
+            // সেটিংস পেজ ওপেন হলে ভ্যালুগুলো আপডেট হওয়ার লজিক
+            if (id === 'settings') {
+                if (window.initSettingsPage) window.initSettingsPage();
+            }
 
             // Push History
             if (addHistory) history.pushState({
@@ -4732,10 +4814,16 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 document.getElementById('edit-profile-modal').classList.add('hidden-custom');
                 return;
             }
-            if (!document.getElementById('account-details-modal').classList.contains('hidden-custom')) {
-                closeAccountDetailsModal();
+            if (!document.getElementById('webview-modal').classList.contains('hidden-custom')) {
+                closeWebview();
                 return;
             }
+            
+            if (!document.getElementById('blocked-users-modal').classList.contains('hidden-custom')) {
+                closeBlockedUsersModal();
+                return;
+            }
+            
             // Verification modal removed in this update, handled by page
 
             if (document.getElementById('search-modal').classList.contains('open')) {
