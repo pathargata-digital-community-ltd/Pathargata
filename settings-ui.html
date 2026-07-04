@@ -20,7 +20,7 @@
             <div class="p-3 bg-gray-50 border-b font-bold text-gray-700 text-sm">প্রাইভেসি ও সিকিউরিটি</div>
             <div class="p-4 space-y-4">
                 <div class="flex items-center justify-between p-2"><span class="text-base text-gray-700">মোবাইল/ইমেইল গোপন রাখুন</span><input type="checkbox" onchange="togglePrivacy(this.checked)" id="setting-privacy-toggle" class="w-6 h-6 text-green-600 rounded"></div>
-                <div onclick="showToast('ব্লক লিস্ট ফিচারটি শীঘ্রই আসছে!', 'success')" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition">
+                <div onclick="openBlockedUsersModal()" class="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded transition">
                     <span class="text-base text-gray-700">ব্লকড ইউজার লিস্ট</span>
                     <i class="fa-solid fa-user-slash text-gray-400 text-lg"></i>
                 </div>
@@ -129,9 +129,23 @@
         <!-- ৭. ডেঞ্জার জোন -->
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
             <div class="p-3 bg-red-50 border-b font-bold text-red-700 text-sm">ডেঞ্জার জোন</div>
-            <div class="p-4"><button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button></div>
+            <div class="p-4 space-y-3">
+                <button onclick="handleDeactivateAccount()" class="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-bold text-base hover:bg-orange-200 transition">একাউন্ট ডিএক্টিভ করুন</button>
+                <button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button>
+            </div>
         </div>
         
         <div class="text-center text-xs text-gray-400 mt-4"><span id="display-app-version-footer">ভার্সন লোড হচ্ছে...</span> | সাপোর্ট: help@patharghata.com</div>
+    </div>
+    
+    <!-- ব্লকড ইউজার লিস্ট মডাল -->
+    <div id="blocked-users-modal" class="fixed inset-0 bg-white z-[200] hidden-custom flex flex-col transition-transform duration-300 transform translate-y-full">
+        <div class="flex items-center gap-3 p-3 border-b bg-gray-50 pt-safe shadow-sm">
+            <button onclick="closeBlockedUsersModal()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h3 class="font-bold text-gray-800 text-base">ব্লকড ইউজার লিস্ট</h3>
+        </div>
+        <div id="blocked-users-list" class="flex-1 overflow-y-auto bg-gray-100 p-4 space-y-3 pb-20">
+            <p class="text-center text-gray-500 mt-10">লোড হচ্ছে...</p>
+        </div>
     </div>
 </div>
