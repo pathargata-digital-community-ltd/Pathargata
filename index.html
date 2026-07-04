@@ -4049,6 +4049,111 @@ peoplePage.addEventListener('touchend', (e) => {
     }
 });
 
+// --- GLOBAL SMART SMOOTH SWIPE NAVIGATION LOGIC ---
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeEndX = 0;
+let swipeEndY = 0;
+const SWIPE_THRESHOLD = 50; // সোয়াইপ কাজ করার জন্য ন্যূনতম দূরত্ব (একটু কমিয়ে দিলাম যেন আরও স্মুথলি ধরে)
+
+document.addEventListener('touchstart', (e) => {
+    swipeStartX = e.changedTouches[0].screenX;
+    swipeStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+    swipeEndX = e.changedTouches[0].screenX;
+    swipeEndY = e.changedTouches[0].screenY;
+    
+    // কোনো হরাইজন্টাল স্লাইডার বা মডালের ভেতরে থাকলে সোয়াইপ ইগনোর করবে
+    if (e.target.closest('.overflow-x-auto') || e.target.closest('.hide-scrollbar') || e.target.closest('.fixed.z-\\[180\\], .fixed.z-\\[200\\], .fixed.z-\\[210\\], .fixed.z-\\[300\\]')) {
+        return;
+    }
+    
+    handleGlobalSwipe();
+}, { passive: true });
+
+// স্মুথ অ্যানিমেশন ফায়ার করার ফাংশন
+function triggerSwipeAnimation(direction) {
+    const mainContent = document.getElementById('content-pages');
+    if (!mainContent) return;
+
+    // পুরনো ক্লাস মুছে ফেলা
+    mainContent.classList.remove('swipe-animate-next', 'swipe-animate-prev');
+    void mainContent.offsetWidth; // Force CSS reflow (অ্যানিমেশন রিস্টার্ট করার ট্রিক)
+
+    // নতুন ক্লাস যুক্ত করা
+    if (direction === 'next') {
+        mainContent.classList.add('swipe-animate-next');
+    } else {
+        mainContent.classList.add('swipe-animate-prev');
+    }
+
+    // নির্দিষ্ট সময় পর ক্লাস মুছে ফেলা যেন আবার ব্যবহার করা যায়
+    setTimeout(() => {
+        mainContent.classList.remove('swipe-animate-next', 'swipe-animate-prev');
+    }, 300);
+}
+
+function handleGlobalSwipe() {
+    const diffX = swipeStartX - swipeEndX;
+    const diffY = swipeStartY - swipeEndY;
+
+    // শর্ত: ডানে-বামে সোয়াইপের পরিমাণ যদি উপর-নিচ স্ক্রলের চেয়ে বেশি হয়
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD) {
+        
+        const activeNavBtn = document.querySelector('.nav-btn.nav-active');
+        if (!activeNavBtn) return;
+        const currentBottomTab = activeNavBtn.id.replace('btn-', '');
+        
+        const bottomTabsOrder = ['home', 'services', 'messages', 'people', 'profile'];
+        const currentBottomIndex = bottomTabsOrder.indexOf(currentBottomTab);
+
+        if (currentBottomTab === 'home') {
+            const topTabs = Array.from(document.querySelectorAll('#home-tabs .feed-tab')).filter(tab => tab.style.display !== 'none');
+            const activeTopIndex = topTabs.findIndex(tab => tab.classList.contains('active'));
+
+            if (activeTopIndex !== -1) {
+                if (diffX > 0) { // বামে সোয়াইপ (পরবর্তী ট্যাব)
+                    if (activeTopIndex < topTabs.length - 1) {
+                        triggerSwipeAnimation('next');
+                        setTimeout(() => topTabs[activeTopIndex + 1].click(), 50); // অ্যানিমেশন শুরুর একটু পর পেজ চেঞ্জ হবে
+                    } else {
+                        triggerSwipeAnimation('next');
+                        setTimeout(() => switchPage('services'), 50);
+                    }
+                } else { // ডানে সোয়াইপ (আগের ট্যাব)
+                    if (activeTopIndex > 0) {
+                        triggerSwipeAnimation('prev');
+                        setTimeout(() => topTabs[activeTopIndex - 1].click(), 50);
+                    }
+                }
+            }
+        } 
+        else {
+            if (diffX > 0) { // বামে সোয়াইপ
+                if (currentBottomIndex < bottomTabsOrder.length - 1) {
+                    triggerSwipeAnimation('next');
+                    setTimeout(() => switchPage(bottomTabsOrder[currentBottomIndex + 1]), 50);
+                }
+            } else { // ডানে সোয়াইপ
+                if (currentBottomIndex > 0) {
+                    const prevPage = bottomTabsOrder[currentBottomIndex - 1];
+                    triggerSwipeAnimation('prev');
+                    setTimeout(() => {
+                        if (prevPage === 'home') {
+                            handleHomeClick(); 
+                        } else {
+                            switchPage(prevPage);
+                        }
+                    }, 50);
+                }
+            }
+        }
+    }
+}
+// --- GLOBAL SMART SMOOTH SWIPE NAVIGATION END ---
+
 // ১. অ্যাডমিনের হোয়াটসঅ্যাপ লিংক ডাটাবেস থেকে আনা
 window.addEventListener('fetchWhatsAppLink', () => {
     get(ref(db, 'admin_settings/whatsapp_link')).then((snap) => {
