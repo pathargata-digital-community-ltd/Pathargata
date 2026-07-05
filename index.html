@@ -1995,7 +1995,7 @@ if (refUid) {
         
         // --- CACHING & GLOBALS (Optimized) ---
         const userCache = {}; // Cache to store user profiles and avoid re-fetching
-        let currentFeedFilter = 'all';
+        window.currentFeedFilter = 'all'; // গ্লোবাল করা হলো
         let lastLoadedPostKey = null;
         let isFeedLoading = false;
         let hasMorePosts = true;
@@ -2372,7 +2372,9 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
         if(window.loadFriendsPreview) window.loadFriendsPreview(user.uid, 'me');
         loadSettingsData();
                         if (document.getElementById('setting-privacy-toggle')) document.getElementById('setting-privacy-toggle').checked = userDetails.privacy_hide_contact || false;
-                        checkMonetizationStatus();
+                        
+                        // সেফ কল: ফাংশনটি লোড হলেই কেবল কল হবে
+                        if(typeof window.checkMonetizationStatus === 'function') window.checkMonetizationStatus();
                     } else {
                         console.log("Database data missing, attempting recovery from Auth...");
                         const recoveredData = {
@@ -4372,11 +4374,11 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     hideLoader();
                 }).catch(e => { console.error("Settings JS load failed", e); hideLoader(); });
             }
-            if (currentFeedFilter === 'contest' || id === 'contest') {
+            if (window.currentFeedFilter === 'contest' || id === 'contest') {
                 showLoader();
                 import('./contest.js').then(() => hideLoader()).catch(e => { console.error("Contest JS load failed", e); hideLoader(); });
             }
-            if (currentFeedFilter === 'fifa' || id === 'fifa') {
+            if (window.currentFeedFilter === 'fifa' || id === 'fifa') {
                 showLoader();
                 import('./fifa.js').then(() => hideLoader()).catch(e => { console.error("Fifa JS load failed", e); hideLoader(); });
             }
@@ -4596,7 +4598,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.log("Contest Design Loaded Successfully!");
                 
                 // কনটেস্টের ডাটা লোড করার ফাংশন কল করা (যদি আগে থেকে কল না হয়ে থাকে)
-                if (currentFeedFilter === 'contest' && typeof window.loadContestFeed === 'function') {
+                if (window.currentFeedFilter === 'contest' && typeof window.loadContestFeed === 'function') {
                     window.loadContestFeed();
                 }
                 
