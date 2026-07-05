@@ -802,7 +802,43 @@
 
 <body id="body-main">
 
-    <body id="body-main">    
+    <!-- Smart Debugger (শুধু ডেভেলপমেন্টের জন্য) -->
+    <script>
+        window.appErrors = [];
+        function showDebuggerUI() {
+            let errBtn = document.getElementById('debug-error-btn');
+            if (!errBtn && document.body) {
+                errBtn = document.createElement('div');
+                errBtn.id = 'debug-error-btn';
+                errBtn.innerHTML = '🐛'; // শুধুমাত্র পোকা আইকন
+                // বাটনটি ছোট গোল করে ডানপাশে প্লাস বাটনের ঠিক উপরে বসানো হয়েছে
+                errBtn.style.cssText = 'position:fixed; bottom:180px; right:35px; background:#ef4444; color:white; width:35px; height:35px; display:flex; align-items:center; justify-content:center; border-radius:50%; z-index:9999999; font-size:16px; cursor:pointer; box-shadow:0 4px 10px rgba(239,68,68,0.4); border: 2px solid white; animation: bounce 1s infinite;';
+                
+                errBtn.onclick = function() {
+                    const errText = window.appErrors.map((e, i) => `[Error ${i+1}]\nমেসেজ: ${e.msg}\nফাইল: ${e.file}\nলাইন: ${e.line}`).join('\n\n------------------------\n\n');
+                    alert("⚠️ অ্যাপে নিচের সমস্যাগুলো পাওয়া গেছে:\n\n" + errText);
+                };
+                document.body.appendChild(errBtn);
+            }
+        }
+
+        // সাধারণ জাভাস্ক্রিপ্ট এরর ধরবে
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const file = url ? url.substring(url.lastIndexOf('/') + 1) : 'Unknown File';
+            window.appErrors.push({msg: msg, file: file, line: lineNo});
+            if(document.body) showDebuggerUI();
+            else window.addEventListener('DOMContentLoaded', showDebuggerUI);
+            return false;
+        };
+
+        // প্রমিস বা মডিউল ফেইলর ধরবে
+        window.addEventListener('unhandledrejection', function(event) {
+            const reason = event.reason ? (event.reason.stack || event.reason.toString()) : 'Unknown Promise Rejection';
+            window.appErrors.push({msg: reason, file: 'Async/Module', line: '?'});
+            if(document.body) showDebuggerUI();
+            else window.addEventListener('DOMContentLoaded', showDebuggerUI);
+        });
+    </script>
 
     <!-- অফলাইন স্ক্রিন (ইন্টারনেট না থাকলে এটি দেখাবে) -->
     <div id="offline-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #ffffff; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; font-family: 'Hind Siliguri', sans-serif;">
@@ -2383,13 +2419,14 @@ loadMyComplaints();
                 loadEmergencyAlerts();
 
                 loadAds();
-                if(window.loadFeed) window.loadFeed('all', true);
+                if(typeof window.loadFeed === 'function') window.loadFeed('all', true);
                 
-                if(window.listenForNewPosts) window.listenForNewPosts(); // রিয়েল-টাইম পোস্ট লিসেনার চালু হলো
+                if(typeof window.listenForNewPosts === 'function') window.listenForNewPosts(); // রিয়েল-টাইম পোস্ট লিসেনার চালু হলো
 
-                loadNotes();
-                setupInfiniteScroll();
-                setupVideoObserver();
+                // Safe function calls to prevent app crash
+                if(typeof window.loadNotes === 'function') window.loadNotes();
+                if(typeof window.setupInfiniteScroll === 'function') window.setupInfiniteScroll();
+                setupVideoObserver(); // এটি মেইন ফাইলেই আছে, তাই সমস্যা নেই
 
                 onValue(ref(db, 'app_info/name'), (snap) => {
                     const name = snap.val();
@@ -4285,6 +4322,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             // Specific Page Logic & DYNAMIC IMPORTS (পেজে প্রবেশ করার সময় শুধু সেই পেজের JS লোড হবে)
             if (id === 'home' && window.currentUser) {
                 if (typeof window.loadFeed === 'function') window.loadFeed(window.currentFeedFilter || 'all', true);
+                if (typeof window.loadNotes === 'function') window.loadNotes();
             }
             if (id === 'profile' && window.currentUser) {
                 showLoader();
