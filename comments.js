@@ -170,7 +170,7 @@ function generateCommentHTML(postId, c, isReply) {
     
     const avatarSize = isReply ? "w-7 h-7" : "w-9 h-9";
     const avatar = c.authorPic 
-        ? `<img ${profileClick} src="${c.authorPic}" class="${avatarSize} rounded-full object-cover shrink-0 border border-gray-100 cursor-pointer">` 
+        ? `<img ${profileClick} src="${c.authorPic}" loading="lazy" class="${avatarSize} rounded-full object-cover shrink-0 border border-gray-100 cursor-pointer">` 
         : `<div ${profileClick} class="${avatarSize} rounded-full bg-blue-50 flex items-center justify-center font-bold text-blue-600 text-xs shrink-0 cursor-pointer border border-blue-100">${safeHTML(c.author || 'U').charAt(0)}</div>`;
     
     const myUid = window.currentUser ? window.currentUser.uid : null;
