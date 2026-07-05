@@ -470,7 +470,7 @@ window.loadFeed = (type, isInitial = false) => {
                     const suggestedUsers = window.suggestionPool.slice(0, 3);
                     let suggHtml = `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-3 max-w-lg mx-auto"><h4 class="font-bold text-gray-800 text-sm mb-3">আপনার পরিচিত হতে পারে</h4><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">`;
                     suggestedUsers.forEach(u => {
-                        let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-16 h-16 rounded-full object-cover border border-gray-200 mx-auto mb-2">` : `<div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold text-2xl mx-auto mb-2 border border-blue-100">${window.escapeHTML(u.name).charAt(0)}</div>`;
+                        let av = u.profile_pic ? `<img src="${u.profile_pic}" loading="lazy" class="w-16 h-16 rounded-full object-cover border border-gray-200 mx-auto mb-2">` : `<div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold text-2xl mx-auto mb-2 border border-blue-100">${window.escapeHTML(u.name).charAt(0)}</div>`;
                         suggHtml += `<div class="border rounded-xl p-3 min-w-[120px] text-center shrink-0">${av}<h5 class="font-bold text-gray-800 text-xs truncate">${window.escapeHTML(u.name).split(' ')[0]}</h5><p class="text-[10px] text-gray-500 truncate mb-2">${window.escapeHTML(u.village || u.union || 'পাথরঘাটা')}</p><button id="btn-feed-req-${u.uid}" onclick="window.sendSuggestionRequest('${u.uid}'); this.innerHTML='Sent'; this.disabled=true; this.classList.replace('bg-blue-600', 'bg-gray-200'); this.classList.replace('text-white', 'text-gray-600');" class="w-full bg-blue-600 text-white text-[10px] font-bold py-1.5 rounded-lg">Add Friend</button></div>`;
                     });
                     suggHtml += `</div></div>`;
@@ -717,8 +717,8 @@ window.createPostHTML = function(post, id) {
     else if (post.privacy === 'friends') privacyIcon = '<i class="fa-solid fa-user-group text-[10px] text-gray-400"></i>';
 
     let displayStyle = "";
-    let avatarHtml = post.authorPic ? `<img onclick="window.openUserProfile('${post.uid}')" src="${post.authorPic}" class="cursor-pointer w-10 h-10 rounded-full object-cover shadow-sm">` : `<div onclick="window.openUserProfile('${post.uid}')" class="cursor-pointer w-10 h-10 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 shadow-sm text-lg">${post.author ? window.escapeHTML(post.author).charAt(0).toUpperCase() : 'U'}</div>`;
-    let myInlineAvatar = window.userDetails.profile_pic ? `<img src="${window.userDetails.profile_pic}" class="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100">` : `<div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 shrink-0"><i class="fa-solid fa-user"></i></div>`;
+    let avatarHtml = post.authorPic ? `<img onclick="window.openUserProfile('${post.uid}')" src="${post.authorPic}" loading="lazy" class="cursor-pointer w-10 h-10 rounded-full object-cover shadow-sm">` : `<div onclick="window.openUserProfile('${post.uid}')" class="cursor-pointer w-10 h-10 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 shadow-sm text-lg">${post.author ? window.escapeHTML(post.author).charAt(0).toUpperCase() : 'U'}</div>`;
+    let myInlineAvatar = window.userDetails.profile_pic ? `<img src="${window.userDetails.profile_pic}" loading="lazy" class="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100">` : `<div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 shrink-0"><i class="fa-solid fa-user"></i></div>`;
 
     const isLiked = post.likes && post.likes[window.currentUser.uid];
     const realLikes = post.likes ? Object.keys(post.likes).length : 0;
@@ -784,10 +784,10 @@ window.createPostHTML = function(post, id) {
             // Fix: Added += instead of = so audio player is not overwritten
             contentHTML += `<p class="post-text-content text-[15px] text-gray-800 mb-2 whitespace-pre-line leading-relaxed font-normal">${cleanText}</p>`;
             
-            if (ytMatch) contentHTML += `<div class="video-container ${post.content.includes("shorts")?'portrait':''} mb-3 shadow-sm"><iframe id="yt-${id}" class="yt-player" src="https://www.youtube.com/embed/${ytMatch[1]}?enablejsapi=1&rel=0" frameborder="0" allowfullscreen></iframe></div>`;
+            if (ytMatch) contentHTML += `<div class="video-container ${post.content.includes("shorts")?'portrait':''} mb-3 shadow-sm"><iframe id="yt-${id}" class="yt-player" src="https://www.youtube.com/embed/${ytMatch[1]}?enablejsapi=1&rel=0" frameborder="0" allowfullscreen loading="lazy"></iframe></div>`;
             if (driveMatch) {
                 const previewUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
-                contentHTML += `<div class="mb-3 shadow-sm rounded-lg overflow-hidden border border-gray-200"><iframe src="${previewUrl}" width="100%" height="250" style="border:0;" allow="autoplay"></iframe></div>`;
+                contentHTML += `<div class="mb-3 shadow-sm rounded-lg overflow-hidden border border-gray-200"><iframe src="${previewUrl}" width="100%" height="250" style="border:0;" allow="autoplay" loading="lazy"></iframe></div>`;
             }
         }
     }
@@ -815,20 +815,20 @@ window.createPostHTML = function(post, id) {
             
             if (count === 1) {
                 gridClass = 'grid grid-cols-1';
-                imgsHtml = `<img src="${images[0]}" onclick="window.handleSmartImageClick('${id}', '${images[0]}')" class="w-full h-auto max-h-[400px] object-cover cursor-pointer">`;
+                imgsHtml = `<img src="${images[0]}" loading="lazy" onclick="window.handleSmartImageClick('${id}', '${images[0]}')" class="w-full h-auto max-h-[400px] object-cover cursor-pointer">`;
             } else if (count === 2) {
                 gridClass = 'grid grid-cols-2 gap-1 h-64';
-                imgsHtml = images.map(img => `<img src="${img}" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
+                imgsHtml = images.map(img => `<img src="${img}" loading="lazy" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
             } else if (count === 3) {
                 // ৩টি ছবির জন্য ফেসবুক স্টাইল (উপরে ১টি বড়, নিচে ২টি ছোট)
                 gridClass = 'grid grid-cols-2 gap-1';
-                imgsHtml = `<img src="${images[0]}" onclick="window.handleSmartImageClick('${id}', '${images[0]}')" class="w-full h-48 object-cover cursor-pointer col-span-2">` +
-                           `<img src="${images[1]}" onclick="window.handleSmartImageClick('${id}', '${images[1]}')" class="w-full h-32 object-cover cursor-pointer">` +
-                           `<img src="${images[2]}" onclick="window.handleSmartImageClick('${id}', '${images[2]}')" class="w-full h-32 object-cover cursor-pointer">`;
+                imgsHtml = `<img src="${images[0]}" loading="lazy" onclick="window.handleSmartImageClick('${id}', '${images[0]}')" class="w-full h-48 object-cover cursor-pointer col-span-2">` +
+                           `<img src="${images[1]}" loading="lazy" onclick="window.handleSmartImageClick('${id}', '${images[1]}')" class="w-full h-32 object-cover cursor-pointer">` +
+                           `<img src="${images[2]}" loading="lazy" onclick="window.handleSmartImageClick('${id}', '${images[2]}')" class="w-full h-32 object-cover cursor-pointer">`;
             } else if (count >= 4) {
                 // ৪টি ছবির জন্য ফেসবুক স্টাইল (২x২ গ্রিড)
                 gridClass = 'grid grid-cols-2 gap-1 h-72';
-                imgsHtml = images.slice(0, 4).map(img => `<img src="${img}" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
+                imgsHtml = images.slice(0, 4).map(img => `<img src="${img}" loading="lazy" onclick="window.handleSmartImageClick('${id}', '${img}')" class="w-full h-full object-cover cursor-pointer">`).join('');
             }
 
             mediaHtml = `<div class="mb-3 w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative ${gridClass}">
@@ -886,7 +886,7 @@ window.openTagModal = () => {
         friendsData.forEach(u => {
             if (u) {
                 const isTagged = window.taggedUsers && window.taggedUsers.some(t => t.uid === u.uid);
-                let avatar = u.profile_pic ? `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold shadow-sm">${u.name.charAt(0)}</div>`;
+                let avatar = u.profile_pic ? `<img src="${u.profile_pic}" loading="lazy" class="w-10 h-10 rounded-full object-cover shadow-sm">` : `<div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg font-bold shadow-sm">${u.name.charAt(0)}</div>`;
                 html += `<div onclick="window.toggleTagUser('${u.uid}', '${window.escapeHTML(u.name)}')" class="bg-white p-3 mb-3 rounded-xl flex justify-between items-center cursor-pointer transition-all border-2 ${isTagged ? 'border-green-500 bg-green-50 shadow-md' : 'border-transparent shadow-sm'} tag-item-${u.uid}"><div class="flex items-center gap-3">${avatar}<div><span class="font-bold text-sm text-gray-800 block">${window.escapeHTML(u.name)}</span><span class="text-[10px] text-gray-500">${window.escapeHTML(u.village || 'পাথরঘাটা')}</span></div></div><i class="fa-solid fa-check-circle text-2xl ${isTagged ? 'text-green-600' : 'text-gray-200'} tag-icon-${u.uid}"></i></div>`;
             }
         });
