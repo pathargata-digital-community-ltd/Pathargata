@@ -21,7 +21,7 @@ window.startChat = (uid, name) => {
     
     window.getUserData(uid).then(u => {
         if(u && u.profile_pic) {
-            document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover">`;
+            document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" loading="lazy" class="w-full h-full object-cover">`;
         }
     });
 
@@ -70,7 +70,7 @@ window.searchChatFriends = async (val) => {
         container.innerHTML = `<h4 class="px-4 py-2 text-xs font-bold text-gray-500">Search Results</h4>` + 
         matched.map(u => {
             let av = u.profile_pic ? 
-                `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border border-gray-200">` : 
+                `<img src="${u.profile_pic}" loading="lazy" class="w-12 h-12 rounded-full object-cover border border-gray-200">` : 
                 `<div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-700 text-xl">${window.escapeHTML(u.name).charAt(0)}</div>`;
             
             return `
@@ -93,7 +93,7 @@ window.loadQuickChatFriends = async () => {
     const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
     div.innerHTML = friendsData.filter(u => u).map(u => {
         let av = u.profile_pic ? 
-            `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
+            `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" loading="lazy" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
             `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-bold text-lg relative">${window.escapeHTML(u.name).charAt(0)}<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>`;
         return `<div onclick="startChat('${u.uid}', '${window.escapeHTML(u.name)}')" class="flex flex-col items-center cursor-pointer min-w-[50px]">${av}<span class="text-[10px] text-gray-600 mt-1 truncate w-14 text-center font-bold">${window.escapeHTML(u.name).split(' ')[0]}</span></div>`;
     }).join('');
@@ -200,7 +200,7 @@ async function renderChatListUI() {
             const timeColor = isUnread ? 'text-green-600 font-bold' : 'text-gray-400';
 
             let av = profilePic ?
-                `<img src="${profilePic}" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
+                `<img src="${profilePic}" loading="lazy" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
                 `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
 
             return `
@@ -431,7 +431,7 @@ window.loadMessages = (otherUid) => {
                 let statusIcon = '';
                 if(isMe) {
                     if (m.status === 'seen') {
-                        statusIcon = `<img src="${document.getElementById('chat-header-img').querySelector('img')?.src || ''}" class="w-3 h-3 rounded-full ml-1 inline-block">`;
+                        statusIcon = `<img src="${document.getElementById('chat-header-img').querySelector('img')?.src || ''}" loading="lazy" class="w-3 h-3 rounded-full ml-1 inline-block">`;
                     } else {
                         statusIcon = `<i class="fa-solid fa-circle-check text-[10px] text-gray-400 ml-1"></i>`;
                     }
@@ -456,7 +456,7 @@ window.loadMessages = (otherUid) => {
                     </div>`;
                 }
 
-                if (m.image) content += `<img src="${m.image}" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
+                if (m.image) content += `<img src="${m.image}" loading="lazy" class="rounded-lg mb-1 max-w-full h-auto cursor-pointer" onclick="window.open('${m.image}')">`;
                 
                 if (m.voice) {
                     const bgColor = isMe ? 'bg-green-700/20' : 'bg-gray-200';
