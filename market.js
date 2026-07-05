@@ -87,7 +87,7 @@ onValue(ref(db, 'market_items'), (snap) => {
         marketListContainer.innerHTML = window.globalMarketItems.length > 0 ? window.globalMarketItems.map(item => {
             // আগের সিঙ্গেল ইমেজ বা নতুন মাল্টিপল ইমেজ সাপোর্ট
             const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
-            const imgTag = firstImage ? `<img src="${firstImage}" class="h-full w-full object-cover group-hover:scale-105 transition-transform">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
+            const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="h-full w-full object-cover group-hover:scale-105 transition-transform">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
             const imageCountBadge = (item.images && item.images.length > 1) ? `<span class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1"><i class="fa-regular fa-images"></i> ${item.images.length}</span>` : '';
 
             return `<div onclick="openProductDetails('${item.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md transition group">
@@ -123,7 +123,7 @@ window.openProductDetails = (id) => {
     
     if (imagesArray.length > 0) {
         imagesHtml = `<div class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide bg-black h-64 sm:h-72 w-full">
-            ${imagesArray.map(img => `<img src="${img}" onclick="window.openImageViewer('${img}')" class="w-full h-full object-contain shrink-0 snap-center">`).join('')}
+            ${imagesArray.map(img => `<img src="${img}" loading="lazy" onclick="window.openImageViewer('${img}')" class="w-full h-full object-contain shrink-0 snap-center">`).join('')}
         </div>`;
     } else {
         imagesHtml = `<div class="h-48 w-full bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-image text-5xl text-gray-400"></i></div>`;
@@ -140,7 +140,7 @@ window.openProductDetails = (id) => {
         </div>`;
     }
 
-    const sellerAvatar = product.sellerPic ? `<img src="${product.sellerPic}" class="w-12 h-12 rounded-full object-cover">` : `<div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-xl">${product.seller.charAt(0)}</div>`;
+    const sellerAvatar = product.sellerPic ? `<img src="${product.sellerPic}" loading="lazy" class="w-12 h-12 rounded-full object-cover">` : `<div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-xl">${product.seller.charAt(0)}</div>`;
 
     contentDiv.innerHTML = `
         ${imagesHtml}
@@ -202,7 +202,7 @@ function renderMyProducts() {
     if (myProducts.length > 0) {
         container.innerHTML = myProducts.map(item => {
             const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
-            const imgTag = firstImage ? `<img src="${firstImage}" class="w-16 h-16 rounded-lg object-cover">` : `<div class="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-image text-gray-400"></i></div>`;
+            const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="w-16 h-16 rounded-lg object-cover">` : `<div class="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-image text-gray-400"></i></div>`;
             
             return `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="openProductDetails('${item.id}')">
