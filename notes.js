@@ -166,7 +166,7 @@ const renderStoryFeed = (usersData) => {
 
     let html = `
     <div onclick="toggleNoteModal(true)" class="story-card group min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border border-gray-200">
-        <img src="${myBg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+        <img src="${myBg}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 bg-gray-200">
         <div class="story-add-btn absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
             <i class="fa-solid fa-plus text-xs"></i>
         </div>
@@ -200,10 +200,10 @@ const renderStoryFeed = (usersData) => {
         let borderClass = isMe ? 'border-blue-500' : 'border-blue-400';
 
         html += `
-        <div onclick="openStoryViewer(${index})" class="story-card min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border-2 ${borderClass}">
-            <img src="${bgImg}" class="w-full h-full object-cover">
+        <div onclick="openStoryViewer(${index})" class="story-card min-w-[100px] flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer shadow-sm border-2 ${borderClass} bg-gray-200">
+            <img src="${bgImg}" loading="lazy" decoding="async" class="w-full h-full object-cover">
             ${videoIcon}
-            <img src="${av}" class="story-avatar absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white object-cover">
+            <img src="${av}" loading="lazy" decoding="async" class="story-avatar absolute top-2 left-2 w-8 h-8 rounded-full border-2 border-white object-cover bg-gray-300">
             <p class="story-name absolute bottom-1 left-2 text-white text-xs font-bold shadow-black drop-shadow-md truncate w-11/12">${isMe ? 'Your Story' : window.escapeHTML(user.author).split(' ')[0]}</p>
         </div>`;
     });
@@ -392,6 +392,7 @@ function playStory() {
     } else if (story.mediaType === 'image' && story.mediaUrl) {
         const img = document.createElement('img');
         img.src = story.mediaUrl;
+        img.decoding = "async"; // ব্রাউজারকে মেইন থ্রেড ব্লক করতে বাধা দেবে
         img.className = "max-w-full max-h-full object-contain";
         mediaContainer.appendChild(img);
         startProgress(currentSubStoryIndex, duration);
