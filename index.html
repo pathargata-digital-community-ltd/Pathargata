@@ -886,7 +886,20 @@
                 <span onclick="toggleAuth('forgot')" class="text-sm text-gray-500 hover:text-green-600 cursor-pointer font-medium">পাসওয়ার্ড ভুলে গেছেন?</span>
             </div>
             <button onclick="handleLogin()" id="btn-login-action" class="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl hover:bg-green-700 shadow-lg transition active:scale-95 flex justify-center items-center gap-2 text-lg">লগইন</button>
-            <p class="mt-8 text-center text-sm text-gray-600">একাউন্ট নেই? <span onclick="toggleAuth('register')" class="text-green-600 font-bold cursor-pointer hover:underline">রেজিস্ট্রেশন করুন</span></p>
+            
+            <!-- Google Login Section -->
+            <div class="mt-5 flex items-center justify-between">
+                <span class="border-b w-1/5 lg:w-1/4"></span>
+                <span class="text-xs text-center text-gray-500 font-bold uppercase">অথবা</span>
+                <span class="border-b w-1/5 lg:w-1/4"></span>
+            </div>
+            
+            <button onclick="handleGoogleLogin()" id="btn-google-login" class="w-full bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 shadow-sm transition active:scale-95 flex justify-center items-center gap-3 text-base mt-4">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" class="w-5 h-5">
+                Google দিয়ে লগইন করুন
+            </button>
+            
+            <p class="mt-6 text-center text-sm text-gray-600">একাউন্ট নেই? <span onclick="toggleAuth('register')" class="text-green-600 font-bold cursor-pointer hover:underline">রেজিস্ট্রেশন করুন</span></p>
         </div>
         <div id="register-form" class="w-full max-w-sm hidden-custom relative">
             <h2 class="text-xl font-bold mb-4 text-green-700 border-l-4 border-green-600 pl-3">নতুন একাউন্ট খুলুন</h2>
@@ -1752,7 +1765,9 @@
             updateProfile,
             EmailAuthProvider,
             reauthenticateWithCredential,
-            updatePassword
+            updatePassword,
+            GoogleAuthProvider,
+            signInWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // --- CONFIGURATION ---
@@ -3169,6 +3184,80 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 btn.innerText = "লগইন";
                 btn.disabled = false;
             });
+        };
+
+        // --- GOOGLE LOGIN FUNCTION ---
+        window.handleGoogleLogin = async () => {
+            if (!navigator.onLine) {
+                showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-google-login');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
+            btn.disabled = true;
+
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // ডাটাবেসে ইউজার চেক করা
+                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+                const userRef = ref(db, 'users/' + user.uid);
+                const snapshot = await get(userRef);
+
+                if (!snapshot.exists()) {
+                    // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
+                    const newUserData = {
+                        name: user.displayName || "অজ্ঞাত ইউজার",
+                        email: user.email,
+                        uid: user.uid,
+                        profile_pic: user.photoURL || "",
+                        role: 'user',
+                        union: 'Unknown',
+                        village: 'Unknown',
+                        joinDate: new Date().toLocaleDateString(),
+                        isVerified: false,
+                        status: 'user',
+                        phone: user.phoneNumber || ""
+                    };
+                    await set(userRef, newUserData);
+                    
+                    // Anti-fraud device check (from existing logic)
+                    try {
+                        const fp = await window.FingerprintJS.load();
+                        const fpResult = await fp.get();
+                        let userIP = "unknown_ip";
+                        try {
+                            const ipRes = await fetch('https://api.ipify.org?format=json');
+                            const ipData = await ipRes.json();
+                            userIP = ipData.ip;
+                        } catch(err) {}
+                        
+                        await set(ref(db, `registered_devices/${fpResult.visitorId}`), {
+                            ip: userIP, timestamp: Date.now(), uid: user.uid
+                        });
+                        localStorage.setItem('has_registered_before', 'true');
+                    } catch(err) {}
+
+                    showToast("Google একাউন্ট খোলা সফল হয়েছে!", "success");
+                } else {
+                    showToast("লগইন সফল হয়েছে!", "success");
+                }
+
+            } catch (error) {
+                console.error("Google Login Error:", error);
+                if(error.code === 'auth/popup-closed-by-user') {
+                    showToast("লগইন বাতিল করা হয়েছে", "error");
+                } else {
+                    showToast("ত্রুটি: " + error.message, "error");
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         };
 
         window.handleForgotPass = () => {
@@ -4816,7 +4905,8 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             setTimeout(() => {
                 // ১. FingerprintJS লোড করা (Anti-Fraud)
                 const fpScript = document.createElement('script');
-                fpScript.src = "https://openfpcdn.io/fingerprintjs/v4";
+                // export এরর সমাধানের জন্য UMD ভার্সন লিংক দেওয়া হলো
+                fpScript.src = "https://openfpcdn.io/fingerprintjs/v4/umd";
                 document.body.appendChild(fpScript);
 
                 // ২. OneSignal লোড ও ইনিশিয়ালাইজ করা
