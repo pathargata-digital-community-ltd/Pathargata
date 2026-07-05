@@ -72,7 +72,7 @@ window.openUserProfile = (uid) => {
         const user = snap.val();
         if (!user) return window.switchPage('home');
         
-        document.getElementById('view-profile-avatar-container').innerHTML = user.profile_pic ? `<img src="${user.profile_pic}" class="w-full h-full object-cover">` : `<span class="text-5xl">${user.name ? window.escapeHTML(user.name).charAt(0) : 'U'}</span>`;
+        document.getElementById('view-profile-avatar-container').innerHTML = user.profile_pic ? `<img src="${user.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : `<span class="text-5xl">${user.name ? window.escapeHTML(user.name).charAt(0) : 'U'}</span>`;
         document.getElementById('view-profile-name').innerHTML = (window.escapeHTML(user.name) || "অজ্ঞাত") + window.checkUserBadge(user);
         document.getElementById('view-profile-union-badge').innerText = user.union || "ইউনিয়ন নেই";
         document.getElementById('view-profile-village-text').innerText = user.village || "গ্রাম উল্লেখ নেই";
@@ -132,7 +132,7 @@ window.loadFriendsPreview = (uid, mode) => {
                 const firstLetter = name.charAt(0).toUpperCase();
                 
                 let av = uData.profile_pic ? 
-                    `<img src="${uData.profile_pic}" class="w-full h-full object-cover">` : 
+                    `<img src="${uData.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : 
                     `<span class="text-2xl">${firstLetter}</span>`;
                 
                 return `
@@ -182,7 +182,7 @@ window.showAllFriends = (uid) => {
                 const firstLetter = u.name ? window.escapeHTML(u.name).charAt(0) : 'U';
                 
                 let av = u.profile_pic ? 
-                    `<img src="${u.profile_pic}" class="w-10 h-10 rounded-full object-cover">` : 
+                    `<img src="${u.profile_pic}" loading="lazy" class="w-10 h-10 rounded-full object-cover">` : 
                     `<div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold">${firstLetter}</div>`;
                     
                 return `
@@ -296,7 +296,7 @@ window.openProfileCard = () => {
     // প্রোফাইল ছবি
     const imgContainer = document.getElementById('card-user-img');
     if (u.profile_pic) {
-        imgContainer.innerHTML = `<img src="${u.profile_pic}" class="w-full h-full object-cover rounded-md">`;
+        imgContainer.innerHTML = `<img src="${u.profile_pic}" loading="lazy" class="w-full h-full object-cover rounded-md">`;
     } else {
         const firstLetter = u.name ? window.escapeHTML(u.name).charAt(0).toUpperCase() : 'U';
         imgContainer.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-400 text-3xl font-bold rounded-md bg-gray-100">${firstLetter}</div>`;
