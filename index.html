@@ -7,36 +7,7 @@
     <title>পাথরঘাটা ডিজিটাল - স্মার্ট সেবা</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FingerprintJS for Anti-Fraud System -->
-    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
-    <!-- ১. OneSignal SDK Loader: এটি মেইন লাইব্রেরি লোড করবে -->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-
-<!-- ২. OneSignal Initialization: এটি নোটিফিকেশন চালু করবে -->
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
-      safari_web_id: "web.onesignal.auto.17649533-3d0d-4581-9f93-9c8699101408", // এটি ঐচ্ছিক
-      notifyButton: {
-        enable: true, // ডানদিকের নিচে একটি বেল আইকন দেখাবে
-      },
-    });
-    // সাইটে ঢোকার সাথে সাথে পারমিশন চাওয়ার জন্য
-    OneSignal.Slidedown.promptPush();
-  });
-</script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
-    });
-    // অ্যাপ ওপেন করলেই যেন পারমিশন চায় তার কোড
-    OneSignal.Slidedown.promptPush();
-  });
-</script>
+    <!-- থার্ড-পার্টি স্ক্রিপ্টগুলো (OneSignal, Fingerprint) পেজের শেষে জাভাস্ক্রিপ্টের মাধ্যমে ৫ সেকেন্ড পর লোড করা হয়েছে অ্যাপ ফাস্ট করার জন্য -->
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
 <script>
@@ -829,7 +800,19 @@
 <script src="https://pathargata-digital-community-ltd.github.io/Pathargata/dark-mode.js" defer></script>
 </head>
 
-<body id="body-main">    
+<body id="body-main">
+
+    <body id="body-main">    
+
+    <!-- অফলাইন স্ক্রিন (ইন্টারনেট না থাকলে এটি দেখাবে) -->
+    <div id="offline-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #ffffff; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; font-family: 'Hind Siliguri', sans-serif;">
+        <div style="width: 100px; height: 100px; background-color: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+            <svg style="width: 50px; height: 50px; color: #ef4444;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path></svg>
+        </div>
+        <h2 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 10px;">ইন্টারনেট সংযোগ নেই!</h2>
+        <p style="font-size: 15px; color: #6b7280; margin-bottom: 30px; line-height: 1.5;">অ্যাপটি ব্যবহার করতে আপনার ইন্টারনেট সংযোগ প্রয়োজন।<br>দয়া করে ওয়াইফাই বা মোবাইল ডাটা চালু করুন।</p>
+        <button onclick="window.location.reload()" style="background-color: #16a34a; color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">আবার চেষ্টা করুন</button>
+    </div>
 
     <!-- টোস্ট কন্টেইনার -->
     <div id="toast-container"></div>
@@ -1610,7 +1593,7 @@
                             <h4 class="font-bold text-sm text-gray-700 mb-3">পেমেন্ট মেথড:</h4>
                             <div class="grid grid-cols-3 gap-2 mb-4">
                                 <div onclick="selectPaymentMethod('Bkash')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-bkash">
-                                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7-3pW0rX1C7s7s7s7s7s7s7s7s7s7s7s7s7s&s" alt="Bkash" class="h-8 object-contain">
+                                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7-3pW0rX1C7s7s7s7s7s7s7s7s7s7s7s7s7s&s" alt="Bkash" loading="lazy" class="h-8 object-contain">
                                     <span class="text-xs font-bold mt-1">Bkash</span>
                                 </div>
                                 <div onclick="selectPaymentMethod('Nagad')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-nagad">
@@ -2253,7 +2236,7 @@ if (refUid) {
                <i class="fa-solid fa-bullhorn text-orange-300"></i>
            </div>
            <a href="${ad.link || '#'}" target="_blank">
-               ${ad.image ? `<img src="${ad.image}" class="w-full h-40 object-cover rounded-lg mb-2">` : ''}
+               ${ad.image ? `<img src="${ad.image}" loading="lazy" class="w-full h-40 object-cover rounded-lg mb-2">` : ''}
                <h4 class="font-bold text-gray-800">${escapeHTML(ad.title)}</h4>
                <p class="text-xs text-gray-500 mb-2">${escapeHTML(ad.description || '')}</p>
                <button class="w-full mt-1 bg-orange-500 text-white py-2 rounded-lg font-bold text-sm">বিস্তারিত দেখুন</button>
@@ -2547,7 +2530,7 @@ loadMyComplaints();
             html += users.map(u => {
                 const badge = checkUserBadge(u);
                 let avatar = `<div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl border border-blue-200">${u.name?escapeHTML(u.name).charAt(0):'U'}</div>`;
-                if (u.profile_pic) avatar = `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm">`;
+                if (u.profile_pic) avatar = `<img src="${u.profile_pic}" loading="lazy" class="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm">`;
                 return `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-row items-center justify-between gap-3"><div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="openUserProfile('${u.uid}')">${avatar}<div class="min-w-0"><h4 class="font-bold text-gray-900 text-base truncate">${escapeHTML(u.name)}${badge}</h4><p class="text-xs text-gray-500 truncate">${escapeHTML(u.profession) || 'সদস্য'}</p></div></div><div class="shrink-0"><button id="btn-req-${u.uid}" onclick="toggleFriendRequest('${u.uid}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-blue-700 transition shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-user-plus"></i> Add</button></div></div>`;
             }).join('');
             div.innerHTML = html;
@@ -2598,7 +2581,7 @@ loadMyComplaints();
             get(ref(db, `services/data/${catId}`)).then((snap) => {
                 const items = snap.val() || {};
                 container.innerHTML = Object.keys(items).length > 0 ? Object.values(items).map(item => {
-                    const imgHtml = item.image ? `<div class="h-32 bg-gray-200 rounded-t-xl overflow-hidden"><img src="${item.image}" class="w-full h-full object-cover"></div>` : '';
+                    const imgHtml = item.image ? `<div class="h-32 bg-gray-200 rounded-t-xl overflow-hidden"><img src="${item.image}" loading="lazy" class="w-full h-full object-cover"></div>` : '';
                     const actionBtn = item.phone ? `<a href="tel:${item.phone}" class="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center shadow hover:bg-green-600 transition"><i class="fa-solid fa-phone"></i></a>` : '';
                     return `<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-3">${imgHtml}<div class="p-4 flex justify-between items-center"><div><h3 class="font-bold text-gray-800 text-lg">${escapeHTML(item.title)}</h3><p class="text-sm text-gray-500 mt-1">${escapeHTML(item.details || '')}</p></div>${actionBtn}</div></div>`;
                 }).join('') : `<div class="text-center py-10"><i class="fa-regular fa-folder-open text-4xl text-gray-300 mb-3"></i><p class="text-gray-400">তথ্য যুক্ত করা হয়নি</p></div>`;
@@ -2713,7 +2696,7 @@ loadMyComplaints();
         function createSuggestionCardHTML(u) {
             const badge = checkUserBadge(u);
             let avatar = `<div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl border border-blue-200">${u.name ? escapeHTML(u.name).charAt(0) : 'U'}</div>`;
-            if (u.profile_pic) avatar = `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm">`;
+            if (u.profile_pic) avatar = `<img src="${u.profile_pic}" loading="lazy" class="w-12 h-12 rounded-full object-cover border border-gray-100 shadow-sm">`;
             
             return `
             <div id="sugg-card-${u.uid}" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-row items-center justify-between gap-3 transition-all duration-300 transform scale-100 opacity-0">
@@ -2771,7 +2754,7 @@ loadMyComplaints();
             const finalName = userDetails.name || (window.currentUser?.displayName) || "অজ্ঞাত";
             const badge = checkUserBadge(userDetails);
             const displayName = finalName + (userDetails.nickname ? ` (${userDetails.nickname})` : "");
-            let avatarHtml = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user"></i>`;
+            let avatarHtml = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user"></i>`;
 
             // সেফটি ফাংশন (যাতে এলিমেন্ট না পেলেও কোড ক্র্যাশ না করে)
             const setHTML = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
@@ -2780,7 +2763,7 @@ loadMyComplaints();
 
             setHTML('sidebar-avatar-container', avatarHtml);
             setHTML('profile-avatar-container', avatarHtml);
-            setHTML('my-comment-avatar-full', userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-gray-400"></i>`);
+            setHTML('my-comment-avatar-full', userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user text-gray-400"></i>`);
             
             setHTML('sidebar-name', displayName + badge);
             if(document.getElementById('profile-name')) setHTML('profile-name', displayName + badge);
@@ -3051,7 +3034,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                         <div class="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm text-center relative hover:border-green-500 hover:shadow-md transition cursor-pointer group">
                             <button onclick="removeSavedAccount('${acc.email}', event)" class="absolute top-2 right-2 w-6 h-6 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center hover:bg-red-100 hover:text-red-500 text-xs transition z-10"><i class="fa-solid fa-xmark"></i></button>
                             <div onclick="quickLogin('${acc.email}', '${acc.pass}')">
-                                <img src="${acc.pic || 'https://via.placeholder.com/100'}" class="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-green-100 group-hover:scale-105 transition">
+                                <img src="${acc.pic || 'https://via.placeholder.com/100'}" loading="lazy" class="w-16 h-16 rounded-full object-cover mx-auto mb-2 border-2 border-green-100 group-hover:scale-105 transition">
                                 <h4 class="font-bold text-gray-800 text-sm truncate">${escapeHTML(acc.name)}</h4>
                                 <p class="text-[10px] text-gray-400 truncate mt-0.5">${escapeHTML(acc.email)}</p>
                             </div>
@@ -3195,7 +3178,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 if (count > 0) {
                     const reqHTMLs = await Promise.all(Object.values(requests).map(async (r) => {
                         const uData = await getUserData(r.fromUid) || {};
-                        let av = uData.profile_pic ? `<img src="${uData.profile_pic}" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold">${uData.name ? uData.name.charAt(0) : 'U'}</div>`;
+                        let av = uData.profile_pic ? `<img src="${uData.profile_pic}" loading="lazy" class="w-10 h-10 rounded-full object-cover">` : `<div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold">${uData.name ? uData.name.charAt(0) : 'U'}</div>`;
                         return `<div class="bg-white p-3 rounded-xl shadow-sm border border-yellow-100 flex justify-between items-center"><div class="flex items-center gap-3" onclick="openUserProfile('${r.fromUid}')">${av}<div><h4 class="font-bold text-gray-800 text-sm">${escapeHTML(r.fromName)}</h4></div></div><div class="flex gap-2"><button onclick="acceptRequest('${r.fromUid}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs">Confirm</button><button onclick="cancelRequest('${r.fromUid}', true)" class="bg-gray-200 text-gray-600 px-3 py-1 rounded text-xs">Delete</button></div></div>`;
                     }));
                     reqDiv.innerHTML = reqHTMLs.join('');
@@ -3209,7 +3192,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     let html = '';
                     friendsData.forEach(u => {
                         if (u) {
-                            let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xs">${escapeHTML(u.name).charAt(0)}</div>`;
+                            let av = u.profile_pic ? `<img src="${u.profile_pic}" loading="lazy" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 font-bold text-xs">${escapeHTML(u.name).charAt(0)}</div>`;
                             html += `<div onclick="openUserProfile('${u.uid}')" class="bg-green-50 p-2 rounded-lg border border-green-100 flex items-center gap-2 cursor-pointer hover:bg-green-100 transition"><div class="shrink-0">${av}</div><span class="text-xs font-bold text-gray-700 truncate">${escapeHTML(u.name).split(' ')[0]}</span></div>`;
                         }
                     });
@@ -3297,7 +3280,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     let html = '';
                     friendsData.forEach(u => {
                         if (u) {
-                            let av = u.profile_pic ? `<img src="${u.profile_pic}" class="w-12 h-12 rounded-full object-cover shadow-sm">` : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xl">${escapeHTML(u.name).charAt(0)}</div>`;
+                            let av = u.profile_pic ? `<img src="${u.profile_pic}" loading="lazy" class="w-12 h-12 rounded-full object-cover shadow-sm">` : `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-xl">${escapeHTML(u.name).charAt(0)}</div>`;
                             html += `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center gap-3">
                                 <div onclick="openUserProfile('${u.uid}')" class="cursor-pointer shrink-0">${av}</div>
                                 <div onclick="openUserProfile('${u.uid}')" class="flex-1 cursor-pointer min-w-0">
@@ -3546,7 +3529,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     
                     return `
                     <div onclick="openSinglePostModal('${p.id}'); toggleGlobalSearch(false)" class="relative aspect-square cursor-pointer group bg-gray-100 overflow-hidden">
-                        <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        <img src="${imgUrl}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                         ${videoIcon || multiIcon}
                     </div>`;
                 }).join('');
@@ -3864,7 +3847,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 if (banners && Object.keys(banners).length > 0) {
                     // এখানে w-full এর বদলে min-w-full ব্যবহার করা হয়েছে 
                     container.innerHTML = Object.values(banners).map(imgUrl =>
-                        `<img src="${imgUrl}" class="min-w-full h-full object-cover shrink-0 snap-center">`
+                        `<img src="${imgUrl}" loading="lazy" class="min-w-full h-full object-cover shrink-0 snap-center">`
                     ).join('');
                 } else {
                     container.innerHTML = `<div class="min-w-full h-full bg-teal-100 flex items-center justify-center shrink-0 snap-center"><span class="text-teal-600 font-bold"><i class="fa-solid fa-bus"></i> স্মার্ট পরিবহন সেবা</span></div>`;
@@ -4262,15 +4245,102 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 }
             }
 
-            // Specific Page Logic
-            if (id === 'profile' && window.currentUser) window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
-            if (id === 'monetization' && window.currentUser) window.checkMonetizationStatus();
-            if (id === 'verification' && window.currentUser) window.checkVerificationStatus();
-            if (id === 'friends-list' && window.currentUser) window.loadAllFriendsList(); // নতুন যোগ করা হলো
-            // ⭐️ মেসেজ পেজে গেলে ডাটা লোড করার লজিক ⭐️
+            // --- DOM Bloat Fix (মেমোরি ক্লিয়ার করা) ---
+            const activeNavBtn = document.querySelector('.nav-btn.nav-active');
+            if (activeNavBtn) {
+                const prevPage = activeNavBtn.id.replace('btn-', '');
+                if (prevPage !== id) {
+                    // পেজ থেকে বের হওয়ার সময় ভারী কন্টেন্ট মুছে ফেলা হচ্ছে (RAM বাঁচানোর জন্য)
+                    if (prevPage === 'home') {
+                        const feed = document.getElementById('news-feed');
+                        if (feed) feed.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
+                    }
+                    if (prevPage === 'messages') {
+                        const msgPage = document.getElementById('page-messages');
+                        if (msgPage) msgPage.innerHTML = ''; 
+                    }
+                }
+            }
+
+            // --- ডাইনামিক লোডিং স্পিনার সেটআপ ---
+            let pageLoader = document.getElementById('dynamic-page-loader');
+            if (!pageLoader) {
+                pageLoader = document.createElement('div');
+                pageLoader.id = 'dynamic-page-loader';
+                // একটি সুন্দর ব্লার ব্যাকগ্রাউন্ড এবং লোডিং এনিমেশন
+                pageLoader.className = 'fixed inset-0 bg-white/70 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none';
+                pageLoader.innerHTML = '<div class="animate-spin rounded-full h-10 w-10 border-4 border-green-200 border-t-green-600 mb-3 shadow-lg"></div><p class="text-sm font-bold text-gray-700 animate-pulse">লোড হচ্ছে...</p>';
+                document.body.appendChild(pageLoader);
+            }
+
+            const showLoader = () => {
+                pageLoader.classList.remove('pointer-events-none');
+                pageLoader.style.opacity = '1';
+            };
+            const hideLoader = () => {
+                pageLoader.style.opacity = '0';
+                setTimeout(() => pageLoader.classList.add('pointer-events-none'), 300);
+            };
+
+            // Specific Page Logic & DYNAMIC IMPORTS (পেজে প্রবেশ করার সময় শুধু সেই পেজের JS লোড হবে)
+            if (id === 'home' && window.currentUser) {
+                if (typeof window.loadFeed === 'function') window.loadFeed(window.currentFeedFilter || 'all', true);
+            }
+            if (id === 'profile' && window.currentUser) {
+                showLoader();
+                import('./profile.js').then(() => {
+                    window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
+                    hideLoader();
+                }).catch(e => { console.error("Profile JS load failed", e); hideLoader(); });
+            }
+            if (id === 'monetization' && window.currentUser) {
+                showLoader();
+                import('./monetization.js').then(() => {
+                    if (typeof window.checkMonetizationStatus === 'function') window.checkMonetizationStatus();
+                    hideLoader();
+                }).catch(e => { console.error("Monetization JS load failed", e); hideLoader(); });
+            }
+            if (id === 'verification' && window.currentUser) {
+                showLoader();
+                import('./verification.js').then(() => {
+                    if (typeof window.checkVerificationStatus === 'function') window.checkVerificationStatus();
+                    hideLoader();
+                }).catch(e => { console.error("Verification JS load failed", e); hideLoader(); });
+            }
+            if (id === 'friends-list' && window.currentUser) {
+                window.loadAllFriendsList();
+            }
             if (id === 'messages' && window.currentUser) {
-                if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
-                if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
+                if (typeof loadMessagesUI === 'function') loadMessagesUI();
+                showLoader();
+                import('./messages.js').then(() => {
+                    if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
+                    if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
+                    hideLoader();
+                }).catch(e => { console.error("Messages JS load failed", e); hideLoader(); });
+            }
+            if (id === 'market') {
+                showLoader();
+                import('./market.js').then(() => hideLoader()).catch(e => { console.error("Market JS load failed", e); hideLoader(); });
+            }
+            if (id === 'blood') {
+                showLoader();
+                import('./blood.js').then(() => hideLoader()).catch(e => { console.error("Blood JS load failed", e); hideLoader(); });
+            }
+            if (id === 'settings') {
+                showLoader();
+                import('./settings.js').then(() => {
+                    if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
+                    hideLoader();
+                }).catch(e => { console.error("Settings JS load failed", e); hideLoader(); });
+            }
+            if (currentFeedFilter === 'contest' || id === 'contest') {
+                showLoader();
+                import('./contest.js').then(() => hideLoader()).catch(e => { console.error("Contest JS load failed", e); hideLoader(); });
+            }
+            if (currentFeedFilter === 'fifa' || id === 'fifa') {
+                showLoader();
+                import('./fifa.js').then(() => hideLoader()).catch(e => { console.error("Fifa JS load failed", e); hideLoader(); });
             }
             if (id === 'notifications') {
                 document.getElementById('nav-badge-notice')?.classList.remove('active');
@@ -4723,28 +4793,80 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             };
             
             window.updateVersionUI();
+
+            // --- থার্ড-পার্টি স্ক্রিপ্ট লেজি লোডিং (৫ সেকেন্ড পর) ---
+            setTimeout(() => {
+                // ১. FingerprintJS লোড করা (Anti-Fraud)
+                const fpScript = document.createElement('script');
+                fpScript.src = "https://openfpcdn.io/fingerprintjs/v4";
+                document.body.appendChild(fpScript);
+
+                // ২. OneSignal লোড ও ইনিশিয়ালাইজ করা
+                const osScript = document.createElement('script');
+                osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+                osScript.defer = true;
+                document.body.appendChild(osScript);
+
+                osScript.onload = () => {
+                    window.OneSignalDeferred = window.OneSignalDeferred || [];
+                    OneSignalDeferred.push(async function(OneSignal) {
+                        await OneSignal.init({
+                            appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
+                            safari_web_id: "web.onesignal.auto.17649533-3d0d-4581-9f93-9c8699101408", // ঐচ্ছিক
+                            notifyButton: { enable: true },
+                        });
+                        OneSignal.Slidedown.promptPush();
+                    });
+                };
+                console.log("Third-party scripts loaded in background.");
+            }, 5000); // 5000ms = 5 seconds
+
         });
     </script>
     
-    <script type="module" src="profile.js"></script>
-    <script type="module" src="contest.js"></script>
-    <script type="module" src="messages.js"></script>
-    <script type="module" src="fifa.js"></script>
+    <!-- হোম পেজের জন্য প্রয়োজনীয় কোর স্ক্রিপ্টগুলো শুধু শুরুতে লোড হবে -->
+    <script type="module" src="post.js"></script>
+    <script type="module" src="comments.js"></script>
     <script type="module" src="notifications.js"></script>
     <script type="module" src="notes.js"></script>
-    <script type="module" src="market.js"></script>
-    <script type="module" src="blood.js"></script>
-    <script type="module" src="comments.js"></script>
-    <script type="module" src="post.js"></script>
-    <script type="module" src="verification.js"></script>
-    <script type="module" src="settings.js"></script>
-    <script type="module" src="monetization.js"></script>
 <!-- সাউন্ড ইফেক্টস -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
     <audio id="message-sound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
     <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2954/2954-preview.mp3" preload="auto"></audio>
     <audio id="send-sound" src="https://assets.mixkit.co/active_storage/sfx/237/237-preview.mp3" preload="auto"></audio>
+<!-- অফলাইন চেকার স্ক্রিপ্ট -->
+    <script>
+        function handleOfflineUI() {
+            // চেক করুন ইন্টারনেট আছে কিনা বা Tailwind লোড হয়েছে কিনা
+            const isOffline = !navigator.onLine;
+            const isTailwindLoaded = typeof tailwind !== 'undefined';
+
+            if (isOffline || !isTailwindLoaded) {
+                // ইন্টারনেট না থাকলে মূল বডির সব কিছু লুকিয়ে অফলাইন স্ক্রিন দেখাবে
+                const children = document.getElementById('body-main').children;
+                for (let i = 0; i < children.length; i++) {
+                    if (children[i].id !== 'offline-screen' && children[i].tagName !== 'SCRIPT' && children[i].tagName !== 'STYLE') {
+                        children[i].style.display = 'none';
+                    }
+                }
+                document.getElementById('offline-screen').style.display = 'flex';
+            }
+        }
+
+        // পেজ লোড হওয়ার পর চেক করবে
+        window.addEventListener('load', () => {
+            setTimeout(handleOfflineUI, 1000); // Tailwind লোড হওয়ার জন্য ১ সেকেন্ড সময় দেওয়া হলো
+        });
+
+        // ইন্টারনেট চলে গেলে সাথে সাথে অফলাইন স্ক্রিন দেখাবে
+        window.addEventListener('offline', handleOfflineUI);
+        
+        // ইন্টারনেট আসলে পেজ রিলোড করে ঠিক করে নিবে
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
 </body>
 
 </html>
