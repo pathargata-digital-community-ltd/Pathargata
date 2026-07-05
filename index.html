@@ -1338,9 +1338,9 @@
                         <div onclick="filterFeed('all')" id="tab-feed-all" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab active uppercase">উপজেলা</div>
                         <div onclick="filterFeed('union')" id="tab-feed-union" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase">ইউনিয়ন</div>
                         <div onclick="filterFeed('village')" id="tab-feed-village" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase" style="display: none;">গ্রাম</div>
-                        <div onclick="filterFeed('contest')" id="tab-feed-contest" class="min-w-[90px] flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer feed-tab uppercase">প্রতিযোগিতা</div>
+                        <div onclick="handleFeedFilterClick('contest')" id="tab-feed-contest" class="min-w-[90px] flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer feed-tab uppercase">প্রতিযোগিতা</div>
                         <!-- নতুন ফিফা ট্যাব -->
-                        <div onclick="filterFeed('fifa')" id="tab-feed-fifa" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-green-600 cursor-pointer feed-tab uppercase flex items-center justify-center gap-1"><i class="fa-solid fa-futbol"></i> ফিফা</div>
+                        <div onclick="handleFeedFilterClick('fifa')" id="tab-feed-fifa" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-green-600 cursor-pointer feed-tab uppercase flex items-center justify-center gap-1"><i class="fa-solid fa-futbol"></i> ফিফা</div>
                     </div>
                 </div>
                 
@@ -4249,65 +4249,30 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             document.getElementById('main-fab').classList.toggle('rotate');
         }
 
-        window.switchPage = function(id, addHistory = true) {
-            // পেজ পরিবর্তন হওয়ার সাথে সাথেই সাইডবারটি ফোর্স ক্লোজ করে দেবে
-            if(typeof toggleSidebar === 'function') toggleSidebar(false);
-            
-            document.querySelectorAll('.post-menu-dropdown').forEach(el => el.classList.add('hidden'));
-
-            // Hide all pages & reset nav buttons
-            ['home', 'services', 'market', 'blood', 'emergency', 'directory', 'directory-list', 'profile', 'people', 'messages', 'notifications', 'view-profile', 'friends-list', 'complaints', 'settings', 'dynamic-content', 'monetization', 'verification', 'invite', 'transport', 'rent-a-car', 'bus'].forEach(p => {
-                document.getElementById('page-' + p)?.classList.add('hidden');
-                document.getElementById('btn-' + p)?.classList.replace('nav-active', 'text-gray-500');
-                document.getElementById('btn-' + p)?.classList.remove('text-green-600');
-            });
-
-            // Show target page
-            document.getElementById('page-' + id)?.classList.remove('hidden');
-
-            // Update Nav Button Style
-            const btn = document.getElementById('btn-' + id);
-            if (btn) {
-                btn.classList.add('nav-active', 'text-green-600');
-                btn.classList.remove('text-gray-500');
-            }
-
-            window.scrollTo(0, 0);
-
-            // Header Visibility Logic (Only show on Home page)
-            const mainHeader = document.getElementById('main-header');
-            if (mainHeader) {
-                if (id === 'home') {
-                    mainHeader.classList.remove('hidden-custom');
+        // --- হোম পেজের ফিড ট্যাব ডাইনামিক লোড করার ফাংশন ---
+        window.handleFeedFilterClick = function(filterType) {
+            if (typeof window.filterFeed === 'function') {
+                if (filterType === 'contest') {
+                    import('./contest.js').then(() => window.filterFeed('contest')).catch(e => console.error(e));
+                } else if (filterType === 'fifa') {
+                    import('./fifa.js').then(() => window.filterFeed('fifa')).catch(e => console.error(e));
                 } else {
-                    mainHeader.classList.add('hidden-custom'); // অন্য পেজে হেডার লুকানো থাকবে
+                    window.filterFeed(filterType);
                 }
             }
+        };
 
-            // --- DOM Bloat Fix (মেমোরি ক্লিয়ার করা) ---
-            const activeNavBtn = document.querySelector('.nav-btn.nav-active');
-            if (activeNavBtn) {
-                const prevPage = activeNavBtn.id.replace('btn-', '');
-                if (prevPage !== id) {
-                    // পেজ থেকে বের হওয়ার সময় ভারী কন্টেন্ট মুছে ফেলা হচ্ছে (RAM বাঁচানোর জন্য)
-                    if (prevPage === 'home') {
-                        const feed = document.getElementById('news-feed');
-                        if (feed) feed.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
-                    }
-                    if (prevPage === 'messages') {
-                        const msgPage = document.getElementById('page-messages');
-                        if (msgPage) msgPage.innerHTML = ''; 
-                    }
-                }
-            }
+        window.switchPage = function(id, addHistory = true) {
+            if(typeof toggleSidebar === 'function') toggleSidebar(false);
+            document.querySelectorAll('.post-menu-dropdown').forEach(el => el.classList.add('hidden'));
 
             // --- ডাইনামিক লোডিং স্পিনার সেটআপ ---
             let pageLoader = document.getElementById('dynamic-page-loader');
             if (!pageLoader) {
                 pageLoader = document.createElement('div');
                 pageLoader.id = 'dynamic-page-loader';
-                // একটি সুন্দর ব্লার ব্যাকগ্রাউন্ড এবং লোডিং এনিমেশন
-                pageLoader.className = 'fixed inset-0 bg-white/70 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center transition-opacity duration-300 opacity-0 pointer-events-none';
+                // স্পিনারের ট্রানজিশন ফাস্ট করা হয়েছে যাতে ধাক্কা না লাগে
+                pageLoader.className = 'fixed inset-0 bg-white/80 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center transition-opacity duration-200 opacity-0 pointer-events-none';
                 pageLoader.innerHTML = '<div class="animate-spin rounded-full h-10 w-10 border-4 border-green-200 border-t-green-600 mb-3 shadow-lg"></div><p class="text-sm font-bold text-gray-700 animate-pulse">লোড হচ্ছে...</p>';
                 document.body.appendChild(pageLoader);
             }
@@ -4318,106 +4283,119 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             };
             const hideLoader = () => {
                 pageLoader.style.opacity = '0';
-                setTimeout(() => pageLoader.classList.add('pointer-events-none'), 300);
+                setTimeout(() => pageLoader.classList.add('pointer-events-none'), 200);
             };
 
-            // Specific Page Logic & DYNAMIC IMPORTS (পেজে প্রবেশ করার সময় শুধু সেই পেজের JS লোড হবে)
-            if (id === 'home' && window.currentUser) {
-                if (typeof window.loadFeed === 'function') window.loadFeed(window.currentFeedFilter || 'all', true);
-                if (typeof window.loadNotes === 'function') window.loadNotes();
-            }
-            if (id === 'profile' && window.currentUser) {
-                showLoader();
-                import('./profile.js').then(() => {
-                    window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
-                    hideLoader();
-                }).catch(e => { console.error("Profile JS load failed", e); hideLoader(); });
-            }
-            if (id === 'monetization' && window.currentUser) {
-                showLoader();
-                import('./monetization.js').then(() => {
-                    if (typeof window.checkMonetizationStatus === 'function') window.checkMonetizationStatus();
-                    hideLoader();
-                }).catch(e => { console.error("Monetization JS load failed", e); hideLoader(); });
-            }
-            if (id === 'verification' && window.currentUser) {
-                showLoader();
-                import('./verification.js').then(() => {
-                    if (typeof window.checkVerificationStatus === 'function') window.checkVerificationStatus();
-                    hideLoader();
-                }).catch(e => { console.error("Verification JS load failed", e); hideLoader(); });
-            }
-            if (id === 'friends-list' && window.currentUser) {
-                window.loadAllFriendsList();
-            }
-            if (id === 'messages' && window.currentUser) {
-                if (typeof loadMessagesUI === 'function') loadMessagesUI();
-                showLoader();
-                import('./messages.js').then(() => {
-                    if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
-                    if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
-                    hideLoader();
-                }).catch(e => { console.error("Messages JS load failed", e); hideLoader(); });
-            }
-            if (id === 'market') {
-                showLoader();
-                import('./market.js').then(() => hideLoader()).catch(e => { console.error("Market JS load failed", e); hideLoader(); });
-            }
-            if (id === 'blood') {
-                showLoader();
-                import('./blood.js').then(() => hideLoader()).catch(e => { console.error("Blood JS load failed", e); hideLoader(); });
-            }
-            if (id === 'settings') {
-                showLoader();
-                import('./settings.js').then(() => {
-                    if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
-                    hideLoader();
-                }).catch(e => { console.error("Settings JS load failed", e); hideLoader(); });
-            }
-            if (window.currentFeedFilter === 'contest' || id === 'contest') {
-                showLoader();
-                import('./contest.js').then(() => hideLoader()).catch(e => { console.error("Contest JS load failed", e); hideLoader(); });
-            }
-            if (window.currentFeedFilter === 'fifa' || id === 'fifa') {
-                showLoader();
-                import('./fifa.js').then(() => hideLoader()).catch(e => { console.error("Fifa JS load failed", e); hideLoader(); });
-            }
-            if (id === 'notifications') {
-                document.getElementById('nav-badge-notice')?.classList.remove('active');
-                document.getElementById('header-badge-notice')?.classList.remove('active');
-                // ফিক্স: নোটিফিকেশন পেজে আসলেই নতুন করে ডাটা লোড হবে
-                if(window.currentUser) {
-                    window.loadNotifications(true);
+            // স্পিনার দেখানোর পর লেআউট শিফট করব যাতে ইউজার ধাক্কা (jerk) না খায়
+            if(id !== 'home') showLoader(); 
+
+            // 50ms ডিলে দেওয়া হলো যাতে স্পিনারটি আগে স্ক্রিনে ভিজিবল হয়, তারপর পেজ ক্লিয়ার হয়
+            setTimeout(() => {
+                // --- DOM Bloat Fix (মেমোরি ক্লিয়ার করা) ---
+                const activeNavBtn = document.querySelector('.nav-btn.nav-active');
+                if (activeNavBtn) {
+                    const prevPage = activeNavBtn.id.replace('btn-', '');
+                    if (prevPage !== id) {
+                        if (prevPage === 'home') {
+                            const feed = document.getElementById('news-feed');
+                            if (feed) {
+                                // ক্লিয়ার করার আগে মিনিমাম হাইট সেট করা হলো যেন পেজ চুপসে না যায় (Jerk Fix)
+                                feed.style.minHeight = '100vh';
+                                feed.innerHTML = '';
+                            }
+                        }
+                        if (prevPage === 'messages') {
+                            const msgPage = document.getElementById('page-messages');
+                            if (msgPage) msgPage.innerHTML = ''; 
+                        }
+                    }
                 }
-            }
-            
-            // সেটিংস পেজ ওপেন হলে ভ্যালুগুলো আপডেট হওয়ার লজিক
-            if (id === 'settings') {
-                if (window.initSettingsPage) window.initSettingsPage();
-            }
 
-            // Push History
-            if (addHistory) history.pushState({
-                page: id
-            }, "", `#${id}`);
+                // Hide all pages & reset nav buttons
+                ['home', 'services', 'market', 'blood', 'emergency', 'directory', 'directory-list', 'profile', 'people', 'messages', 'notifications', 'view-profile', 'friends-list', 'complaints', 'settings', 'dynamic-content', 'monetization', 'verification', 'invite', 'transport', 'rent-a-car', 'bus'].forEach(p => {
+                    document.getElementById('page-' + p)?.classList.add('hidden');
+                    document.getElementById('btn-' + p)?.classList.replace('nav-active', 'text-gray-500');
+                    document.getElementById('btn-' + p)?.classList.remove('text-green-600');
+                });
 
-            // Handle FAB Visibility
-            const fabContainer = document.getElementById('fab-container');
-            if (fabContainer) {
-                if (id === 'home') {
-                    fabContainer.classList.remove('hidden-custom');
+                // Show target page
+                document.getElementById('page-' + id)?.classList.remove('hidden');
+
+                // Update Nav Button Style
+                const btn = document.getElementById('btn-' + id);
+                if (btn) {
+                    btn.classList.add('nav-active', 'text-green-600');
+                    btn.classList.remove('text-gray-500');
+                }
+
+                // একদম স্মুথলি টপে স্ক্রল হবে (স্পিনারের আড়ালে)
+                window.scrollTo(0, 0);
+
+                // Header Visibility
+                const mainHeader = document.getElementById('main-header');
+                if (mainHeader) id === 'home' ? mainHeader.classList.remove('hidden-custom') : mainHeader.classList.add('hidden-custom');
+
+                // FAB Visibility
+                const fabContainer = document.getElementById('fab-container');
+                if (fabContainer) id === 'home' ? fabContainer.classList.remove('hidden-custom') : fabContainer.classList.add('hidden-custom');
+
+                // Chat View Hiding
+                if (id !== 'messages' && id !== 'chat-conversation') {
+                    document.getElementById('chat-list-view')?.classList.remove('hidden', 'hidden-custom');
+                    document.getElementById('chat-conversation-view')?.classList.add('hidden', 'hidden-custom');
+                    window.currentChatUser = null;
+                }
+
+                if (addHistory) history.pushState({ page: id }, "", `#${id}`);
+
+                // --- Specific Page Logic & DYNAMIC IMPORTS ---
+                if (id === 'home' && window.currentUser) {
+                    if (typeof window.loadFeed === 'function') window.loadFeed(window.currentFeedFilter || 'all', true);
+                    if (typeof window.loadNotes === 'function') window.loadNotes();
+                    hideLoader();
+                } else if (id === 'profile' && window.currentUser) {
+                    import('./profile.js').then(() => {
+                        window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
+                        hideLoader();
+                    }).catch(e => { console.error("Profile JS load failed", e); hideLoader(); });
+                } else if (id === 'monetization' && window.currentUser) {
+                    import('./monetization.js').then(() => {
+                        if (typeof window.checkMonetizationStatus === 'function') window.checkMonetizationStatus();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
+                } else if (id === 'verification' && window.currentUser) {
+                    import('./verification.js').then(() => {
+                        if (typeof window.checkVerificationStatus === 'function') window.checkVerificationStatus();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
+                } else if (id === 'messages' && window.currentUser) {
+                    if (typeof loadMessagesUI === 'function') loadMessagesUI();
+                    import('./messages.js').then(() => {
+                        if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
+                        if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
+                } else if (id === 'market') {
+                    import('./market.js').then(() => hideLoader()).catch(e => { hideLoader(); });
+                } else if (id === 'blood') {
+                    import('./blood.js').then(() => hideLoader()).catch(e => { hideLoader(); });
+                } else if (id === 'settings') {
+                    import('./settings.js').then(() => {
+                        if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
                 } else {
-                    fabContainer.classList.add('hidden-custom');
+                    // যেসব পেজের জন্য আলাদা মডিউল নেই
+                    if (id === 'friends-list' && window.currentUser) window.loadAllFriendsList();
+                    if (id === 'notifications' && window.currentUser) {
+                        document.getElementById('nav-badge-notice')?.classList.remove('active');
+                        document.getElementById('header-badge-notice')?.classList.remove('active');
+                        if (typeof window.loadNotifications === 'function') window.loadNotifications(true);
+                    }
+                    hideLoader();
                 }
-            }
-
-            // Handle Chat View Hiding
-            if (id !== 'messages' && id !== 'chat-conversation') {
-                document.getElementById('chat-list-view').classList.remove('hidden', 'hidden-custom');
-                document.getElementById('chat-conversation-view').classList.add('hidden', 'hidden-custom');
-                currentChatUser = null;
-            }
-        }
+            }, 50); // 50ms delay for smooth UI transition
+        };
 
         window.handleHomeClick = () => {
             const homeBtn = document.getElementById('btn-home');
