@@ -184,7 +184,7 @@ async function renderActiveContestGrid(participants) {
             </div>
             <div class="p-2 flex-1 flex flex-col justify-between">
                 <div class="flex items-center gap-2 mb-1">
-                    <img src="${p.authorPic || 'https://via.placeholder.com/40'}" class="w-6 h-6 rounded-full object-cover border border-gray-200">
+                    <img src="${p.authorPic || 'https://via.placeholder.com/40'}" loading="lazy" class="w-6 h-6 rounded-full object-cover border border-gray-200">
                     <span class="text-xs font-bold text-gray-800 truncate">${window.escapeHTML(p.authorName || 'অজ্ঞাত')}</span>
                 </div>
                 <p class="text-[10px] text-gray-500 line-clamp-2 mb-1">${window.escapeHTML(p.caption || '')}</p>
@@ -231,10 +231,10 @@ function renderContestResults(participants) {
                 <i class="fa-solid fa-crown"></i> ১ম স্থান
             </div>
             <div class="h-56 w-full relative" onclick="window.openImageViewer('${top3[0].image}')">
-                <img src="${top3[0].image}" class="w-full h-full object-cover cursor-pointer">
+                <img src="${top3[0].image}" loading="lazy" class="w-full h-full object-cover cursor-pointer">
             </div>
             <div class="p-4 text-center bg-gradient-to-t from-yellow-50 to-white">
-                <img src="${top3[0].authorPic}" class="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md mx-auto -mt-12 relative z-10">
+                <img src="${top3[0].authorPic}" loading="lazy" class="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md mx-auto -mt-12 relative z-10">
                 <h4 class="font-extrabold text-gray-800 text-lg mt-2">${window.escapeHTML(top3[0].authorName)}</h4>
                 <p class="text-sm text-yellow-700 font-bold bg-yellow-100 inline-block px-3 py-1 rounded-full mt-1">মোট ভোট: ${top3[0].votes}</p>
             </div>
@@ -251,10 +251,10 @@ function renderContestResults(participants) {
             <div class="bg-white rounded-xl shadow border-2 border-gray-300 overflow-hidden relative">
                 <div class="absolute top-0 left-0 bg-gray-300 text-gray-800 px-2 py-0.5 rounded-br-lg text-xs font-bold shadow z-10">২য় স্থান</div>
                 <div class="h-32 w-full" onclick="window.openImageViewer('${top3[1].image}')">
-                    <img src="${top3[1].image}" class="w-full h-full object-cover cursor-pointer">
+                    <img src="${top3[1].image}" loading="lazy" class="w-full h-full object-cover cursor-pointer">
                 </div>
                 <div class="p-2 text-center bg-gray-50">
-                    <img src="${top3[1].authorPic}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow mx-auto -mt-6 relative z-10">
+                    <img src="${top3[1].authorPic}" loading="lazy" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow mx-auto -mt-6 relative z-10">
                     <h4 class="font-bold text-gray-800 text-xs mt-1 truncate">${window.escapeHTML(top3[1].authorName)}</h4>
                     <p class="text-[10px] text-gray-600 font-bold">${top3[1].votes} ভোট</p>
                 </div>
@@ -267,10 +267,10 @@ function renderContestResults(participants) {
             <div class="bg-white rounded-xl shadow border-2 border-amber-600 overflow-hidden relative">
                 <div class="absolute top-0 left-0 bg-amber-600 text-white px-2 py-0.5 rounded-br-lg text-xs font-bold shadow z-10">৩য় স্থান</div>
                 <div class="h-32 w-full" onclick="window.openImageViewer('${top3[2].image}')">
-                    <img src="${top3[2].image}" class="w-full h-full object-cover cursor-pointer">
+                    <img src="${top3[2].image}" loading="lazy" class="w-full h-full object-cover cursor-pointer">
                 </div>
                 <div class="p-2 text-center bg-amber-50">
-                    <img src="${top3[2].authorPic}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow mx-auto -mt-6 relative z-10">
+                    <img src="${top3[2].authorPic}" loading="lazy" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow mx-auto -mt-6 relative z-10">
                     <h4 class="font-bold text-gray-800 text-xs mt-1 truncate">${window.escapeHTML(top3[2].authorName)}</h4>
                     <p class="text-[10px] text-amber-700 font-bold">${top3[2].votes} ভোট</p>
                 </div>
@@ -287,7 +287,7 @@ function renderContestResults(participants) {
         <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <span class="text-gray-400 font-bold w-4 text-center">#${index + 4}</span>
-                <img src="${p.authorPic}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                <img src="${p.authorPic}" loading="lazy" class="w-10 h-10 rounded-full object-cover border border-gray-200">
                 <div>
                     <h4 class="font-bold text-gray-800 text-sm">${window.escapeHTML(p.authorName)}</h4>
                     <p class="text-[11px] text-gray-500 truncate w-32">${window.escapeHTML(p.caption)}</p>
