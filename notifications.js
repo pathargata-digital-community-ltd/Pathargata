@@ -79,7 +79,7 @@ window.showTikTokStyleToast = async (notif) => {
     toast.className = 'in-app-toast-anim bg-white/95 backdrop-blur-md border border-gray-100 shadow-xl rounded-full p-2 pr-3 flex items-center gap-3 w-[90%] max-w-sm mx-auto mb-2 cursor-pointer pointer-events-auto';
     
     toast.innerHTML = `
-        <img src="${profilePicUrl}" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200">
+        <img src="${profilePicUrl}" loading="lazy" decoding="async" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200 bg-gray-200">
         <div class="flex-1 min-w-0">
             <h4 class="font-bold text-gray-800 text-sm truncate">${window.escapeHTML(notif.fromName || 'নোটিফিকেশন')}</h4>
             <p class="text-xs text-gray-600 truncate">${text}</p>
@@ -207,7 +207,7 @@ window.loadNotifications = (isInitial = false) => {
                 html = `
                 <div id="notif-${n.id}" class="${bgClass} p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between mb-3 cursor-pointer transition-colors duration-300">
                     <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <img src="${n.profilePicUrl}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200">
+                        <img src="${n.profilePicUrl}" loading="lazy" decoding="async" class="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200 bg-gray-200">
                         <div class="flex-1 min-w-0">
                             <h4 class="font-bold text-red-700 text-sm truncate">জরুরি রক্ত প্রয়োজন!</h4>
                             <p class="text-xs text-gray-600 truncate">গ্রুপ: ${window.escapeHTML(n.group)} | নাম: ${window.escapeHTML(n.fromName)}</p>
@@ -231,7 +231,7 @@ window.loadNotifications = (isInitial = false) => {
                 html = `
                 <div id="notif-${n.id}" class="${bgClass} p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between mb-3 cursor-pointer hover:bg-gray-50 transition-colors duration-300" onclick="handleNotificationClick('${n.id}', '${n.postId}', '${n.type}')">
                     <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <img src="${n.profilePicUrl}" class="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200">
+                        <img src="${n.profilePicUrl}" loading="lazy" decoding="async" class="w-12 h-12 rounded-full object-cover shrink-0 border border-gray-200 bg-gray-200">
                         <div class="flex-1 min-w-0">
                             <h4 class="font-bold text-gray-800 text-sm truncate">${window.escapeHTML(n.fromName)}</h4>
                             <p class="text-xs text-gray-500 truncate">${text}</p>
