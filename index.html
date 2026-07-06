@@ -899,6 +899,12 @@
                 Google দিয়ে লগইন করুন
             </button>
             
+            <!-- Facebook Login Button -->
+            <button onclick="handleFacebookLogin()" id="btn-facebook-login" class="w-full bg-[#1877F2] text-white font-bold py-3 rounded-xl hover:bg-[#166FE5] shadow-sm transition active:scale-95 flex justify-center items-center gap-3 text-base mt-3">
+                <i class="fa-brands fa-facebook text-xl"></i>
+                Facebook দিয়ে লগইন করুন
+            </button>
+            
             <p class="mt-6 text-center text-sm text-gray-600">একাউন্ট নেই? <span onclick="toggleAuth('register')" class="text-green-600 font-bold cursor-pointer hover:underline">রেজিস্ট্রেশন করুন</span></p>
         </div>
         <div id="register-form" class="w-full max-w-sm hidden-custom relative">
@@ -1767,6 +1773,7 @@
             reauthenticateWithCredential,
             updatePassword,
             GoogleAuthProvider,
+            FacebookAuthProvider,
             signInWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -3251,6 +3258,82 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 console.error("Google Login Error:", error);
                 if(error.code === 'auth/popup-closed-by-user') {
                     showToast("লগইন বাতিল করা হয়েছে", "error");
+                } else {
+                    showToast("ত্রুটি: " + error.message, "error");
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // --- FACEBOOK LOGIN FUNCTION ---
+        window.handleFacebookLogin = async () => {
+            if (!navigator.onLine) {
+                showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-facebook-login');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
+            btn.disabled = true;
+
+            try {
+                const provider = new FacebookAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // ডাটাবেসে ইউজার চেক করা
+                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+                const userRef = ref(db, 'users/' + user.uid);
+                const snapshot = await get(userRef);
+
+                if (!snapshot.exists()) {
+                    // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
+                    const newUserData = {
+                        name: user.displayName || "অজ্ঞাত ইউজার",
+                        email: user.email || "", // Facebook sometimes doesn't provide email
+                        uid: user.uid,
+                        profile_pic: user.photoURL || "",
+                        role: 'user',
+                        union: 'Unknown',
+                        village: 'Unknown',
+                        joinDate: new Date().toLocaleDateString(),
+                        isVerified: false,
+                        status: 'user',
+                        phone: user.phoneNumber || ""
+                    };
+                    await set(userRef, newUserData);
+                    
+                    // Anti-fraud device check
+                    try {
+                        const fp = await window.FingerprintJS.load();
+                        const fpResult = await fp.get();
+                        let userIP = "unknown_ip";
+                        try {
+                            const ipRes = await fetch('https://api.ipify.org?format=json');
+                            const ipData = await ipRes.json();
+                            userIP = ipData.ip;
+                        } catch(err) {}
+                        
+                        await set(ref(db, `registered_devices/${fpResult.visitorId}`), {
+                            ip: userIP, timestamp: Date.now(), uid: user.uid
+                        });
+                        localStorage.setItem('has_registered_before', 'true');
+                    } catch(err) {}
+
+                    showToast("Facebook একাউন্ট খোলা সফল হয়েছে!", "success");
+                } else {
+                    showToast("লগইন সফল হয়েছে!", "success");
+                }
+
+            } catch (error) {
+                console.error("Facebook Login Error:", error);
+                if(error.code === 'auth/popup-closed-by-user') {
+                    showToast("লগইন বাতিল করা হয়েছে", "error");
+                } else if (error.code === 'auth/account-exists-with-different-credential') {
+                    showToast("এই ইমেইল দিয়ে আগেই Google বা ইমেইল-পাসওয়ার্ড দিয়ে একাউন্ট খোলা হয়েছে!", "error");
                 } else {
                     showToast("ত্রুটি: " + error.message, "error");
                 }
