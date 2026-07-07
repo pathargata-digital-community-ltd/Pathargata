@@ -3382,6 +3382,38 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 btn.disabled = false;
             });
         };
+        // --- 🤖 AI BOT LAZY LOADER (Only loads when clicked) ---
+        window.initAndStartBot = function() {
+            const loadingText = document.getElementById('bot-loading-text');
+            if(loadingText) loadingText.innerText = "বট লোড হচ্ছে, অপেক্ষা করুন...";
+
+            // যদি ফাইলটি আগে থেকেই লোড করা থাকে, তবে সরাসরি চালু হবে
+            if (typeof window.startBotChat === 'function') {
+                if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
+                window.startBotChat();
+                return;
+            }
+
+            // যদি লোড করা না থাকে, তবে ডাইনামিকভাবে bot.js লোড করবে
+            const script = document.createElement('script');
+            script.src = 'bot.js';
+            script.id = 'ai-bot-script';
+            
+            script.onload = () => {
+                if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
+                if (typeof window.startBotChat === 'function') {
+                    window.startBotChat();
+                }
+            };
+            
+            script.onerror = () => {
+                showToast("বট কানেক্ট হতে সমস্যা হচ্ছে। ইন্টারনেট চেক করুন।", "error");
+                if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
+            };
+            
+            document.body.appendChild(script);
+        };
+
         window.handleLogout = async () => {
             if (confirm("লগআউট করবেন?")) {
                 // আগের একাউন্টের ক্যাশ মুছে ফেলা হচ্ছে
