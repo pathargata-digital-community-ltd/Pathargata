@@ -1347,7 +1347,7 @@
             <button onclick="submitMissingInfo()" id="btn-save-missing-info" class="w-full bg-blue-600 text-white font-bold py-3.5 mt-6 rounded-xl shadow-lg hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2 text-lg">সংরক্ষণ করুন <i class="fa-solid fa-check"></i></button>
         </div>
     </div>
-    
+
     <!-- আপডেট প্রোগ্রেস স্ক্রিন -->
     <div id="update-screen" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center hidden-custom transition-opacity duration-300">
         <div class="w-24 h-24 mb-6 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-4xl animate-bounce shadow-lg border-4 border-blue-100">
@@ -2400,10 +2400,12 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
 
                 if (!history.state) {
                     const currentHash = window.location.hash.replace('#', '');
-                    if (currentHash && currentHash !== 'home') setTimeout(() => switchPage(currentHash), 500);
-                    else history.replaceState({
-                        page: 'home'
-                    }, "", "#home");
+                    if (currentHash && currentHash !== 'home') {
+                        setTimeout(() => switchPage(currentHash), 500);
+                    } else {
+                        history.replaceState({ page: 'home' }, "", "#home");
+                        switchPage('home', false); // ফিক্স: লগইনের পর সরাসরি হোম পেজ লোড হবে
+                    }
                 } else {
                     switchPage(history.state.page || 'home', false);
                 }
@@ -2414,9 +2416,9 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
 
                     if (data) {
                         userDetails = data;
-window.userDetails = userDetails;
-window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
-                        // Reactivation Logic (ডিএক্টিভ থাকলে লগইন করার সাথে সাথে একটিভ হবে)
+                        window.userDetails = userDetails;
+                        window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
+                        
                         if (data.status === 'deactivated') {
                             update(ref(db, 'users/' + user.uid), { status: 'user' });
                             data.status = 'user';
@@ -3239,10 +3241,9 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 btn.disabled = false;
             });
         };
-
-        // --- SOCIAL LOGIN (GOOGLE & FACEBOOK) WITH REDIRECT ---
+// --- SOCIAL LOGIN (GOOGLE & FACEBOOK) WITH REDIRECT ---
         
-        // Redirect Result Handler (লগইন করে একই পেজে ফিরে আসলে এই কোড রান করবে)
+        // Redirect Result Handler
         getRedirectResult(auth).then(async (result) => {
             if (result) {
                 const user = result.user;
@@ -3266,7 +3267,6 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     };
                     await set(userRef, newUserData);
                     
-                    // Anti-fraud device check
                     try {
                         const fp = await window.FingerprintJS.load();
                         const fpResult = await fp.get();
@@ -3283,6 +3283,9 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                         localStorage.setItem('has_registered_before', 'true');
                     } catch(err) {}
                 }
+                // লগইন বা একাউন্ট ক্রিয়েট সফল হলে মেসেজ এবং হোম পেজে রিডাইরেক্ট
+                showToast("লগইন সফল হয়েছে!", "success");
+                switchPage('home');
             }
         }).catch((error) => {
             console.error("Social Login Error:", error);
@@ -3302,7 +3305,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
             
             const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, একই পেজে রিডাইরেক্ট হবে
+            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, অ্যাপের ভেতরেই রিডাইরেক্ট হবে
         };
 
         // Facebook Login Button Action
@@ -3314,7 +3317,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
             
             const provider = new FacebookAuthProvider();
-            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, একই পেজে রিডাইরেক্ট হবে
+            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, অ্যাপের ভেতরেই রিডাইরেক্ট হবে
         };
 
         window.submitMissingInfo = async () => {
@@ -3349,6 +3352,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 
                 document.getElementById('missing-info-modal').classList.add('hidden-custom');
                 showToast("আপনার তথ্য সফলভাবে সংরক্ষিত হয়েছে!", "success");
+                switchPage('home'); // ফিক্স: সেভ করার পর হোম পেজে পাঠানো
             } catch (e) {
                 showToast("ত্রুটি: " + e.message, "error");
                 btn.innerHTML = 'সংরক্ষণ করুন <i class="fa-solid fa-check"></i>';
