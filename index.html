@@ -1308,7 +1308,7 @@
             <button onclick="submitPasswordChange()" id="btn-save-password" class="w-full bg-green-600 text-white font-bold py-3 mt-5 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">পরিবর্তন করুন</button>
         </div>
     </div>
-    
+
     <!-- MISSING INFO MODAL (Google/Facebook Login) -->
     <div id="missing-info-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[9999] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
@@ -1540,65 +1540,7 @@
 
             <div id="blood-ui-container"></div>
 
-            <!-- পরিবহন প্রধান পেজ -->
-            <div id="page-transport" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-                <button onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition"><i class="fa-solid fa-arrow-left"></i> সকল সেবা</button>
-                <h2 class="text-xl font-bold mb-5 border-l-4 border-teal-500 pl-3 text-gray-700">পরিবহন সেবা</h2>
-
-                <!-- ব্যানার স্লাইডার -->
-                <div id="transport-banner-container" class="w-full h-40 bg-gray-200 rounded-xl mb-6 shadow-sm overflow-x-auto flex snap-x snap-mandatory hide-scrollbar relative">
-                    <p class="text-gray-400 text-sm m-auto">ব্যানার লোড হচ্ছে...</p>
-                </div>
-                <style>
-                    .hide-scrollbar::-webkit-scrollbar {
-                        display: none;
-                    }
-
-                    .hide-scrollbar {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
-                </style>
-
-                <h3 class="font-bold text-gray-600 mb-3 text-sm">ক্যাটাগরি নির্বাচন করুন</h3>
-                <!-- রেন্ট-এ-কার এবং বাস অপশন -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div onclick="switchPage('rent-a-car'); loadRentACar();" class="bg-white p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:bg-teal-50 transition border border-gray-100 transform active:scale-95">
-                        <div class="w-14 h-14 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="fa-solid fa-car"></i></div>
-                        <h4 class="font-bold text-gray-800 text-base">রেন্ট-এ-কার</h4>
-                        <p class="text-[10px] text-gray-500 text-center mt-1">প্রাইভেট কার ও মাইক্রোবাস</p>
-                    </div>
-
-                    <div onclick="switchPage('bus'); loadBusServices();" class="bg-white p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:bg-green-50 transition border border-gray-100 transform active:scale-95">
-                        <div class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mb-3"><i class="fa-solid fa-bus"></i></div>
-                        <h4 class="font-bold text-gray-800 text-base">বাস সার্ভিস</h4>
-                        <p class="text-[10px] text-gray-500 text-center mt-1">লোকাল ও দূরপাল্লার বাস</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- রেন্ট-এ-কার পেজ -->
-            <div id="page-rent-a-car" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-                <button onclick="switchPage('transport')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
-                <div class="flex justify-between items-center mb-5">
-                    <h2 class="text-xl font-bold border-l-4 border-teal-500 pl-3 text-gray-700">রেন্ট-এ-কার</h2>
-                </div>
-                <div class="bg-teal-50 p-3 rounded-lg border border-teal-100 mb-4">
-                    <p class="text-xs text-teal-800 font-medium"><i class="fa-solid fa-location-dot mr-1"></i> শুধুমাত্র <b><span id="user-village-name">আপনার গ্রামের</span></b> গাড়িগুলো এখানে দেখানো হচ্ছে।</p>
-                </div>
-                <div id="rent-a-car-list" class="space-y-3">
-                    <p class="text-center text-gray-400 py-10">গাড়ি লোড হচ্ছে...</p>
-                </div>
-            </div>
-
-            <!-- বাস সার্ভিস পেজ -->
-            <div id="page-bus" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-                <button onclick="switchPage('transport')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
-                <h2 class="text-xl font-bold mb-5 border-l-4 border-green-500 pl-3 text-gray-700">বাস সার্ভিস</h2>
-                <div id="bus-service-list" class="space-y-3">
-                    <p class="text-center text-gray-400 py-10">বাসের তথ্য লোড হচ্ছে...</p>
-                </div>
-            </div>
+            <div id="transport-ui-container"></div>
 
             <!-- NEW EMERGENCY ALERT PAGE -->
             <div id="page-emergency" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
@@ -1813,8 +1755,7 @@
             updatePassword,
             GoogleAuthProvider,
             FacebookAuthProvider,
-            signInWithRedirect,
-            getRedirectResult
+            signInWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // --- CONFIGURATION ---
@@ -2400,12 +2341,10 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
 
                 if (!history.state) {
                     const currentHash = window.location.hash.replace('#', '');
-                    if (currentHash && currentHash !== 'home') {
-                        setTimeout(() => switchPage(currentHash), 500);
-                    } else {
-                        history.replaceState({ page: 'home' }, "", "#home");
-                        switchPage('home', false); // ফিক্স: লগইনের পর সরাসরি হোম পেজ লোড হবে
-                    }
+                    if (currentHash && currentHash !== 'home') setTimeout(() => switchPage(currentHash), 500);
+                    else history.replaceState({
+                        page: 'home'
+                    }, "", "#home");
                 } else {
                     switchPage(history.state.page || 'home', false);
                 }
@@ -2416,9 +2355,9 @@ import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((m
 
                     if (data) {
                         userDetails = data;
-                        window.userDetails = userDetails;
-                        window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
-                        
+window.userDetails = userDetails;
+window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
+                        // Reactivation Logic (ডিএক্টিভ থাকলে লগইন করার সাথে সাথে একটিভ হবে)
                         if (data.status === 'deactivated') {
                             update(ref(db, 'users/' + user.uid), { status: 'user' });
                             data.status = 'user';
@@ -2606,11 +2545,7 @@ loadMyComplaints();
 
                     // কোন সার্ভিসে ক্লিক করলে কোথায় যাবে তার লজিক
                     if (['directory', 'blood', 'complaints', 'market', 'emergency', 'transport'].includes(key)) {
-                        if (key === 'transport') {
-                            onclick = `switchPage('${key}'); loadTransportBanners();`;
-                        } else {
-                            onclick = `switchPage('${key}')`;
-                        }
+                        onclick = `switchPage('${key}')`;
                     } else if (key === 'birth_reg') {
                         onclick = `window.openInAppWebview('${cat.title}', 'https://bdris.gov.bd/')`;
                     } else if (key === 'tin_cert') {
@@ -3241,12 +3176,26 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 btn.disabled = false;
             });
         };
-// --- SOCIAL LOGIN (GOOGLE & FACEBOOK) WITH REDIRECT ---
-        
-        // Redirect Result Handler
-        getRedirectResult(auth).then(async (result) => {
-            if (result) {
+
+        // --- GOOGLE LOGIN FUNCTION ---
+        window.handleGoogleLogin = async () => {
+            if (!navigator.onLine) {
+                showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-google-login');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
+            btn.disabled = true;
+
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
                 const user = result.user;
+
+                // ডাটাবেসে ইউজার চেক করা
+                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
                 const userRef = ref(db, 'users/' + user.uid);
                 const snapshot = await get(userRef);
 
@@ -3254,7 +3203,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
                     const newUserData = {
                         name: user.displayName || "অজ্ঞাত ইউজার",
-                        email: user.email || "",
+                        email: user.email,
                         uid: user.uid,
                         profile_pic: user.photoURL || "",
                         role: 'user',
@@ -3267,6 +3216,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     };
                     await set(userRef, newUserData);
                     
+                    // Anti-fraud device check (from existing logic)
                     try {
                         const fp = await window.FingerprintJS.load();
                         const fpResult = await fp.get();
@@ -3282,42 +3232,99 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                         });
                         localStorage.setItem('has_registered_before', 'true');
                     } catch(err) {}
-                }
-                // লগইন বা একাউন্ট ক্রিয়েট সফল হলে মেসেজ এবং হোম পেজে রিডাইরেক্ট
-                showToast("লগইন সফল হয়েছে!", "success");
-                switchPage('home');
-            }
-        }).catch((error) => {
-            console.error("Social Login Error:", error);
-            if (error.code === 'auth/account-exists-with-different-credential') {
-                showToast("এই ইমেইল দিয়ে আগেই অন্যভাবে একাউন্ট খোলা হয়েছে!", "error");
-            } else {
-                showToast("লগইন বাতিল বা সমস্যা হয়েছে!", "error");
-            }
-        });
 
-        // Google Login Button Action
-        window.handleGoogleLogin = () => {
-            if (!navigator.onLine) {
-                return showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+                    showToast("Google একাউন্ট খোলা সফল হয়েছে!", "success");
+                } else {
+                    showToast("লগইন সফল হয়েছে!", "success");
+                }
+
+            } catch (error) {
+                console.error("Google Login Error:", error);
+                if(error.code === 'auth/popup-closed-by-user') {
+                    showToast("লগইন বাতিল করা হয়েছে", "error");
+                } else {
+                    showToast("ত্রুটি: " + error.message, "error");
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
-            const btn = document.getElementById('btn-google-login');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
-            
-            const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, অ্যাপের ভেতরেই রিডাইরেক্ট হবে
         };
 
-        // Facebook Login Button Action
-        window.handleFacebookLogin = () => {
+        // --- FACEBOOK LOGIN FUNCTION ---
+        window.handleFacebookLogin = async () => {
             if (!navigator.onLine) {
-                return showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+                showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+                return;
             }
+
             const btn = document.getElementById('btn-facebook-login');
+            const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
-            
-            const provider = new FacebookAuthProvider();
-            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, অ্যাপের ভেতরেই রিডাইরেক্ট হবে
+            btn.disabled = true;
+
+            try {
+                const provider = new FacebookAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // ডাটাবেসে ইউজার চেক করা
+                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+                const userRef = ref(db, 'users/' + user.uid);
+                const snapshot = await get(userRef);
+
+                if (!snapshot.exists()) {
+                    // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
+                    const newUserData = {
+                        name: user.displayName || "অজ্ঞাত ইউজার",
+                        email: user.email || "", // Facebook sometimes doesn't provide email
+                        uid: user.uid,
+                        profile_pic: user.photoURL || "",
+                        role: 'user',
+                        union: 'Unknown',
+                        village: 'Unknown',
+                        joinDate: new Date().toLocaleDateString(),
+                        isVerified: false,
+                        status: 'user',
+                        phone: user.phoneNumber || ""
+                    };
+                    await set(userRef, newUserData);
+                    
+                    // Anti-fraud device check
+                    try {
+                        const fp = await window.FingerprintJS.load();
+                        const fpResult = await fp.get();
+                        let userIP = "unknown_ip";
+                        try {
+                            const ipRes = await fetch('https://api.ipify.org?format=json');
+                            const ipData = await ipRes.json();
+                            userIP = ipData.ip;
+                        } catch(err) {}
+                        
+                        await set(ref(db, `registered_devices/${fpResult.visitorId}`), {
+                            ip: userIP, timestamp: Date.now(), uid: user.uid
+                        });
+                        localStorage.setItem('has_registered_before', 'true');
+                    } catch(err) {}
+
+                    showToast("Facebook একাউন্ট খোলা সফল হয়েছে!", "success");
+                } else {
+                    showToast("লগইন সফল হয়েছে!", "success");
+                }
+
+            } catch (error) {
+                console.error("Facebook Login Error:", error);
+                if(error.code === 'auth/popup-closed-by-user') {
+                    showToast("লগইন বাতিল করা হয়েছে", "error");
+                } else if (error.code === 'auth/account-exists-with-different-credential') {
+                    showToast("এই ইমেইল দিয়ে আগেই Google বা ইমেইল-পাসওয়ার্ড দিয়ে একাউন্ট খোলা হয়েছে!", "error");
+                } else {
+                    showToast("ত্রুটি: " + error.message, "error");
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         };
 
         window.submitMissingInfo = async () => {
@@ -3352,7 +3359,6 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 
                 document.getElementById('missing-info-modal').classList.add('hidden-custom');
                 showToast("আপনার তথ্য সফলভাবে সংরক্ষিত হয়েছে!", "success");
-                switchPage('home'); // ফিক্স: সেভ করার পর হোম পেজে পাঠানো
             } catch (e) {
                 showToast("ত্রুটি: " + e.message, "error");
                 btn.innerHTML = 'সংরক্ষণ করুন <i class="fa-solid fa-check"></i>';
@@ -4065,102 +4071,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             });
         };
 
-        // --- TRANSPORT SERVICES LOGIC ---
-
-        // ১. ব্যানার লোড করা
-        window.loadTransportBanners = () => {
-            const container = document.getElementById('transport-banner-container');
-            get(ref(db, 'admin_settings/transport_banners')).then((snap) => {
-                const banners = snap.val();
-                if (banners && Object.keys(banners).length > 0) {
-                    // এখানে w-full এর বদলে min-w-full ব্যবহার করা হয়েছে 
-                    container.innerHTML = Object.values(banners).map(imgUrl =>
-                        `<img src="${imgUrl}" loading="lazy" class="min-w-full h-full object-cover shrink-0 snap-center">`
-                    ).join('');
-                } else {
-                    container.innerHTML = `<div class="min-w-full h-full bg-teal-100 flex items-center justify-center shrink-0 snap-center"><span class="text-teal-600 font-bold"><i class="fa-solid fa-bus"></i> স্মার্ট পরিবহন সেবা</span></div>`;
-                }
-            }).catch(e => console.error(e));
-        };
-
-        // ২. রেন্ট-এ-কার লোড করা (শুধুমাত্র নিজের গ্রামের)
-        window.loadRentACar = () => {
-            const container = document.getElementById('rent-a-car-list');
-            const userVillage = userDetails.village;
-
-            document.getElementById('user-village-name').innerText = userVillage || "আপনার গ্রামের";
-
-            if (!userVillage || userVillage === "Unknown") {
-                container.innerHTML = `<div class="text-center py-10"><i class="fa-solid fa-triangle-exclamation text-4xl text-yellow-400 mb-3"></i><p class="text-gray-500 text-sm">প্রোফাইল থেকে আগে আপনার গ্রাম সেট করুন।</p></div>`;
-                return;
-            }
-
-            container.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div></div>';
-
-            get(ref(db, 'transport/rent_a_car')).then((snap) => {
-                const data = snap.val() || {};
-
-                // ফিল্টার করা: শুধুমাত্র ইউজারের গ্রামের গাড়িগুলো দেখাবে
-                const filteredCars = Object.values(data).filter(car => car.village === userVillage);
-
-                if (filteredCars.length > 0) {
-                    container.innerHTML = filteredCars.map(car => `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex gap-3 items-center">
-                                <div class="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center text-teal-600 text-xl shrink-0"><i class="fa-solid fa-car-side"></i></div>
-                                <div>
-                                    <h4 class="font-bold text-gray-800 text-base">${escapeHTML(car.driverName)}</h4>
-                                    <p class="text-xs text-gray-500 font-medium">${escapeHTML(car.carModel)}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="text-[11px] text-gray-500 mb-3 bg-gray-50 p-2 rounded-lg"><i class="fa-solid fa-circle-info mr-1"></i> ${escapeHTML(car.details || 'কোনো বিস্তারিত তথ্য নেই')}</p>
-                        <div class="flex gap-2 mt-auto">
-                            <a href="tel:${car.phone}" class="flex-1 bg-teal-600 text-white py-2 rounded-lg font-bold text-sm shadow hover:bg-teal-700 flex items-center justify-center gap-2 transition active:scale-95"><i class="fa-solid fa-phone"></i> কল করুন</a>
-                        </div>
-                    </div>
-                `).join('');
-                } else {
-                    container.innerHTML = `<div class="text-center py-10"><i class="fa-regular fa-face-frown text-4xl text-gray-300 mb-3"></i><p class="text-gray-500 text-sm">আপনার গ্রামে কোনো রেন্ট-এ-কার পাওয়া যায়নি।</p></div>`;
-                }
-            });
-        };
-
-        // ৩. বাস সার্ভিস লোড করা
-        window.loadBusServices = () => {
-            const container = document.getElementById('bus-service-list');
-            container.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
-
-            get(ref(db, 'transport/bus')).then((snap) => {
-                const data = snap.val() || {};
-                const buses = Object.values(data);
-
-                if (buses.length > 0) {
-                    container.innerHTML = buses.map(bus => {
-                        const onlineTicketBtn = bus.website ? `<a href="${bus.website}" target="_blank" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-2 rounded-lg font-bold text-xs hover:bg-blue-100 flex items-center justify-center gap-2 transition active:scale-95"><i class="fa-solid fa-globe"></i> টিকিট বুকিং</a>` : '';
-
-                        return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col mb-3">
-                        <div class="flex gap-3 items-center mb-3">
-                            <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-600 text-xl shrink-0"><i class="fa-solid fa-bus-simple"></i></div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-gray-800 text-base">${escapeHTML(bus.name)}</h4>
-                                <p class="text-[11px] text-gray-500"><i class="fa-solid fa-location-dot mr-1"></i> কাউন্টার: ${escapeHTML(bus.counterName)}</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 mt-2 border-t pt-3">
-                            <a href="tel:${bus.phone}" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-xs shadow hover:bg-green-700 flex items-center justify-center gap-2 transition active:scale-95"><i class="fa-solid fa-phone"></i> কল কাউন্টার</a>
-                            ${onlineTicketBtn}
-                        </div>
-                    </div>
-                `
-                    }).join('');
-                } else {
-                    container.innerHTML = `<div class="text-center py-10"><p class="text-gray-500 text-sm">কোনো বাসের তথ্য পাওয়া যায়নি।</p></div>`;
-                }
-            });
-        };
+        
         
         // --- PULL TO REFRESH LOGIC FOR PEOPLE PAGE ---
 let touchStartY = 0;
@@ -4573,6 +4484,21 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                         if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
                         hideLoader();
                     }).catch(e => { hideLoader(); });
+                } else if (id === 'transport') {
+                    import('./transport.js').then(() => {
+                        if (typeof window.loadTransportBanners === 'function') window.loadTransportBanners();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
+                } else if (id === 'rent-a-car') {
+                    import('./transport.js').then(() => {
+                        if (typeof window.loadRentACar === 'function') window.loadRentACar();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
+                } else if (id === 'bus') {
+                    import('./transport.js').then(() => {
+                        if (typeof window.loadBusServices === 'function') window.loadBusServices();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
                 } else {
                     // যেসব পেজের জন্য আলাদা মডিউল নেই
                     if (id === 'friends-list' && window.currentUser) window.loadAllFriendsList();
@@ -4970,6 +4896,23 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 console.error("Error loading Monetization UI:", error);
             }
         }
+        
+        // Transport UI Fetcher
+        async function loadTransportUI() {
+            try {
+                const response = await fetch('transport-ui.html');
+                if (!response.ok) throw new Error('Failed to load Transport UI');
+                
+                const htmlText = await response.text();
+                const container = document.getElementById('transport-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Transport Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Transport UI:", error);
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
             loadProfileUI();
@@ -4984,6 +4927,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadVerificationUI();
             loadSettingsUI();
             loadMonetizationUI();
+            loadTransportUI();
 
             // ডাইনামিক অ্যাপ ভার্সন সেট করার জন্য ফাংশন
             window.updateVersionUI = function() {
