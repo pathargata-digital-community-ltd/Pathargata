@@ -1308,7 +1308,46 @@
             <button onclick="submitPasswordChange()" id="btn-save-password" class="w-full bg-green-600 text-white font-bold py-3 mt-5 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">পরিবর্তন করুন</button>
         </div>
     </div>
-
+    
+    <!-- MISSING INFO MODAL (Google/Facebook Login) -->
+    <div id="missing-info-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[9999] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-xl p-6 shadow-2xl relative">
+            <div class="text-center mb-5">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 text-blue-600 text-3xl animate-bounce">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">তথ্য হালনাগাদ করুন</h3>
+                <p class="text-xs text-red-500 mt-1 font-bold">একাউন্টটি ব্যবহার করতে নিচের তথ্যগুলো দেওয়া বাধ্যতামূলক।</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">ইউনিয়ন নির্বাচন করুন *</label>
+                    <select id="missing-union" onchange="loadVillagesForUnion(this.value, 'missing-village')" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-sm focus:bg-white transition-all">
+                        <option value="">নির্বাচন করুন</option>
+                        <option value="Patharghata Union Sadar">পাথরঘাটা ইউনিয়ন (সদর)</option>
+                        <option value="Char Duani Union">চরদুয়ানী ইউনিয়ন</option>
+                        <option value="Kakchira Union">কাকচিরা ইউনিয়ন</option>
+                        <option value="Kalmegha Union">কালমেঘা ইউনিয়ন</option>
+                        <option value="Kathaltoli Union">কাঁঠালতলী ইউনিয়ন</option>
+                        <option value="Nachnapara Union">নাচনাপাড়া ইউনিয়ন</option>
+                        <option value="Raihanpur Union">রায়হানপুর ইউনিয়ন</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">গ্রাম/মহল্লা *</label>
+                    <select id="missing-village" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-sm disabled:bg-gray-200 focus:bg-white transition-all" disabled>
+                        <option value="">আগে ইউনিয়ন নির্বাচন করুন</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold block mb-1">মোবাইল নাম্বার (ঐচ্ছিক)</label>
+                    <input type="tel" id="missing-phone" placeholder="017XXXXXXXX" class="w-full bg-gray-50 border border-gray-200 p-3.5 rounded-xl text-sm focus:bg-white transition-all">
+                </div>
+            </div>
+            <button onclick="submitMissingInfo()" id="btn-save-missing-info" class="w-full bg-blue-600 text-white font-bold py-3.5 mt-6 rounded-xl shadow-lg hover:bg-blue-700 transition active:scale-95 flex justify-center items-center gap-2 text-lg">সংরক্ষণ করুন <i class="fa-solid fa-check"></i></button>
+        </div>
+    </div>
+    
     <!-- আপডেট প্রোগ্রেস স্ক্রিন -->
     <div id="update-screen" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center hidden-custom transition-opacity duration-300">
         <div class="w-24 h-24 mb-6 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-4xl animate-bounce shadow-lg border-4 border-blue-100">
@@ -1774,7 +1813,8 @@
             updatePassword,
             GoogleAuthProvider,
             FacebookAuthProvider,
-            signInWithPopup
+            signInWithRedirect,
+            getRedirectResult
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // --- CONFIGURATION ---
@@ -2390,6 +2430,13 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
                             window.ADVANCED_FEATURES.enableTouristMode();
                             userDetails.role = 'tourist'; 
                         }
+
+                        // Google/Facebook Missing Info Check
+                        if (!data.union || data.union === 'Unknown' || !data.village || data.village === 'Unknown') {
+                            document.getElementById('missing-info-modal').classList.remove('hidden-custom');
+                            if (data.phone) document.getElementById('missing-phone').value = data.phone;
+                        }
+
                         updateUIWithUserData();
         if(window.loadFriendsPreview) window.loadFriendsPreview(user.uid, 'me');
         loadSettingsData();
@@ -3193,25 +3240,12 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             });
         };
 
-        // --- GOOGLE LOGIN FUNCTION ---
-        window.handleGoogleLogin = async () => {
-            if (!navigator.onLine) {
-                showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
-                return;
-            }
-
-            const btn = document.getElementById('btn-google-login');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
-            btn.disabled = true;
-
-            try {
-                const provider = new GoogleAuthProvider();
-                const result = await signInWithPopup(auth, provider);
+        // --- SOCIAL LOGIN (GOOGLE & FACEBOOK) WITH REDIRECT ---
+        
+        // Redirect Result Handler (লগইন করে একই পেজে ফিরে আসলে এই কোড রান করবে)
+        getRedirectResult(auth).then(async (result) => {
+            if (result) {
                 const user = result.user;
-
-                // ডাটাবেসে ইউজার চেক করা
-                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
                 const userRef = ref(db, 'users/' + user.uid);
                 const snapshot = await get(userRef);
 
@@ -3219,81 +3253,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
                     const newUserData = {
                         name: user.displayName || "অজ্ঞাত ইউজার",
-                        email: user.email,
-                        uid: user.uid,
-                        profile_pic: user.photoURL || "",
-                        role: 'user',
-                        union: 'Unknown',
-                        village: 'Unknown',
-                        joinDate: new Date().toLocaleDateString(),
-                        isVerified: false,
-                        status: 'user',
-                        phone: user.phoneNumber || ""
-                    };
-                    await set(userRef, newUserData);
-                    
-                    // Anti-fraud device check (from existing logic)
-                    try {
-                        const fp = await window.FingerprintJS.load();
-                        const fpResult = await fp.get();
-                        let userIP = "unknown_ip";
-                        try {
-                            const ipRes = await fetch('https://api.ipify.org?format=json');
-                            const ipData = await ipRes.json();
-                            userIP = ipData.ip;
-                        } catch(err) {}
-                        
-                        await set(ref(db, `registered_devices/${fpResult.visitorId}`), {
-                            ip: userIP, timestamp: Date.now(), uid: user.uid
-                        });
-                        localStorage.setItem('has_registered_before', 'true');
-                    } catch(err) {}
-
-                    showToast("Google একাউন্ট খোলা সফল হয়েছে!", "success");
-                } else {
-                    showToast("লগইন সফল হয়েছে!", "success");
-                }
-
-            } catch (error) {
-                console.error("Google Login Error:", error);
-                if(error.code === 'auth/popup-closed-by-user') {
-                    showToast("লগইন বাতিল করা হয়েছে", "error");
-                } else {
-                    showToast("ত্রুটি: " + error.message, "error");
-                }
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        };
-
-        // --- FACEBOOK LOGIN FUNCTION ---
-        window.handleFacebookLogin = async () => {
-            if (!navigator.onLine) {
-                showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
-                return;
-            }
-
-            const btn = document.getElementById('btn-facebook-login');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
-            btn.disabled = true;
-
-            try {
-                const provider = new FacebookAuthProvider();
-                const result = await signInWithPopup(auth, provider);
-                const user = result.user;
-
-                // ডাটাবেসে ইউজার চেক করা
-                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-                const userRef = ref(db, 'users/' + user.uid);
-                const snapshot = await get(userRef);
-
-                if (!snapshot.exists()) {
-                    // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
-                    const newUserData = {
-                        name: user.displayName || "অজ্ঞাত ইউজার",
-                        email: user.email || "", // Facebook sometimes doesn't provide email
+                        email: user.email || "",
                         uid: user.uid,
                         profile_pic: user.photoURL || "",
                         role: 'user',
@@ -3322,23 +3282,76 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                         });
                         localStorage.setItem('has_registered_before', 'true');
                     } catch(err) {}
-
-                    showToast("Facebook একাউন্ট খোলা সফল হয়েছে!", "success");
-                } else {
-                    showToast("লগইন সফল হয়েছে!", "success");
                 }
+            }
+        }).catch((error) => {
+            console.error("Social Login Error:", error);
+            if (error.code === 'auth/account-exists-with-different-credential') {
+                showToast("এই ইমেইল দিয়ে আগেই অন্যভাবে একাউন্ট খোলা হয়েছে!", "error");
+            } else {
+                showToast("লগইন বাতিল বা সমস্যা হয়েছে!", "error");
+            }
+        });
 
-            } catch (error) {
-                console.error("Facebook Login Error:", error);
-                if(error.code === 'auth/popup-closed-by-user') {
-                    showToast("লগইন বাতিল করা হয়েছে", "error");
-                } else if (error.code === 'auth/account-exists-with-different-credential') {
-                    showToast("এই ইমেইল দিয়ে আগেই Google বা ইমেইল-পাসওয়ার্ড দিয়ে একাউন্ট খোলা হয়েছে!", "error");
-                } else {
-                    showToast("ত্রুটি: " + error.message, "error");
-                }
-            } finally {
-                btn.innerHTML = originalText;
+        // Google Login Button Action
+        window.handleGoogleLogin = () => {
+            if (!navigator.onLine) {
+                return showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+            }
+            const btn = document.getElementById('btn-google-login');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
+            
+            const provider = new GoogleAuthProvider();
+            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, একই পেজে রিডাইরেক্ট হবে
+        };
+
+        // Facebook Login Button Action
+        window.handleFacebookLogin = () => {
+            if (!navigator.onLine) {
+                return showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
+            }
+            const btn = document.getElementById('btn-facebook-login');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
+            
+            const provider = new FacebookAuthProvider();
+            signInWithRedirect(auth, provider); // নতুন ট্যাব নয়, একই পেজে রিডাইরেক্ট হবে
+        };
+
+        window.submitMissingInfo = async () => {
+            const union = document.getElementById('missing-union').value;
+            const village = document.getElementById('missing-village').value;
+            const phone = document.getElementById('missing-phone').value.trim();
+
+            if (!union || !village) {
+                return showToast("ইউনিয়ন এবং গ্রাম অবশ্যই নির্বাচন করতে হবে!", "error");
+            }
+            if (phone && !/^01[3-9]\d{8}$/.test(phone)) {
+                return showToast("সঠিক মোবাইল নম্বর দিন", "error");
+            }
+
+            const btn = document.getElementById('btn-save-missing-info');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> সংরক্ষণ হচ্ছে...';
+            btn.disabled = true;
+
+            try {
+                const updates = { union: union, village: village };
+                if (phone) updates.phone = phone;
+
+                // Firebase Database এ আপডেট করা
+                await update(ref(db, 'users/' + window.currentUser.uid), updates);
+                
+                // লোকাল ভেরিয়েবল আপডেট করা
+                userDetails.union = union;
+                userDetails.village = village;
+                if (phone) userDetails.phone = phone;
+                
+                updateUIWithUserData();
+                
+                document.getElementById('missing-info-modal').classList.add('hidden-custom');
+                showToast("আপনার তথ্য সফলভাবে সংরক্ষিত হয়েছে!", "success");
+            } catch (e) {
+                showToast("ত্রুটি: " + e.message, "error");
+                btn.innerHTML = 'সংরক্ষণ করুন <i class="fa-solid fa-check"></i>';
                 btn.disabled = false;
             }
         };
