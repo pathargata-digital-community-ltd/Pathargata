@@ -4755,7 +4755,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             const container = document.getElementById('page-messages');
             // যদি ইতিমধ্যে UI লোড হয়ে থাকে, তাহলে আর পুনরায় ফেচ করার দরকার নেই
             if (container && container.innerHTML.trim() !== '') {
-                return;
+                return Promise.resolve();
             }
             try {
                 const response = await fetch('messages-ui.html');
@@ -4766,11 +4766,13 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     container.innerHTML = htmlText;
                     console.log("Messages Design Loaded Successfully!");
                 }
+                return Promise.resolve();
             } catch (error) {
                 console.error("Error loading Messages UI:", error);
-                throw error;
+                return Promise.reject(error);
             }
         }
+        window.loadMessagesUI = loadMessagesUI; // গ্লোবাল উইন্ডো অবজেক্টে এক্সপোজ করা হলো
         
         // Notifications HTML Fetcher
         async function loadNotificationsUI() {
