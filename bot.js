@@ -179,22 +179,48 @@ function getAdvancedBotReply(msg, originalMsg) {
         const userName = window.userDetails?.name?.split(' ')[0] || 'বন্ধু';
         const currentContext = localStorage.getItem('maya_context');
         
-        // --- 1. CONTEXT MEMORY (আগের প্রশ্নের উত্তর) ---
-        if (currentContext) {
-            if (currentContext === 'ask_blood_group') {
-                localStorage.removeItem('maya_context');
-                if (hasWords(['na', 'না', 'জানি না'])) return { reply: `ঠিক আছে, কোনো সমস্যা নেই! পরে জেনে অ্যাপে আপডেট করে নিতে পারবেন। অন্য কোনো সাহায্য লাগবে?` };
-                saveUserDataToFirebase('blood_group', originalMsg);
-                return { reply: `ধন্যবাদ! আপনার রক্তের গ্রুপ (${originalMsg}) আমাদের সিস্টেমে সেভ করে রাখলাম। এটি ভবিষ্যতে জরুরি প্রয়োজনে কারো জীবন বাঁচাতে সাহায্য করতে পারে। ❤️` };
+        // 📝 --- PROACTIVE CONTEXT HANDLERS (Continuous Conversation) ---
+        if (currentContext === 'ask_blood_group') {
+            localStorage.removeItem('maya_context');
+            if (hasWords(['na', 'না', 'জানি না', 'mon nei', 'মনে নেই'])) {
+                return { reply: `ঠিক আছে, কোনো সমস্যা নেই! পরে জেনে অ্যাপে আপডেট করে নিতে পারবেন। অন্য কোনো সাহায্য লাগবে?` };
             }
-            
-            if (currentContext === 'ask_profession') {
-                localStorage.removeItem('maya_context');
-                saveUserDataToFirebase('profession', originalMsg);
-                return { reply: `দারুণ পেশা! আপনার পেশা (${originalMsg}) প্রোফাইলে যুক্ত করে নিলাম। এতে আমাদের কমিউনিটিতে আপনার পরিচিতি বাড়বে। 🌟` };
-            }
+            saveUserDataToFirebase('blood_group', originalMsg);
+            return { reply: `ধন্যবাদ! আপনার রক্তের গ্রুপ (${originalMsg}) সেভ করে রাখলাম। এটি ভবিষ্যতে কারো জীবন বাঁচাতে সাহায্য করতে পারে। ❤️\n\nআর হ্যাঁ, আমাকে অন্য যেকোনো প্রশ্ন করতে পারেন।` };
+        }
+        
+        if (currentContext === 'ask_profession') {
+            localStorage.removeItem('maya_context');
+            saveUserDataToFirebase('profession', originalMsg);
+            return { reply: `দারুণ পেশা! আপনার পেশা (${originalMsg}) প্রোফাইলে যুক্ত করে নিলাম। 🌟\n\nএখন বলুন, পাথরঘাটা অ্যাপের কোনো সেবা কি আপনার দরকার?`, buttons: ['উপজেলা মার্কেট', 'ডাক্তার ও হাসপাতাল'] };
+        }
 
-            // 🎁 Gamification: Riddle 1
+        if (currentContext === 'ask_feedback') {
+            localStorage.removeItem('maya_context');
+            if (window.db && window.currentUser) {
+                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
+                    const { ref, push } = module;
+                    push(ref(window.db, 'admin_feedback'), { uid: window.currentUser.uid, name: userName, feedback: originalMsg, timestamp: Date.now() });
+                });
+            }
+            return { reply: `আপনার সুন্দর মতামতের জন্য অনেক ধন্যবাদ! আমি এটি অ্যাডমিন প্যানেলে পাঠিয়ে দিয়েছি। 🥰\n\nআর কিছু জানতে চান?` };
+        }
+        
+        if (currentContext === 'ask_day_status') {
+            localStorage.removeItem('maya_context');
+            if (hasWords(['valo', 'ভালো', 'katse', 'কাটছে', 'shundor', 'সুন্দর', 'alhamdulillah', 'আলহামদুলিল্লাহ'])) {
+                return { reply: `শুনে খুব ভালো লাগলো! আপনার দিনটি আরও সুন্দর হোক। 🌸\n\nআপনার কি এখন কোনো সাহায্য লাগবে? নাকি কুইজ খেলতে চান?`, buttons: ['পাথরঘাটা কুইজ', 'উপজেলা মার্কেট'] };
+            }
+            return { reply: `ওহ! আশা করি দিনটি খুব দ্রুত ভালো হয়ে যাবে। মন ভালো করতে চাইলে আমি কি একটা কৌতুক শোনাবো? 😇`, buttons: ['হ্যাঁ, কৌতুক শোনাও', 'ধাঁধা'] };
+        }
+
+        if (currentContext === 'ask_hobby') {
+            localStorage.removeItem('maya_context');
+            saveUserDataToFirebase('hobby', originalMsg); // ইউজারের শখ সেভ করা
+            return { reply: `বাহ! "${originalMsg}" তো খুব সুন্দর একটা শখ! আমার শখ হলো সারাদিন মানুষের সাথে গল্প করা আর তাদের সাহায্য করা। 🤖\n\nচলুন, অন্য কোনো বিষয়ে কথা বলি!`, buttons: ['কৌতুক শোনাও', 'আমার পয়েন্ট'] };
+        }
+
+        // 🎁 Gamification: Riddle 1
             if (currentContext === 'ask_riddle_1') {
                 localStorage.removeItem('maya_context');
                 if (hasWords(['pukur', 'পুকুর'])) {
@@ -232,7 +258,6 @@ function getAdvancedBotReply(msg, originalMsg) {
                 }
                 return { reply: `হলো না! উত্তরটি হতো "লালদিয়া সমুদ্র সৈকত"। পাথরঘাটার মানুষ হয়ে এটা না জানলে কেমন হয়! 😉` };
             }
-        }
 
         // --- 2. ADMIN AUTOMATION & SUPPORT TOOLS ---
 
@@ -437,13 +462,13 @@ function getAdvancedBotReply(msg, originalMsg) {
                 bonusMsg = `\n\n🎁 **ডেইলি বোনাস:** আজ অ্যাপে এসে আমার সাথে কথা বলার জন্য আপনি ২ পয়েন্ট পেলেন! এভাবেই প্রতিদিন কথা বলতে আসবেন।`;
             }
 
-            let baseReply = `হ্যালো ${userName}! আমি মায়া। আপনার দিনকাল কেমন যাচ্ছে? 😊`;
-            if (hasWords(['salam', 'সালাম'])) baseReply = `ওয়ালাইকুমুস সালাম! 😇 কেমন আছেন, ${userName}? আমাকে স্মরণ করার জন্য ধন্যবাদ।`;
-            else if (hasWords(['kemon', 'কেমন'])) baseReply = `আলহামদুলিল্লাহ, আমি খুব ভালো আছি! আপনার দিনকাল কেমন যাচ্ছে? ✨`;
+            let baseReply = `হ্যালো ${userName}! আমি মায়া।`;
+            if (hasWords(['salam', 'সালাম'])) baseReply = `ওয়ালাইকুমুস সালাম 😇!`;
+            else if (hasWords(['kemon', 'কেমন'])) baseReply = `আলহামদুলিল্লাহ, আমি খুব ভালো আছি!`;
 
             return { 
                 reply: baseReply + bdayMsg + bonusMsg, 
-                buttons: ['উপজেলা মার্কেট', 'পাথরঘাটা কুইজ', 'ধাঁধা'] 
+                buttons: ['উপজেলা মার্কেট', 'পাথরঘাটা কুইজ', 'আমার পয়েন্ট'] 
             };
         }
         
@@ -467,6 +492,40 @@ function getAdvancedBotReply(msg, originalMsg) {
 
     // ফাংশন কল করে উত্তর খোঁজা
     let response = generateResponse();
+
+    // 🧠 PROACTIVE CONVERSATION ENGINE (মায়া নিজে থেকে কথা বাড়াবে)
+    // শর্ত: আগে থেকে কোনো প্রশ্ন করা না থাকলে এবং বটের বর্তমান উত্তরে কোনো প্রশ্নবোধক (?) চিহ্ন না থাকলে
+    if (response && !localStorage.getItem('maya_context') && !response.reply.includes('?')) {
+        let proactiveText = "";
+        
+        // ১. প্রোফাইল ডাটা কালেক্ট (ইউজারকে বিরক্ত না করতে এক সেশনে একবার জিজ্ঞেস করবে)
+        if (!window.userDetails?.blood_group && !sessionStorage.getItem('maya_asked_blood')) {
+            localStorage.setItem('maya_context', 'ask_blood_group');
+            sessionStorage.setItem('maya_asked_blood', 'true');
+            proactiveText = `\n\n💡 কথায় কথায় মনে পড়ল, আপনার রক্তের গ্রুপ কী? (জেনে রাখা ভালো, কারো জীবন বাঁচতে পারে!)`;
+        } 
+        else if (!window.userDetails?.profession && !sessionStorage.getItem('maya_asked_prof')) {
+            localStorage.setItem('maya_context', 'ask_profession');
+            sessionStorage.setItem('maya_asked_prof', 'true');
+            proactiveText = `\n\n💡 আচ্ছা, আপনি পেশায় কী করেন? (আমি আপনার প্রোফাইলে আপডেট করে রাখব!)`;
+        } 
+        // ২. রেন্ডম চ্যাট (৩০% চান্স, যাতে ইউজার সবসময় প্রশ্ন শুনে বিরক্ত না হয়)
+        else if (Math.random() > 0.7) { 
+            const chats = [
+                { ctx: 'ask_day_status', text: `\n\nযাই হোক, আজকের দিনটা আপনার কেমন কাটছে?` },
+                { ctx: 'ask_hobby', text: `\n\nআচ্ছা, অবসর সময়ে আপনি কী করতে পছন্দ করেন?` },
+                { ctx: 'ask_riddle_1', text: `\n\nচলুন একটা ব্রেন টেস্ট গেম খেলি! "কোন জিনিস কাটলে বড় হয়?"` },
+                { ctx: 'ask_feedback', text: `\n\nপাথরঘাটা অ্যাপটি ব্যবহার করতে আপনার কেমন লাগছে? কোনো মতামত আছে?` }
+            ];
+            const choice = chats[Math.floor(Math.random() * chats.length)];
+            localStorage.setItem('maya_context', choice.ctx);
+            proactiveText = choice.text;
+        }
+
+        if (proactiveText) {
+            response.reply += proactiveText; // আসল উত্তরের সাথে নতুন প্রশ্ন জুড়ে দেওয়া হলো
+        }
+    }
 
     // 🔴 SMART FALLBACK LOGIC & MISSING QUERY REPORT (যদি মায়া কিছু না বোঝে)
     if (response) {
