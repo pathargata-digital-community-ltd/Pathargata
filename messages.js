@@ -15,7 +15,7 @@ if (typeof window.escapeHTML !== 'function') {
     };
 }
 
-// Map HTML button to startBotChat
+// Map HTML button to Maya Bot
 window.initAndStartBot = () => {
     if (typeof window.startBotChat === 'function') {
         window.startBotChat();
@@ -39,11 +39,14 @@ window.startChat = (uid, name) => {
         try { window.switchPage('messages'); } catch(e) { console.warn(e); }
     }
     
-    const chatListView = document.getElementById('chat-list-view');
-    const chatConvView = document.getElementById('chat-conversation-view');
-    
-    if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
-    if (chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
+    // রাউটিং ট্রানজিশন শেষ হওয়ার জন্য সামান্য বিরতি দিয়ে ক্লাস পরিবর্তন করা হচ্ছে
+    setTimeout(() => {
+        const chatListView = document.getElementById('chat-list-view');
+        const chatConvView = document.getElementById('chat-conversation-view');
+        
+        if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
+        if (chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
+    }, 50);
     
     const escapedName = typeof window.escapeHTML === 'function' ? window.escapeHTML(name) : name;
     
@@ -67,18 +70,21 @@ window.startChat = (uid, name) => {
         history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
     } catch(e) {}
     
-    if (typeof window.loadMessages === 'function') window.loadMessages(uid);
-    if (typeof window.listenToTyping === 'function') window.listenToTyping(uid);
-    
-    if (window.currentUser && window.db) {
-        const chatId = window.getChatId(window.currentUser.uid, uid);
-        update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 }).catch(o => {});
+    if (window.currentUser) {
+        if (typeof window.loadMessages === 'function') window.loadMessages(uid);
+        if (typeof window.listenToTyping === 'function') window.listenToTyping(uid);
+        
+        if (window.db) {
+            const chatId = window.getChatId(window.currentUser.uid, uid);
+            update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 }).catch(o => {});
+        }
     }
 };
 
 window.closeChat = () => {
     const chatListView = document.getElementById('chat-list-view');
     const chatConvView = document.getElementById('chat-conversation-view');
+    
     if (chatListView) chatListView.classList.remove('hidden', 'hidden-custom');
     if (chatConvView) chatConvView.classList.add('hidden', 'hidden-custom');
     
@@ -103,14 +109,14 @@ window.closeChat = () => {
 window.searchChatFriends = async (val) => {
     const q = val.toLowerCase().trim();
     const container = document.getElementById('chat-list-container');
+    if (!container) return;
     
     if (!q) {
         if (window.currentUser) window.loadChatList(window.currentUser.uid); 
         return;
     }
     
-    if (!window.myFriends) return;
-    const friendsData = await Promise.all(window.myFriends.map(uid => typeof window.getUserData === 'function' ? window.getUserData(uid) : null));
+    const friendsData = await Promise.all(window.myFriends.map(uid => window.getUserData(uid)));
     const matched = friendsData.filter(u => u && u.name.toLowerCase().includes(q));
     
     if (matched.length > 0) {
@@ -133,11 +139,13 @@ window.searchChatFriends = async (val) => {
 
 window.loadQuickChatFriends = async () => {
     const div = document.getElementById('quick-chat-friends');
+    if (!div) return;
+    
     if (!window.myFriends || window.myFriends.length === 0) {
         div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
         return;
     }
-    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => typeof window.getUserData === 'function' ? window.getUserData(uid) : null));
+    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
     div.innerHTML = friendsData.filter(u => u).map(u => {
         let av = u.profile_pic ? 
             `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" loading="lazy" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
@@ -158,7 +166,7 @@ let isChatListenerAttached = false;
 
 window.loadChatList = async (uid) => {
     const container = document.getElementById('chat-list-container');
-    if (!container) return;
+    if (!container) return; // এলিমেন্ট না থাকলে লোড করা বন্ধ করবে
     
     // ক্যাশে ডেটা থাকলে দ্রুত দেখিয়ে দেওয়া হবে (Loading স্ক্রিন এড়াতে)
     if (Object.keys(chatListCache).length > 0) {
@@ -199,7 +207,7 @@ async function renderChatListUI() {
         }
 
         const promises = Object.entries(chatListCache).map(async ([peerUid, info]) => {
-            const userData = typeof window.getUserData === 'function' ? await window.getUserData(peerUid) : null;
+            const userData = await window.getUserData(peerUid);
             return { peerUid, info, profilePic: userData?.profile_pic };
         });
 
@@ -259,7 +267,7 @@ async function renderChatListUI() {
                 <div class="flex-1 min-w-0 pointer-events-none">
                     <div class="flex justify-between items-center mb-0.5">
                         <h4 class="${nameStyle} text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                        <span class="text-[10px] ${timeColor} shrink-0 whitespace-nowrap">${window.timeAgo ? window.timeAgo(info.timestamp) : ''}</span>
+                        <span class="text-[10px] ${timeColor} shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
                     </div>
                     <p class="text-sm ${textStyle} truncate block">${window.escapeHTML(displayMsg)}</p>
                 </div>
@@ -272,7 +280,7 @@ async function renderChatListUI() {
             let timer;
             el.addEventListener('touchstart', (e) => {
                 const uid = el.id.split('-')[2];
-                const name = el.querySelector('h4').innerText;
+                const name = el.querySelector('h4') ? el.querySelector('h4').innerText : '';
                 const isUnread = el.querySelector('.bg-green-600') !== null;
                 timer = setTimeout(() => {
                     openChatListOptions(e, uid, name, isUnread);
@@ -290,71 +298,86 @@ async function renderChatListUI() {
 window.openChatListOptions = (e, uid, name, isUnread = false) => {
     e.preventDefault();
     e.stopPropagation();
-    document.getElementById('chat-options-uid').value = uid;
-    document.getElementById('chat-options-name').innerText = name;
+    
+    const uidInput = document.getElementById('chat-options-uid');
+    const nameText = document.getElementById('chat-options-name');
+    if (uidInput) uidInput.value = uid;
+    if (nameText) nameText.innerText = name;
     
     const toggleBtnText = document.getElementById('text-toggle-read');
-    const toggleBtnIcon = document.getElementById('btn-toggle-read').querySelector('i');
+    const toggleBtnIcon = document.getElementById('btn-toggle-read') ? document.getElementById('btn-toggle-read').querySelector('i') : null;
     
-    if (isUnread) {
-        toggleBtnText.innerText = "মার্ক অ্যাজ রিড (Mark as Read)";
-        toggleBtnIcon.className = "fa-solid fa-envelope-open";
-        document.getElementById('btn-toggle-read').setAttribute('data-action', 'read');
-    } else {
-        toggleBtnText.innerText = "মার্ক অ্যাজ আনরিড (Mark as Unread)";
-        toggleBtnIcon.className = "fa-solid fa-envelope";
-        document.getElementById('btn-toggle-read').setAttribute('data-action', 'unread');
+    if (toggleBtnText && toggleBtnIcon) {
+        if (isUnread) {
+            toggleBtnText.innerText = "মার্ক অ্যাজ রিড (Mark as Read)";
+            toggleBtnIcon.className = "fa-solid fa-envelope-open";
+            document.getElementById('btn-toggle-read').setAttribute('data-action', 'read');
+        } else {
+            toggleBtnText.innerText = "মার্ক অ্যাজ আনরিড (Mark as Unread)";
+            toggleBtnIcon.className = "fa-solid fa-envelope";
+            document.getElementById('btn-toggle-read').setAttribute('data-action', 'unread');
+        }
     }
 
     const modal = document.getElementById('chat-list-options-modal');
     const sheet = document.getElementById('chat-list-sheet');
-    modal.classList.remove('hidden');
-    setTimeout(() => sheet.classList.remove('translate-y-full'), 10);
+    if (modal && sheet) {
+        modal.classList.remove('hidden');
+        setTimeout(() => sheet.classList.remove('translate-y-full'), 10);
+    }
     
     if(navigator.vibrate) navigator.vibrate(50);
 };
 
 window.closeChatListOptions = () => {
     const sheet = document.getElementById('chat-list-sheet');
-    sheet.classList.add('translate-y-full');
-    setTimeout(() => document.getElementById('chat-list-options-modal').classList.add('hidden'), 300);
+    const modal = document.getElementById('chat-list-options-modal');
+    if (sheet && modal) {
+        sheet.classList.add('translate-y-full');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 };
 
 window.toggleReadStatus = () => {
-    const uid = document.getElementById('chat-options-uid').value;
-    const action = document.getElementById('btn-toggle-read').getAttribute('data-action');
+    const uid = document.getElementById('chat-options-uid')?.value;
+    const action = document.getElementById('btn-toggle-read')?.getAttribute('data-action');
+    if (!uid || !action || !window.currentUser) return;
     
     const unreadCount = action === 'unread' ? 1 : 0;
     
     update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), {
         unread: unreadCount
     }).then(() => {
-        if (window.showToast) window.showToast(action === 'unread' ? "আনরিড করা হয়েছে" : "রিড করা হয়েছে");
+        if (typeof window.showToast === 'function') {
+            window.showToast(action === 'unread' ? "আনরিড করা হয়েছে" : "রিড করা হয়েছে");
+        }
         closeChatListOptions();
     });
 };
 
 window.archiveChat = () => {
-    const uid = document.getElementById('chat-options-uid').value;
+    const uid = document.getElementById('chat-options-uid')?.value;
+    if (!uid || !window.currentUser) return;
     const isArchiving = !showArchived; 
     
     if(isArchiving) {
         set(ref(window.db, `user_archived_chats/${window.currentUser.uid}/${uid}`), true);
-        if (window.showToast) window.showToast("চ্যাট আর্কাইভে পাঠানো হয়েছে");
+        if (typeof window.showToast === 'function') window.showToast("চ্যাট আর্কাইভে পাঠানো হয়েছে");
     } else {
         remove(ref(window.db, `user_archived_chats/${window.currentUser.uid}/${uid}`));
-        if (window.showToast) window.showToast("আর্কাইভ থেকে সরানো হয়েছে");
+        if (typeof window.showToast === 'function') window.showToast("আর্কাইভ থেকে সরানো হয়েছে");
     }
     closeChatListOptions();
-    if (window.currentUser) window.loadChatList(window.currentUser.uid); 
+    window.loadChatList(window.currentUser.uid); 
 };
 
 window.deleteChatConversation = () => {
+    const uid = document.getElementById('chat-options-uid')?.value;
+    if (!uid || !window.currentUser) return;
     if(!confirm("পুরো কনভারসেশন ডিলিট করবেন? এটি আর ফিরে পাবেন না।")) return;
-    const uid = document.getElementById('chat-options-uid').value;
     
     remove(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`)).then(() => {
-        if (window.showToast) window.showToast("কনভারসেশন ডিলিট হয়েছে");
+        if (typeof window.showToast === 'function') window.showToast("কনভারসেশন ডিলিট হয়েছে");
         closeChatListOptions();
     });
 };
@@ -379,6 +402,7 @@ window.currentPlayingAudio = null;
 window.playCustomAudio = (audioId, btnElement) => {
     const audio = document.getElementById(audioId);
     const icon = btnElement.querySelector('i');
+    if (!audio || !icon) return;
 
     if (window.currentPlayingAudio && window.currentPlayingAudio !== audio) {
         window.currentPlayingAudio.pause();
@@ -408,7 +432,7 @@ window.updateAudioProgress = (msgId) => {
     const progress = document.getElementById(`progress-${msgId}`);
     const timeDisplay = document.getElementById(`time-${msgId}`);
     
-    if (audio.duration) {
+    if (audio && audio.duration && progress && timeDisplay) {
         const percent = (audio.currentTime / audio.duration) * 100;
         progress.style.width = `${percent}%`;
         
@@ -422,7 +446,7 @@ window.updateAudioProgress = (msgId) => {
 window.setAudioDuration = (msgId) => {
     const audio = document.getElementById(`audio-${msgId}`);
     const timeDisplay = document.getElementById(`time-${msgId}`);
-    if (audio.duration && audio.duration !== Infinity) {
+    if (audio && audio.duration && audio.duration !== Infinity && timeDisplay) {
         const totalSecs = Math.floor(audio.duration);
         const m = Math.floor(totalSecs / 60);
         const s = (totalSecs % 60).toString().padStart(2, '0');
@@ -447,8 +471,13 @@ window.resetAudio = (msgId) => {
 window.currentChatListenerRef = null;
 
 window.loadMessages = (otherUid) => {
+    if (!window.currentUser) {
+        console.warn("User state not verified.");
+        return;
+    }
     const chatId = window.getChatId(window.currentUser.uid, otherUid);
     const div = document.getElementById('messages-container');
+    if (!div) return;
     div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
     
     // ⭐️ বারবার চ্যাটে ঢুকলে যাতে মেমরি লিক বা লেটেন্সি না হয় তার জন্য পুরোনো লিসেনার রিমুভ
@@ -479,7 +508,9 @@ window.loadMessages = (otherUid) => {
                 let statusIcon = '';
                 if(isMe) {
                     if (m.status === 'seen') {
-                        statusIcon = `<img src="${document.getElementById('chat-header-img').querySelector('img')?.src || ''}" loading="lazy" class="w-3 h-3 rounded-full ml-1 inline-block">`;
+                        const headerImgEl = document.getElementById('chat-header-img');
+                        const headerImgSrc = headerImgEl ? (headerImgEl.querySelector('img')?.src || '') : '';
+                        statusIcon = `<img src="${headerImgSrc}" loading="lazy" class="w-3 h-3 rounded-full ml-1 inline-block">`;
                     } else {
                         statusIcon = `<i class="fa-solid fa-circle-check text-[10px] text-gray-400 ml-1"></i>`;
                     }
@@ -610,40 +641,53 @@ window.openMsgOptions = (element) => {
     const text = element.getAttribute('data-text');
     const isMe = element.getAttribute('data-sender') === 'me';
     
-    document.getElementById('msg-options-id').value = id;
-    document.getElementById('msg-options-text').value = text;
+    const idInput = document.getElementById('msg-options-id');
+    const textInput = document.getElementById('msg-options-text');
+    const unsendBtn = document.getElementById('btn-unsend-msg');
     
-    if(isMe) {
-        document.getElementById('btn-unsend-msg').classList.remove('hidden');
-    } else {
-        document.getElementById('btn-unsend-msg').classList.add('hidden');
+    if (idInput) idInput.value = id;
+    if (textInput) textInput.value = text;
+    
+    if(unsendBtn) {
+        if(isMe) {
+            unsendBtn.classList.remove('hidden');
+        } else {
+            unsendBtn.classList.add('hidden');
+        }
     }
 
-    document.getElementById('msg-options-modal').classList.remove('hidden');
+    const modal = document.getElementById('msg-options-modal');
+    if (modal) modal.classList.remove('hidden');
     if(navigator.vibrate) navigator.vibrate(50);
 };
 
 window.closeMsgOptions = () => {
-    document.getElementById('msg-options-modal').classList.add('hidden');
+    const modal = document.getElementById('msg-options-modal');
+    if (modal) modal.classList.add('hidden');
 };
 
 window.replyToMsgFromOptions = () => {
-    const id = document.getElementById('msg-options-id').value;
-    const text = document.getElementById('msg-options-text').value;
-    setReplyMode(id, text, window.currentChatUser.name);
+    const id = document.getElementById('msg-options-id')?.value;
+    const text = document.getElementById('msg-options-text')?.value;
+    if (id) {
+        setReplyMode(id, text || '', window.currentChatUser ? window.currentChatUser.name : '');
+    }
     closeMsgOptions();
 };
 
 window.copyMsgText = () => {
-    const text = document.getElementById('msg-options-text').value;
-    navigator.clipboard.writeText(text).then(() => {
-        if (window.showToast) window.showToast("কপি হয়েছে");
-    });
+    const text = document.getElementById('msg-options-text')?.value;
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof window.showToast === 'function') window.showToast("কপি হয়েছে");
+        });
+    }
     closeMsgOptions();
 };
 
 window.unsendMsg = () => {
-    const msgId = document.getElementById('msg-options-id').value;
+    const msgId = document.getElementById('msg-options-id')?.value;
+    if (!msgId || !window.currentUser || !window.currentChatUser) return;
     const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
     
     update(ref(window.db, `chats/${chatId}/${msgId}`), {
@@ -659,7 +703,8 @@ window.unsendMsg = () => {
 };
 
 window.removeMsgForMe = () => {
-    const msgId = document.getElementById('msg-options-id').value;
+    const msgId = document.getElementById('msg-options-id')?.value;
+    if (!msgId || !window.currentUser || !window.currentChatUser) return;
     const chatId = window.getChatId(window.currentUser.uid, window.currentChatUser.uid);
     
     update(ref(window.db, `chats/${chatId}/${msgId}/deletedFor`), {
@@ -674,21 +719,27 @@ window.removeMsgForMe = () => {
 // --- REPLY UI LOGIC ---
 function setReplyMode(id, text, name) {
     replyMessageData = { id, text, name };
-    document.getElementById('reply-preview-name').innerText = name;
-    document.getElementById('reply-preview-text').innerText = text;
-    document.getElementById('reply-preview-box').classList.remove('hidden');
-    document.getElementById('msg-input').focus();
+    const nameEl = document.getElementById('reply-preview-name');
+    const textEl = document.getElementById('reply-preview-text');
+    const boxEl = document.getElementById('reply-preview-box');
+    const inputEl = document.getElementById('msg-input');
+    
+    if (nameEl) nameEl.innerText = name;
+    if (textEl) textEl.innerText = text;
+    if (boxEl) boxEl.classList.remove('hidden');
+    if (inputEl) inputEl.focus();
 }
 
 window.cancelReply = () => {
     replyMessageData = null;
-    document.getElementById('reply-preview-box').classList.add('hidden');
+    const boxEl = document.getElementById('reply-preview-box');
+    if (boxEl) boxEl.classList.add('hidden');
 };
 
 // --- TYPING INDICATOR ---
 let typingTimeout;
 window.triggerTyping = () => {
-    if(!window.currentChatUser || !window.db) return;
+    if(!window.currentChatUser || !window.currentUser) return;
     const typingRef = ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`);
     
     set(typingRef, true);
@@ -700,11 +751,11 @@ window.triggerTyping = () => {
 };
 
 window.listenToTyping = (otherUid) => {
-    if (!window.db) return;
+    if (!window.currentUser) return;
     onValue(ref(window.db, `chats_typing/${window.currentUser.uid}/${otherUid}`), (snap) => {
         const isTyping = snap.val();
         const statusEl = document.getElementById('chat-typing-status');
-        if(statusEl) {
+        if (statusEl) {
             if(isTyping) {
                 statusEl.classList.remove('hidden');
             } else {
@@ -733,37 +784,46 @@ window.startChatVoiceRecord = async () => {
             const file = new File([blob], "voice.mp3", { type: 'audio/mp3' });
             
             const btn = document.getElementById('btn-chat-send');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-            btn.disabled = true;
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+            }
 
             try {
                 const res = await window.uploadMediaToCloudinary(file);
                 window.sendMsg(null, res.url);
             } catch(e) {
-                if (window.showToast) window.showToast("ভয়েস পাঠানো যায়নি", "error");
+                if (typeof window.showToast === 'function') window.showToast("ভয়েস পাঠানো যায়নি", "error");
             } finally {
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+                    btn.disabled = false;
+                }
                 window.cancelChatVoice();
             }
         };
 
         chatMediaRecorder.start();
         
-        document.getElementById('chat-input-ui').classList.add('hidden');
-        document.getElementById('chat-voice-ui').classList.remove('hidden');
-        document.getElementById('chat-voice-ui').classList.add('flex');
+        const inputUI = document.getElementById('chat-input-ui');
+        const voiceUI = document.getElementById('chat-voice-ui');
+        if (inputUI) inputUI.classList.add('hidden');
+        if (voiceUI) {
+            voiceUI.classList.remove('hidden');
+            voiceUI.classList.add('flex');
+        }
         
         chatRecSeconds = 0;
         chatRecordingTimer = setInterval(() => {
             chatRecSeconds++;
             const m = Math.floor(chatRecSeconds / 60).toString().padStart(2, '0');
             const s = (chatRecSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('chat-voice-timer').innerText = `${m}:${s}`;
+            const timerEl = document.getElementById('chat-voice-timer');
+            if (timerEl) timerEl.innerText = `${m}:${s}`;
         }, 1000);
 
     } catch(err) {
-        if (window.showToast) window.showToast("মাইক্রোফোন পারমিশন দিন", "error");
+        if (typeof window.showToast === 'function') window.showToast("মাইক্রোফোন পারমিশন দিন", "error");
     }
 };
 
@@ -773,9 +833,13 @@ window.cancelChatVoice = () => {
         chatMediaRecorder.stream.getTracks().forEach(t => t.stop());
     }
     clearInterval(chatRecordingTimer);
-    document.getElementById('chat-input-ui').classList.remove('hidden');
-    document.getElementById('chat-voice-ui').classList.add('hidden');
-    document.getElementById('chat-voice-ui').classList.remove('flex');
+    const inputUI = document.getElementById('chat-input-ui');
+    const voiceUI = document.getElementById('chat-voice-ui');
+    if (inputUI) inputUI.classList.remove('hidden');
+    if (voiceUI) {
+        voiceUI.classList.add('hidden');
+        voiceUI.classList.remove('flex');
+    }
 };
 
 window.sendChatVoice = () => {
@@ -787,26 +851,32 @@ window.sendChatVoice = () => {
 
 // --- SEND MESSAGE OVERRIDE ---
 window.handleChatImageSelect = () => {
-    const file = document.getElementById('chat-img-input').files[0];
+    const fileInput = document.getElementById('chat-img-input');
+    const file = fileInput ? fileInput.files[0] : null;
     if (file) {
         const btn = document.getElementById('btn-chat-send');
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        btn.disabled = true;
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+        }
 
         window.uploadMediaToCloudinary(file).then(res => {
             window.sendMsg(res.url, null);
-            document.getElementById('chat-img-input').value = "";
+            if (fileInput) fileInput.value = "";
         }).catch(e => {
-            if (window.showToast) window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-            btn.disabled = false;
+            if (typeof window.showToast === 'function') window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+                btn.disabled = false;
+            }
         });
     }
 };
 
 window.sendMsg = (imageUrl = null, voiceUrl = null) => {
-    if (!window.currentChatUser) return;
+    if (!window.currentChatUser || !window.currentUser) return;
     const input = document.getElementById('msg-input');
+    if (!input) return;
     const text = input.value.trim();
     if (!text && !imageUrl && !voiceUrl) return;
     
@@ -833,7 +903,7 @@ window.sendMsg = (imageUrl = null, voiceUrl = null) => {
     if (voiceUrl) lastMsg = "🎤 Voice message";
 
     const myUpdate = { name: window.currentChatUser.name, lastMessage: "You: " + lastMsg, timestamp: ts };
-    const peerUpdate = { name: window.userDetails.name, lastMessage: lastMsg, timestamp: ts };
+    const peerUpdate = { name: window.userDetails ? window.userDetails.name : "User", lastMessage: lastMsg, timestamp: ts };
 
     get(ref(window.db, `user_chats/${window.currentChatUser.uid}/${window.currentUser.uid}/unread`)).then(snap => {
         let count = snap.val() || 0;
@@ -845,8 +915,10 @@ window.sendMsg = (imageUrl = null, voiceUrl = null) => {
 
     input.value = "";
     cancelReply();
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
-    btn.disabled = false;
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+        btn.disabled = false;
+    }
     
     set(ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`), false);
 };
