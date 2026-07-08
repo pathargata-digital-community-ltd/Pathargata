@@ -15,7 +15,7 @@ if (typeof window.escapeHTML !== 'function') {
     };
 }
 
-// Map HTML button to Maya Bot
+// Map HTML button to startBotChat
 window.initAndStartBot = () => {
     if (typeof window.startBotChat === 'function') {
         window.startBotChat();
@@ -77,8 +77,11 @@ window.startChat = (uid, name) => {
 };
 
 window.closeChat = () => {
-    document.getElementById('chat-list-view').classList.remove('hidden', 'hidden-custom');
-    document.getElementById('chat-conversation-view').classList.add('hidden', 'hidden-custom');
+    const chatListView = document.getElementById('chat-list-view');
+    const chatConvView = document.getElementById('chat-conversation-view');
+    if (chatListView) chatListView.classList.remove('hidden', 'hidden-custom');
+    if (chatConvView) chatConvView.classList.add('hidden', 'hidden-custom');
+    
     window.currentChatUser = null;
     cancelReply();
     
@@ -87,7 +90,7 @@ window.closeChat = () => {
         window.currentPlayingAudio = null;
     }
     
-    if(window.currentUser) {
+    if(window.currentUser && window.db) {
         set(ref(window.db, `chats_typing/${window.currentUser.uid}`), false);
     }
     
@@ -102,11 +105,12 @@ window.searchChatFriends = async (val) => {
     const container = document.getElementById('chat-list-container');
     
     if (!q) {
-        window.loadChatList(window.currentUser.uid); 
+        if (window.currentUser) window.loadChatList(window.currentUser.uid); 
         return;
     }
     
-    const friendsData = await Promise.all(window.myFriends.map(uid => window.getUserData(uid)));
+    if (!window.myFriends) return;
+    const friendsData = await Promise.all(window.myFriends.map(uid => typeof window.getUserData === 'function' ? window.getUserData(uid) : null));
     const matched = friendsData.filter(u => u && u.name.toLowerCase().includes(q));
     
     if (matched.length > 0) {
@@ -133,7 +137,7 @@ window.loadQuickChatFriends = async () => {
         div.innerHTML = '<span class="text-xs text-gray-400">কোনো বন্ধু নেই</span>';
         return;
     }
-    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => window.getUserData(uid)));
+    const friendsData = await Promise.all(window.myFriends.slice(0, 15).map(uid => typeof window.getUserData === 'function' ? window.getUserData(uid) : null));
     div.innerHTML = friendsData.filter(u => u).map(u => {
         let av = u.profile_pic ? 
             `<div class="w-12 h-12 relative"><img src="${u.profile_pic}" loading="lazy" class="w-full h-full rounded-full object-cover"><div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div></div>` : 
@@ -144,7 +148,7 @@ window.loadQuickChatFriends = async () => {
 
 window.toggleArchivedChats = () => {
     showArchived = !showArchived;
-    window.loadChatList(window.currentUser.uid);
+    if (window.currentUser) window.loadChatList(window.currentUser.uid);
 };
 
 // ⭐️ ডেটা ক্যাশ এবং লিসেনার ভেরিয়েবল যাতে বারবার লোড না হয়
@@ -154,6 +158,7 @@ let isChatListenerAttached = false;
 
 window.loadChatList = async (uid) => {
     const container = document.getElementById('chat-list-container');
+    if (!container) return;
     
     // ক্যাশে ডেটা থাকলে দ্রুত দেখিয়ে দেওয়া হবে (Loading স্ক্রিন এড়াতে)
     if (Object.keys(chatListCache).length > 0) {
@@ -194,7 +199,7 @@ async function renderChatListUI() {
         }
 
         const promises = Object.entries(chatListCache).map(async ([peerUid, info]) => {
-            const userData = await window.getUserData(peerUid);
+            const userData = typeof window.getUserData === 'function' ? await window.getUserData(peerUid) : null;
             return { peerUid, info, profilePic: userData?.profile_pic };
         });
 
@@ -254,7 +259,7 @@ async function renderChatListUI() {
                 <div class="flex-1 min-w-0 pointer-events-none">
                     <div class="flex justify-between items-center mb-0.5">
                         <h4 class="${nameStyle} text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
-                        <span class="text-[10px] ${timeColor} shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
+                        <span class="text-[10px] ${timeColor} shrink-0 whitespace-nowrap">${window.timeAgo ? window.timeAgo(info.timestamp) : ''}</span>
                     </div>
                     <p class="text-sm ${textStyle} truncate block">${window.escapeHTML(displayMsg)}</p>
                 </div>
@@ -324,7 +329,7 @@ window.toggleReadStatus = () => {
     update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), {
         unread: unreadCount
     }).then(() => {
-        window.showToast(action === 'unread' ? "আনরিড করা হয়েছে" : "রিড করা হয়েছে");
+        if (window.showToast) window.showToast(action === 'unread' ? "আনরিড করা হয়েছে" : "রিড করা হয়েছে");
         closeChatListOptions();
     });
 };
@@ -335,13 +340,13 @@ window.archiveChat = () => {
     
     if(isArchiving) {
         set(ref(window.db, `user_archived_chats/${window.currentUser.uid}/${uid}`), true);
-        window.showToast("চ্যাট আর্কাইভে পাঠানো হয়েছে");
+        if (window.showToast) window.showToast("চ্যাট আর্কাইভে পাঠানো হয়েছে");
     } else {
         remove(ref(window.db, `user_archived_chats/${window.currentUser.uid}/${uid}`));
-        window.showToast("আর্কাইভ থেকে সরানো হয়েছে");
+        if (window.showToast) window.showToast("আর্কাইভ থেকে সরানো হয়েছে");
     }
     closeChatListOptions();
-    window.loadChatList(window.currentUser.uid); 
+    if (window.currentUser) window.loadChatList(window.currentUser.uid); 
 };
 
 window.deleteChatConversation = () => {
@@ -349,7 +354,7 @@ window.deleteChatConversation = () => {
     const uid = document.getElementById('chat-options-uid').value;
     
     remove(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`)).then(() => {
-        window.showToast("কনভারসেশন ডিলিট হয়েছে");
+        if (window.showToast) window.showToast("কনভারসেশন ডিলিট হয়েছে");
         closeChatListOptions();
     });
 };
@@ -631,7 +636,9 @@ window.replyToMsgFromOptions = () => {
 
 window.copyMsgText = () => {
     const text = document.getElementById('msg-options-text').value;
-    navigator.clipboard.writeText(text).then(() => window.showToast("কপি হয়েছে"));
+    navigator.clipboard.writeText(text).then(() => {
+        if (window.showToast) window.showToast("কপি হয়েছে");
+    });
     closeMsgOptions();
 };
 
@@ -681,7 +688,7 @@ window.cancelReply = () => {
 // --- TYPING INDICATOR ---
 let typingTimeout;
 window.triggerTyping = () => {
-    if(!window.currentChatUser) return;
+    if(!window.currentChatUser || !window.db) return;
     const typingRef = ref(window.db, `chats_typing/${window.currentChatUser.uid}/${window.currentUser.uid}`);
     
     set(typingRef, true);
@@ -693,13 +700,16 @@ window.triggerTyping = () => {
 };
 
 window.listenToTyping = (otherUid) => {
+    if (!window.db) return;
     onValue(ref(window.db, `chats_typing/${window.currentUser.uid}/${otherUid}`), (snap) => {
         const isTyping = snap.val();
         const statusEl = document.getElementById('chat-typing-status');
-        if(isTyping) {
-            statusEl.classList.remove('hidden');
-        } else {
-            statusEl.classList.add('hidden');
+        if(statusEl) {
+            if(isTyping) {
+                statusEl.classList.remove('hidden');
+            } else {
+                statusEl.classList.add('hidden');
+            }
         }
     });
 };
@@ -730,7 +740,7 @@ window.startChatVoiceRecord = async () => {
                 const res = await window.uploadMediaToCloudinary(file);
                 window.sendMsg(null, res.url);
             } catch(e) {
-                window.showToast("ভয়েস পাঠানো যায়নি", "error");
+                if (window.showToast) window.showToast("ভয়েস পাঠানো যায়নি", "error");
             } finally {
                 btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 btn.disabled = false;
@@ -753,7 +763,7 @@ window.startChatVoiceRecord = async () => {
         }, 1000);
 
     } catch(err) {
-        window.showToast("মাইক্রোফোন পারমিশন দিন", "error");
+        if (window.showToast) window.showToast("মাইক্রোফোন পারমিশন দিন", "error");
     }
 };
 
@@ -787,7 +797,7 @@ window.handleChatImageSelect = () => {
             window.sendMsg(res.url, null);
             document.getElementById('chat-img-input').value = "";
         }).catch(e => {
-            window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
+            if (window.showToast) window.showToast("ছবি আপলোড হয়নি: " + e.message, 'error');
             btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
             btn.disabled = false;
         });
