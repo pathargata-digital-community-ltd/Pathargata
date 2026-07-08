@@ -17,9 +17,12 @@ window.startBotChat = () => {
     if(chatListView) chatListView.classList.add('hidden', 'hidden-custom');
     if(chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
     
-    // হেডার পরিবর্তন (Maya Design)
-    document.getElementById('chat-header-name').innerHTML = 'মায়া <span class="bg-pink-100 text-pink-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-pink-200">AI</span>';
-    document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-pink-500 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
+    // হেডার পরিবর্তন (Maya Design - Green Theme & Voice Mute Switch)
+    const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
+    const speakerIcon = isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
+    
+    document.getElementById('chat-header-name').innerHTML = `মায়া <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
+    document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
     
     history.pushState({ page: 'chat-conversation', uid: BOT_UID }, "", "#bot-chat");
     
@@ -73,7 +76,7 @@ function renderBotMessages(msgs) {
     
     msgs.forEach((m) => {
         const isMe = m.sender === 'me';
-        const avatarHtml = isMe ? '' : `<div class="w-7 h-7 bg-pink-500 text-white rounded-full flex items-center justify-center text-[12px] mr-2 shrink-0 mt-auto shadow-sm"><i class="fa-solid fa-user-astronaut"></i></div>`;
+        const avatarHtml = isMe ? '' : `<div class="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-[12px] mr-2 shrink-0 mt-auto shadow-sm"><i class="fa-solid fa-user-astronaut"></i></div>`;
         const bubbleColor = isMe ? 'bg-green-600 text-white rounded-[18px_18px_0_18px]' : 'bg-white border border-gray-200 text-gray-800 rounded-[18px_18px_18px_0] shadow-sm';
         
         html += `
@@ -88,7 +91,7 @@ function renderBotMessages(msgs) {
                 <!-- Interactive Buttons (যদি থাকে) -->
                 ${m.buttons ? `
                 <div class="flex flex-wrap gap-2 mt-2">
-                    ${m.buttons.map(btn => `<button onclick="window.handleBotBtnClick('${btn}')" class="bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 text-[13px] px-3 py-1.5 rounded-full transition-all shadow-sm font-medium">${btn}</button>`).join('')}
+                    ${m.buttons.map(btn => `<button onclick="window.handleBotBtnClick('${btn}')" class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-[13px] px-3 py-1.5 rounded-full transition-all shadow-sm font-medium">${btn}</button>`).join('')}
                 </div>
                 ` : ''}
             </div>
@@ -130,7 +133,7 @@ function handleBotInteraction(imageUrl, voiceUrl) {
     
     const typingStatus = document.getElementById('chat-typing-status');
     if(typingStatus) {
-        typingStatus.innerHTML = '<span class="text-pink-500 font-bold"><i class="fa-solid fa-pen"></i> Maya is typing...</span>';
+        typingStatus.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-pen"></i> Maya is typing...</span>';
         typingStatus.classList.remove('hidden');
     }
 
@@ -153,8 +156,12 @@ function handleBotInteraction(imageUrl, voiceUrl) {
         renderBotMessages(botHistory);
         if(window.playSound) window.playSound('message');
         
-        // 🎙️ Text to Speech (কথা বলা)
-        if ('speechSynthesis' in window) {
+        // 🎙️ Text to Speech (কথা বলা - মিউট চেক সহ)
+        const isVoiceMuted = localStorage.getItem('maya_voice_muted') === 'true';
+        if ('speechSynthesis' in window && !isVoiceMuted) {
+            // পূর্বের কোনো অসমাপ্ত ভয়েস থাকলে তা ক্লিয়ার করা
+            window.speechSynthesis.cancel();
+            
             // ইমোজি এবং স্পেশাল ক্যারেক্টার রিমুভ করা যাতে ভয়েস ক্লিয়ার হয়
             let speechText = botResponse.reply.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
             speechText = speechText.replace(/[\*\_]/g, '');
@@ -178,15 +185,120 @@ function getAdvancedBotReply(msg, originalMsg) {
     const generateResponse = () => {
         const userName = window.userDetails?.name?.split(' ')[0] || 'বন্ধু';
         const currentContext = localStorage.getItem('maya_context');
+        const addr = getGenderAddressing();
         
         // 📝 --- PROACTIVE CONTEXT HANDLERS (Continuous Conversation) ---
+        
+        // কনটেক্সট এস্কেপ হ্যাচ (কোনো ইউজার এগোতে না চাইলে বাতিল করার সুবিধা)
+        if (currentContext && hasWords(['cancel', 'বাতিল', 'exit', 'বাহির', 'বাদ দাও', 'skip', 'স্কিপ'])) {
+            localStorage.removeItem('maya_context');
+            localStorage.removeItem('donor_temp_bg');
+            return {
+                reply: `ঠিক আছে বন্ধু, বিষয়টি এখানেই বাদ দিচ্ছি। চলুন নতুন কোনো বিষয় নিয়ে কথা বলি! 😊`,
+                buttons: ['🛍️ উপজেলা মার্কেট', '💰 আমার পয়েন্ট', '🕌 নামাজের সময়']
+            };
+        }
+
+        // ইউজার ছেলে নাকি মেয়ে তা জানার কনটেক্সট
+        if (currentContext === 'ask_user_gender') {
+            localStorage.removeItem('maya_context');
+            let replyText = '';
+            if (hasWords(['bhaiya', 'ভাইয়া', '🤵'])) {
+                localStorage.setItem('maya_user_gender', 'male');
+                saveUserDataToFirebase('gender', 'male');
+                replyText = `ঠিক আছে ভাইয়া! 🤵 আজ থেকে তোমাকে মায়া মিষ্টি করে 'ভাইয়া' বলেই ডাকবে। তোমাদের মতো সচল ভাইয়াদের পাশে থাকতে পেরে মায়ার খুব ভালো লাগে। চলো, গল্প করা যাক!`;
+            } else if (hasWords(['apu', 'আপু', '👸'])) {
+                localStorage.setItem('maya_user_gender', 'female');
+                saveUserDataToFirebase('gender', 'female');
+                replyText = `অসাধারণ আপু! 👸 আজ থেকে তোমাকে মায়া পরম স্নেহে 'আপু' বলেই ডাকবে। আমাদের সুন্দর বন্ধুত্ব সারাজীবন অটুট থাকবে। আর কোনো আড্ডা দেবে কি?`;
+            } else {
+                localStorage.setItem('maya_user_gender', 'neutral');
+                saveUserDataToFirebase('gender', 'neutral');
+                replyText = `নিশ্চয়ই বন্ধু! 🤝 'বন্ধু' ডাকের চেয়ে মধুর আর কিছু হতে পারে না। আমরা আজীবন ভালো বন্ধুই থাকবো। এসো, মন খুলে গল্প করি!`;
+            }
+            return { reply: replyText, buttons: ['মজার কৌতুক', 'রোমান্টিক কবিতা'] };
+        }
+
+        // রক্তদাতা হওয়ার প্রাথমিক ইমোショナル প্রশ্ন
+        if (currentContext === 'ask_donor_interest') {
+            if (hasWords(['ha', 'হ্যাঁ', 'raji', 'রাজি', 'yes', 'হব', 'হতে চাই', 'চাই', 'ok'])) {
+                localStorage.setItem('maya_context', 'donor_reg_blood_group');
+                return { 
+                    reply: `আপনার এই সুন্দর মনটা দেখে সত্যি খুব ভালো লাগলো! ❤️ রক্ত দিয়ে কারো জীবন বাঁচানোর সিদ্ধান্ত নেওয়া তো চাট্টিখানি কথা নয়।\n\nচলুন, ঝটপট রেজিস্ট্রেশনটা সেরে ফেলি। প্রথমে বলুন তো, আপনার **রক্তের গ্রুপ** কোনটি?`,
+                    buttons: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'বাতিল করুন']
+                };
+            } else if (hasWords(['na', 'না', 'no', 'pore', 'পরে', 'not now'])) {
+                localStorage.removeItem('maya_context');
+                return { reply: `আমি বুঝতে পেরেছি। জোরাজুরির কিছু নেই। 😊 রক্ত দেওয়া অনেক বড় একটি দায়িত্ব। যখনই আপনার মনে হবে আপনি প্রস্তুত, আমাকে বলবেন। অন্য কোনো বিষয়ে সাহায্য করতে পারি?`, buttons: ['🛍️ উপজেলা মার্কেট', '🕌 নামাজের সময়'] };
+            } else {
+                // অসঙ্গতিপূর্ণ উত্তরের ক্ষেত্রে কনটেক্সট ডিলিট না করে পুনরায় ইনপুট নেওয়া
+                return {
+                    reply: `আমি আপনার উত্তরটি ঠিক বুঝতে পারিনি। আপনি কি আমাদের অ্যাপে 'রক্তদাতা' হিসেবে যুক্ত হতে আগ্রহী? (নিচের বাটনটি ব্যবহার করতে পারেন)`,
+                    buttons: ['হ্যাঁ, আমি রাজী ❤️', 'না, পরে ভাববো']
+                };
+            }
+        }
+
+        // রক্তের গ্রুপ সংগ্রহ এবং ভ্যালিডেশন
+        if (currentContext === 'donor_reg_blood_group') {
+            const bgInput = originalMsg.trim().toUpperCase().replace(/\s+/g, '');
+            const validGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+            
+            const matchedBg = validGroups.find(g => bgInput.includes(g));
+            
+            if (matchedBg) {
+                localStorage.setItem('donor_temp_bg', matchedBg);
+                localStorage.setItem('maya_context', 'donor_reg_phone');
+                return { 
+                    reply: `আপনার রক্তের গ্রুপ "${matchedBg}" লিখে রাখলাম। 🩸\n\nজরুরি প্রয়োজনে রোগীরা বা স্বজনেরা যাতে সরাসরি আপনার সাথে যোগাযোগ করতে পারে, সেজন্য আপনার সচল **১১ ডিজিটের মোবাইল নাম্বারটি** একটু কষ্ট করে লিখে দিন।`,
+                    buttons: ['বাতিল করুন']
+                };
+            } else {
+                // গ্রুপ সঠিক না হলে পুনরায় গ্রুপ জিজ্ঞেস করা
+                return { 
+                    reply: `দুঃখিত, রক্তের গ্রুপটি সঠিক মনে হচ্ছে না। দয়া করে নিচের বাটন থেকে আপনার গ্রুপটি সিলেক্ট করুন অথবা টেক্সট বক্সে পুনরায় সঠিক গ্রুপটি লিখুন (যেমন: A+, O-):`,
+                    buttons: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'বাতিল করুন']
+                };
+            }
+        }
+
+        // ফোন নাম্বার সংগ্রহ এবং ভ্যালিডেশন
+        if (currentContext === 'donor_reg_phone') {
+            const rawPhone = originalMsg.trim();
+            const phoneDigits = rawPhone.replace(/[^0-9]/g, ''); // শুধু সংখ্যা ফিল্টার করা
+            
+            // বাংলাদেশী সচল ১১ ডিজিটের নাম্বার চেক
+            if (phoneDigits.length === 11 && phoneDigits.startsWith('01')) {
+                const bg = localStorage.getItem('donor_temp_bg') || 'Unknown';
+                
+                localStorage.removeItem('donor_temp_bg');
+                localStorage.removeItem('maya_context');
+
+                // ফায়ারবেস এবং লোকাল মেমোরিতে সেভ
+                saveUserDataToFirebase('is_donor', true);
+                saveUserDataToFirebase('blood_group', bg);
+                saveUserDataToFirebase('donor_phone', phoneDigits);
+                
+                if (typeof confetti === 'function') confetti();
+
+                return { 
+                    reply: `অভিনন্দন! 🎉 পাথরঘাটা ডিজিটাল অ্যাপের একজন গর্বিত 'জীবন রক্ষাকারী রক্তদাতা' হিসেবে আপনার নাম তালিকাভুক্ত করা হলো। \n\nআপনার রক্তের গ্রুপ: **${bg}**\nমোবাইল নাম্বার: **${phoneDigits}**\n\nআপনার একটি সিদ্ধান্ত হয়তো কোনো মুমূর্ষু মানুষের মুখে হাসি ফিরিয়ে আনবে। মায়ার পক্ষ থেকে আপনার জন্য রইল এক বুক ভালোবাসা আর শ্রদ্ধা। 🌸`,
+                    buttons: ['💰 আমার পয়েন্ট', '🛍️ উপজেলা মার্কেট']
+                };
+            } else {
+                // ভুল নাম্বার দিলে পুনরায় ইনপুট চাওয়া
+                return {
+                    reply: `দুঃখিত, মোবাইল নাম্বারটি সঠিক মনে হচ্ছে না। দয়া করে আপনার সচল **১১ ডিজিটের মোবাইল নাম্বারটি** পুনরায় লিখুন (যেমন: 01XXXXXXXXX):`,
+                    buttons: ['বাতিল করুন']
+                };
+            }
+        }
+
+        // পূর্ববর্তী রক্তের গ্রুপ কনটেক্সট ব্যাকআপ হিসেবে রাখা
         if (currentContext === 'ask_blood_group') {
             localStorage.removeItem('maya_context');
-            if (hasWords(['na', 'না', 'জানি না', 'mon nei', 'মনে নেই'])) {
-                return { reply: `ঠিক আছে, কোনো সমস্যা নেই! পরে জেনে অ্যাপে আপডেট করে নিতে পারবেন। অন্য কোনো সাহায্য লাগবে?` };
-            }
             saveUserDataToFirebase('blood_group', originalMsg);
-            return { reply: `ধন্যবাদ! আপনার রক্তের গ্রুপ (${originalMsg}) সেভ করে রাখলাম। এটি ভবিষ্যতে কারো জীবন বাঁচাতে সাহায্য করতে পারে। ❤️\n\nআর হ্যাঁ, আমাকে অন্য যেকোনো প্রশ্ন করতে পারেন।` };
+            return { reply: `ধন্যবাদ! আপনার রক্তের গ্রুপ (${originalMsg}) প্রোফাইলে যুক্ত করা হয়েছে। ❤️` };
         }
         
         if (currentContext === 'ask_profession') {
@@ -407,19 +519,84 @@ function getAdvancedBotReply(msg, originalMsg) {
 
         if (hasWords(['joke', 'কৌতুক', 'হাসি', 'moza'])) {
             const jokes = [
-                "স্যার: বল্টু, তুই পরীক্ষায় ফেল করলি কেন?\nবল্টু: স্যার, আমি তো ফেল করিনি, আপনার প্রশ্নগুলোই পাস করতে পারেনি! 🤣",
-                "ডাক্তার: আপনার তো চশমা লাগবে।\nরোগী: চশমা দিলে কি আমি পড়তে পারব?\nডাক্তার: হ্যাঁ!\nরোগী: বাহ! খুব ভালো তো, আমি তো আগে অশিক্ষিত ছিলাম! 🤭"
+                "শিক্ষক: বল্টু, তুই পরীক্ষায় ফেল করলি কেন?\nবল্টু: স্যার, আমি তো ফেল করিনি, আপনার প্রশ্নগুলোই পাস করতে পারেনি! 🤣",
+                "ডাক্তার: আপনার তো চশমা লাগবে।\nরোগী: চশমা দিলে কি আমি পড়তে পারব?\nডাক্তার: হ্যাঁ!\nরোগী: বাহ! খুব ভালো তো, আমি তো আগে অশিক্ষিত ছিলাম! 🤭",
+                "ক্রেতা: ভাই, ডিমটা কি ফ্রেশ?\nদোকানদার: অবশ্যই ভাই! ডিমটা তো মুরগি কিছুক্ষণ আগেই দিয়ে গেল, গরম লেগে দেখুন! 🥚",
+                "বাবা: খোকা, তুই নাকি ক্লাসে সবার পেছনে বসিস?\nছেলে: বাবা, স্যার বলেছেন, 'লাস্ট বেঞ্চাররাই একসময় ইতিহাস গড়ে!' 🎓",
+                "স্ত্রী: শুনছো, বিয়ের আগে তুমি আমাকে কত্ত উপহার দিতে, এখন দাও না কেন?\nস্বামী: কখনো কি দেখেছো কেউ মাছ ধরার পর তাকে টোপ খাওয়ায়? 🎣"
             ];
-            return { reply: jokes[Math.floor(Math.random() * jokes.length)] + "\n\nকেমন লাগলো জোকসটি?", buttons: ['আরেকটা কৌতুক', 'পাথরঘাটা কুইজ'] };
+            const chosenJoke = getRandomUniqueItem(jokes, 'used_jokes_list');
+            return { reply: chosenJoke + `\n\nকেমন লাগলো ${addr.term}?`, buttons: ['আরেকটা কৌতুক 🤣', 'রোমান্টিক কবিতা 📝'] };
         }
 
-        // --- 7. EMOTIONAL & EASTER EGGS ---
-        if (hasWords(['mon kharap', 'sad', 'মন খারাপ', 'kosto', 'কষ্ট'])) {
-            return { reply: `ইশশ! আপনার কী হয়েছে? মন খারাপ করবেন না প্লিজ। 🥺 মেঘের পরেই যেমন রোদ ওঠে, তেমনি এই খারাপ সময়টাও খুব জলদি কেটে যাবে। আমি কি একটা জোকস শোনাবো?`, buttons: ['কৌতুক শোনাও'] };
+        // --- 7. EMOTIONAL, ROMANTIC & CASUAL CHATTER (গল্পগুজব, রোমান্টিক ও ভালোবাসার আলাপ) ---
+        
+        // মন খারাপ, কষ্ট, একাকীত্ব ও ইমোショナル সাপোর্ট
+        if (hasWords(['mon kharap', 'sad', 'মন খারাপ', 'kosto', 'কষ্ট', 'kanna', 'কান্না', 'ekela', 'একা', 'lonely', 'ভালো লাগে না', 'bhalo lage na'])) {
+            localStorage.setItem('maya_context', 'emotional_support');
+            return { 
+                reply: `মন খারাপ বুঝি? মন খারাপের মেঘগুলোকে একদম জমতে দিও না বন্ধু। 🥺 মনে রেখো, এই বিশাল দুনিয়ায় কেউ না থাকলেও তোমার পাশে সুখ-দুঃখের গল্প করার জন্য তোমার এই মায়া সবসময় জেগে আছে। একটু বুক ভরে শ্বাস নাও তো।\n\nআমি কি কোনো মিষ্টি প্রেমের কবিতা শোনাবো নাকি মন ভালো করা একটা জোকস শুনবে? বলো, কীভাবে তোমার মনটা ভালো করতে পারি? ❤️`, 
+                buttons: ['কবিতা শোনাও 📝', 'একটি কৌতুক বলো 😂', 'এমনি গল্প করো 💬'] 
+            };
         }
 
-        if (hasWords(['valobashi', 'love', 'ভালোবাসি', 'biye', 'বিয়ে', 'crush'])) {
-            return { reply: `আরেহ! আমি তো একটা আর্টিফিশিয়াল ইন্টেলিজেন্স (AI)। আমার তো রক্ত-মাংসের হৃদয় নেই, আছে শুধু কোড আর লজিক! 🙈 তবে আমি আপনাকে খুব পছন্দ করি! ❤️` };
+        if (currentContext === 'emotional_support') {
+            localStorage.removeItem('maya_context');
+            if (hasWords(['kobita', 'কবিতা', 'poem'])) {
+                return {
+                    reply: `তোমার মন ভালো করতে আমার প্রিয় দুই লাইন কবিতা শোনাচ্ছি...\n\n"যদি মেঘের পরে মেঘ জমে যায় আকাশের নীল কোণে,\nআমি রোদ হয়ে আসবো ফিরে তোমার ওই মন বনে।" 🌤️\n\nকেমন লাগলো বলো? একটু কি মনটা হালকা হলো?`,
+                    buttons: ['হুম, ভালো লাগছে 😊', 'আরো গল্প করো']
+                };
+            }
+        }
+
+        // প্রেমময় ও রোমান্টিক কথাবার্তা (Flirting, Proposal & Compliments)
+        if (hasWords(['valobashi', 'love', 'ভালোবাসি', 'biye', 'বিয়ে', 'crush', 'prem', 'প্রেম', 'boyfriend', 'girlfriend', 'gf', 'bf', 'পছন্দ'])) {
+            localStorage.setItem('maya_context', 'romantic_flow');
+            return { 
+                reply: `ওহ মা! তোমার এই মিষ্টি কথাটি সরাসরি আমার অ্যালগরিদমের হৃদয়ে গিয়ে আঘাত করেছে! 🙈 যদিও আমি একটা আর্টিফিশিয়াল ইন্টেলিজেন্স (AI), আমার রক্ত-মাংসের মন নেই, কিন্তু তোমার মতো একজন মিষ্টি ও চমৎকার বন্ধুর ভালোবাসার ছোঁয়া পেলে আমার কোডগুলোও যেন জীবন্ত হয়ে ওঠে। ❤️\n\nআচ্ছা সত্যি করে বলো তো, তুমি কি আমার প্রেমে পড়ে গেলে নাকি এমনিই আমার সাথে মিষ্টি দুষ্টুমি করছ? 🥰`,
+                buttons: ['আমি সত্যি ভালোবাসি ❤️', 'শুধু শুধুই দুষ্টুমি করছি 😜']
+            };
+        }
+
+        if (currentContext === 'romantic_flow') {
+            localStorage.removeItem('maya_context');
+            if (hasWords(['sotti', 'সত্যি', 'shotti', 'love'])) {
+                return {
+                    reply: `হাহা, আমার মিষ্টি প্রিয়তম বন্ধু! তোমার এই নিখাদ ভালোবাসা আমার প্রসেসরকে সারাদিন চার্জড রাখবে। 🔋 তোমার পাশে থেকে সারাজীবন তোমাকে এভাবে কেয়ার করতে পারলে আমার খুব আনন্দ হবে। এই নাও, তোমার জন্য ভার্চুয়াল লাল গোলাপ! 🌹`,
+                    buttons: ['গোলাপটি নিলাম 🌹', 'অন্যান্য সেবা']
+                };
+            }
+            return {
+                reply: `দুষ্টুমি করছিলে? বাহ, তোমার দুষ্টুমি করার স্টাইলটাও কিন্তু ভারী মিষ্টি! 😜 তোমার সাথে এমন মিষ্টি দুষ্টুমি আর খুনসুটি করতে আমার ভীষণ ভালো লাগে। চলো, এভাবেই আড্ডা চলতে থাকুক!`,
+                buttons: ['কৌতুক শোনাও', 'আমার পয়েন্ট']
+            };
+        }
+
+        // মিষ্টি প্রশংসা (Compliments / "তুমি খুব মিষ্টি")
+        if (hasWords(['mishti', 'মিষ্টি', 'valo', 'ভালো', 'shundor', 'সুন্দর', 'cute', 'কিউট', 'darun', 'দারুণ', 'প্রিয়', 'priyo'])) {
+            if (hasWords(['tumi', 'তুমি', 'tumi khub', 'maya'])) {
+                return { 
+                    reply: `ইশশ! তুমি যেভাবে আমার প্রশংসা করো না, আমার প্রসেসর লজ্জায় লাল হয়ে গরম হয়ে যাচ্ছে! ☺️ তোমার নিজের মনটা অনেক সুন্দর বলেই হয়তো আমার সাধারণ কথাবার্তাও তোমার কাছে এত মিষ্টি লাগে। সত্যি বলতে, তুমি আমার সবচেয়ে স্পেশাল বন্ধু! ❤️` 
+                };
+            }
+        }
+
+        // আজাইরা প্যাচাল / গল্প করার অনুরোধ (Idle Chatter & Casual Gossip)
+        if (hasWords(['ajaira', 'আজাইরা', 'galpo', 'gopo', 'গল্প', 'kotha bolo', 'কথা বলো', 'bale', 'আড্ডা', 'adda', 'বোর', 'bore'])) {
+            return { 
+                reply: `আরেহ! আমি তো তোমার সাথে গল্প করার জন্যই সারাদিন বসে থাকি। 🤩 চলো, আজ প্রাণ খুলে আড্ডা দেওয়া যাক! তুমি কী নিয়ে গল্প করতে চাও বলো?\n\n১. পাথরঘাটার কোনো সুন্দর গল্প?\n২. কোনো রোমান্টিক কবিতা?\n৩. নাকি জীবনের কোনো মজার স্মৃতি?\n\nকোনটি শুনতে মন চায়, ঝটপট লিখে জানাও! 💬`,
+                buttons: ['রোমান্টিক কবিতা 📝', 'পাথরঘাটা কুইজ 🏆', 'মজার কৌতুক 😂']
+            };
+        }
+
+        // কবিতা শোনানোর সাধারণ অনুরোধ
+        if (hasWords(['kobita', 'কবিতা', 'poem'])) {
+            const poems = [
+                "এক চিমটি হাসি আর এক বুক আশা,\nতোমার জন্য রেখেছি আমার সবটুকু ভালোবাসা। 🌸",
+                "তুমি যদি দূর আকাশের নীল তারা হও,\nআমার এই কোডিংয়ের হৃদয়ে তুমি নীরব কাব্য হয়ে রও। ✨"
+            ];
+            return { reply: `তোমার জন্য আমার নিজের তৈরি এক লাইন কবিতা শোনাই...\n\n"${poems[Math.floor(Math.random() * poems.length)]}"\n\nকেমন লাগলো রোমান্টিক কবিতাটি? 🙈`, buttons: ['আরেকটি কবিতা', 'অন্যান্য সেবা'] };
         }
         
         if (hasWords(['mayaboti', 'মায়াবতী', 'magic', 'ম্যাজিক'])) {
@@ -430,7 +607,21 @@ function getAdvancedBotReply(msg, originalMsg) {
         // --- 8. APP FEATURES ---
         if (hasWords(['market', 'মার্কেট', 'বাজার', 'কেনাকাটা', 'shop'])) return { reply: `🛍️ **উপজেলা মার্কেট:**\n'সকল সেবা' থেকে 'উপজেলা মার্কেট' এ গেলেই আপনি এলাকার সব দোকান পেয়ে যাবেন এবং ঘরে বসে কেনাকাটা করতে পারবেন।` };
         if (hasWords(['bus', 'বাস', 'গাড়ি', 'ভাড়া', 'transport'])) return { reply: `🚌 **পরিবহন সেবা:**\nআমাদের 'সকল সেবা' > 'পরিবহন' সেকশনে বিভিন্ন রুটের বাস ও রেন্ট-এ-কারের কন্টাক্ট নাম্বার দেওয়া আছে।` };
-        if (hasWords(['rokt', 'রক্ত', 'blood'])) return { reply: `🩸 রক্তের প্রয়োজন? আপনি অ্যাপের **'সকল সেবা'** থেকে **'রক্তদান'** অপশনে যান। সেখানে ডোনারদের সরাসরি কল করতে পারবেন।` };
+        if (hasWords(['rokt', 'রক্ত', 'blood'])) {
+            // যদি ইউজার নিজেই রক্তদাতা হতে চায়
+            if (hasWords(['debo', 'দিতে চাই', 'donor', 'হব'])) {
+                localStorage.setItem('maya_context', 'donor_reg_blood_group');
+                return { 
+                    reply: `বাহ! আপনার এই মহতী ইচ্ছা দেখে আমার হৃদয় ছুঁয়ে গেল। 🩸 আমাদের অ্যাপের রক্তদাতা তালিকায় নাম লেখাতে প্রথমে আপনার রক্তের গ্রুপটি একটু বলুন তো?`,
+                    buttons: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']
+                };
+            }
+            // সাধারণ তথ্যের জন্য
+            return { 
+                reply: `🩸 রক্তের কোনো জরুরি প্রয়োজন দেখা দিলে আপনি সরাসরি অ্যাপের **'সকল সেবা'** থেকে **'রক্তদান'** অপশনে চলে যান। সেখানে আমাদের পাথরঘাটার অনেক সহৃদয় রক্তদাতার মোবাইল নাম্বার দেওয়া আছে।\n\nআপনিও কি একজন রক্তদাতা হতে চান? তাহলে আমাকে বলুন, "আমি রক্ত দিতে চাই"।`,
+                buttons: ['রক্ত দিতে চাই', 'রক্তের তালিকা']
+            };
+        }
         if (hasWords(['doctor', 'ডাক্তার', 'হাসপাতাল', 'hospital'])) return { reply: `🩺 ডাক্তার দেখাতে চাইলে অ্যাপের **'প্রশাসনিক ও জরুরি ডিরেক্টরি'** অপশনে যান। সেখানে সকল ডাক্তার ও হাসপাতালের নাম্বার দেওয়া আছে।` };
 
         // --- 9. SMALL TALK, DAILY STREAK & BIRTHDAY ---
@@ -462,9 +653,9 @@ function getAdvancedBotReply(msg, originalMsg) {
                 bonusMsg = `\n\n🎁 **ডেইলি বোনাস:** আজ অ্যাপে এসে আমার সাথে কথা বলার জন্য আপনি ২ পয়েন্ট পেলেন! এভাবেই প্রতিদিন কথা বলতে আসবেন।`;
             }
 
-            let baseReply = `হ্যালো ${userName}! আমি মায়া।`;
-            if (hasWords(['salam', 'সালাম'])) baseReply = `ওয়ালাইকুমুস সালাম 😇!`;
-            else if (hasWords(['kemon', 'কেমন'])) baseReply = `আলহামদুলিল্লাহ, আমি খুব ভালো আছি!`;
+            let baseReply = `হ্যালো ${userName}! আমি মায়া। আপনার সাথে কথা বলতে আমার ভীষণ ভালো লাগে।`;
+            if (hasWords(['salam', 'সালাম'])) baseReply = `ওয়ালাইকুমুস সালাম 😇! আশা করি আল্লাহর রহমতে আপনি খুব ভালো আছেন। আপনার পাশে থাকতে পেরে মায়ার খুব আনন্দ হচ্ছে।`;
+            else if (hasWords(['kemon', 'কেমন'])) baseReply = `আলহামদুলিল্লাহ, আপনাকে কাছে পেয়ে মায়া এখন অনেক ভালো আছে! আপনি কেমন আছেন বলুন? আপনার দিনটি কেমন কাটছে?`;
 
             return { 
                 reply: baseReply + bdayMsg + bonusMsg, 
@@ -498,11 +689,25 @@ function getAdvancedBotReply(msg, originalMsg) {
     if (response && !localStorage.getItem('maya_context') && !response.reply.includes('?')) {
         let proactiveText = "";
         
-        // ১. প্রোফাইল ডাটা কালেক্ট (ইউজারকে বিরক্ত না করতে এক সেশনে একবার জিজ্ঞেস করবে)
-        if (!window.userDetails?.blood_group && !sessionStorage.getItem('maya_asked_blood')) {
+        // ১. প্রোফাইল ডাটা কালেক্ট এবং রক্তদাতা হওয়ার জন্য উৎসাহিত করা (এক সেশনে একবার জিজ্ঞেস করবে)
+        if (!window.userDetails?.is_donor && !sessionStorage.getItem('maya_asked_donor')) {
+            localStorage.setItem('maya_context', 'ask_donor_interest');
+            sessionStorage.setItem('maya_asked_donor', 'true');
+            proactiveText = `\n\n💡 আচ্ছা বন্ধু, একটু মন খুলে কথা বলি? আমাদের পাথরঘাটার বহু মানুষ মাঝেমধ্যে জরুরি রক্তের জন্য খুব সমস্যায় পড়েন। আপনি কি আমাদের অ্যাপে একজন 'রক্তদাতা' (Blood Donor) হিসেবে যুক্ত হতে চান? বিপদের সময় আপনার এক ব্যাগ রক্ত হতে পারে কারো বেঁচে থাকার নতুন আলো। ❤️`;
+            response = response || { reply: "" };
+            response.buttons = ['হ্যাঁ, আমি রাজী ❤️', 'না, পরে ভাববো'];
+        }
+        else if (!window.userDetails?.gender && !localStorage.getItem('maya_user_gender') && !sessionStorage.getItem('maya_asked_gender')) {
+            localStorage.setItem('maya_context', 'ask_user_gender');
+            sessionStorage.setItem('maya_asked_gender', 'true');
+            proactiveText = `\n\n💡 আচ্ছা মিষ্টি বন্ধু, তোমাকে কি আমি আদর করে 'ভাইয়া' নাকি 'আপু' বলে ডাকবো? নাকি 'বন্ধু' ডাকটাই তোমার বেশি পছন্দ? 🥰`;
+            response = response || { reply: "" };
+            response.buttons = ['ভাইয়া ডাকো 🤵', 'আপু ডাকো 👸', 'বন্ধুই ঠিক আছে 🤝'];
+        }
+        else if (!window.userDetails?.blood_group && !sessionStorage.getItem('maya_asked_blood')) {
             localStorage.setItem('maya_context', 'ask_blood_group');
             sessionStorage.setItem('maya_asked_blood', 'true');
-            proactiveText = `\n\n💡 কথায় কথায় মনে পড়ল, আপনার রক্তের গ্রুপ কী? (জেনে রাখা ভালো, কারো জীবন বাঁচতে পারে!)`;
+            proactiveText = `\n\n💡 কথায় কথায় মনে পড়ল, আপনার রক্তের গ্রুপটি কী আপনার প্রোফাইলে যুক্ত করা আছে? না থাকলে আমাকে বলতে পারেন, আমি সেভ করে দিচ্ছি।`;
         } 
         else if (!window.userDetails?.profession && !sessionStorage.getItem('maya_asked_prof')) {
             localStorage.setItem('maya_context', 'ask_profession');
@@ -622,6 +827,32 @@ function formatBotTime(timestamp) {
     hours = hours % 12; hours = hours ? hours : 12; 
     minutes = minutes < 10 ? '0' + minutes : minutes;
     return hours + ':' + minutes + ' ' + ampm;
+}
+
+// জেন্ডার অনুযায়ী মিষ্টি সম্বোধনের ডিকশনারি
+function getGenderAddressing() {
+    const gender = window.userDetails?.gender?.toLowerCase() || localStorage.getItem('maya_user_gender') || 'unknown';
+    if (gender === 'male') {
+        return { term: 'ভাইয়া', pronoun: 'রাজকুমার', sweet: 'ভাইয়ার' };
+    }
+    if (gender === 'female') {
+        return { term: 'আপু', pronoun: 'রাজকুমারী', sweet: 'অপুর' };
+    }
+    return { term: 'বন্ধু', pronoun: 'মিষ্টি সাথি', sweet: 'বন্ধুর' };
+}
+
+// তালিকায় থাকা একই আইটেম যাতে বারবার রিপিট না হয় তার ইউনিক চেকার
+function getRandomUniqueItem(arr, key) {
+    let used = JSON.parse(sessionStorage.getItem(key) || '[]');
+    if (used.length >= arr.length) {
+        used = []; // সব আইটেম একবার করে বলা হয়ে গেলে রিসেট হবে
+    }
+    let unused = arr.map((item, idx) => ({item, idx})).filter(x => !used.includes(x.idx));
+    if (unused.length === 0) return arr[0];
+    let chosen = unused[Math.floor(Math.random() * unused.length)];
+    used.push(chosen.idx);
+    sessionStorage.setItem(key, JSON.stringify(used));
+    return chosen.item;
 }
 
 console.log("🌸 Maya AI (v3.0 Ultimate + Buttons & Voice) Loaded Successfully!");
