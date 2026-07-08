@@ -3387,31 +3387,36 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             const loadingText = document.getElementById('bot-loading-text');
             if(loadingText) loadingText.innerText = "বট লোড হচ্ছে, অপেক্ষা করুন...";
 
-            // যদি ফাইলটি আগে থেকেই লোড করা থাকে, তবে সরাসরি চালু হবে
-            if (typeof window.startBotChat === 'function') {
-                if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
-                window.startBotChat();
-                return;
-            }
-
-            // যদি লোড করা না থাকে, তবে ডাইনামিকভাবে bot.js লোড করবে
-            const script = document.createElement('script');
-            script.src = 'bot.js';
-            script.id = 'ai-bot-script';
-            
-            script.onload = () => {
-                if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
+            // চ্যাটের মূল ডিজাইন স্ট্রাকচার লোড নিশ্চিত করে তারপর বট শুরু করা হচ্ছে
+            loadMessagesUI().then(() => {
                 if (typeof window.startBotChat === 'function') {
+                    if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
                     window.startBotChat();
+                    return;
                 }
-            };
-            
-            script.onerror = () => {
-                showToast("বট কানেক্ট হতে সমস্যা হচ্ছে। ইন্টারনেট চেক করুন।", "error");
+
+                // যদি লোড করা না থাকে, তবে ডাইনামিকভাবে bot.js লোড করবে
+                const script = document.createElement('script');
+                script.src = 'bot.js';
+                script.id = 'ai-bot-script';
+                
+                script.onload = () => {
+                    if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
+                    if (typeof window.startBotChat === 'function') {
+                        window.startBotChat();
+                    }
+                };
+                
+                script.onerror = () => {
+                    showToast("বট কানেক্ট হতে সমস্যা হচ্ছে। ইন্টারনেট চেক করুন।", "error");
+                    if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
+                };
+                
+                document.body.appendChild(script);
+            }).catch(() => {
+                showToast("চ্যাট লেআউট লোড করা যায়নি", "error");
                 if(loadingText) loadingText.innerText = "যেকোনো প্রশ্ন করুন...";
-            };
-            
-            document.body.appendChild(script);
+            });
         };
 
         window.handleLogout = async () => {
@@ -4501,12 +4506,13 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                         hideLoader();
                     }).catch(e => { hideLoader(); });
                 } else if (id === 'messages' && window.currentUser) {
-                    if (typeof loadMessagesUI === 'function') loadMessagesUI();
-                    import('./messages.js').then(() => {
-                        if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
-                        if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
-                        hideLoader();
-                    }).catch(e => { hideLoader(); });
+                    loadMessagesUI().then(() => {
+                        import('./messages.js').then(() => {
+                            if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
+                            if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
+                            hideLoader();
+                        }).catch(e => { console.error("Error importing messages.js", e); hideLoader(); });
+                    }).catch(e => { console.error("Error loading Messages UI structure", e); hideLoader(); });
                 } else if (id === 'market') {
                     import('./market.js').then(() => hideLoader()).catch(e => { hideLoader(); });
                 } else if (id === 'blood') {
@@ -4650,9 +4656,21 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     closeFullCommentModal();
                     history.back();
                 } else if (event.state.page === 'chat-conversation') {
-                    if(window.closeChat) window.closeChat();
+                    if (event.state.uid && window.startChat) {
+                        const cachedUser = userCache[event.state.uid];
+                        window.startChat(event.state.uid, cachedUser ? cachedUser.name : 'User');
+                    }
                 } else {
-                    switchPage(event.state.page, false);
+                    if (event.state.page === 'messages') {
+                        const chatConvView = document.getElementById('chat-conversation-view');
+                        if (chatConvView && !chatConvView.classList.contains('hidden') && window.closeChat) {
+                            window.closeChat();
+                        } else {
+                            switchPage(event.state.page, false);
+                        }
+                    } else {
+                        switchPage(event.state.page, false);
+                    }
                 }
             } else {
                 switchPage('home', false);
@@ -4734,24 +4752,23 @@ window.addEventListener('uploadNIDEvent', async (e) => {
 
         // Messages HTML Fetcher
         async function loadMessagesUI() {
+            const container = document.getElementById('page-messages');
+            // যদি ইতিমধ্যে UI লোড হয়ে থাকে, তাহলে আর পুনরায় ফেচ করার দরকার নেই
+            if (container && container.innerHTML.trim() !== '') {
+                return;
+            }
             try {
                 const response = await fetch('messages-ui.html');
                 if (!response.ok) throw new Error('Failed to load Messages UI');
                 
                 const htmlText = await response.text();
-                const container = document.getElementById('page-messages');
                 if (container) {
                     container.innerHTML = htmlText;
                     console.log("Messages Design Loaded Successfully!");
                 }
-
-                // ডাটা রেন্ডার করার ফাংশন কল করা (যদি ইউজার লগইন থাকে)
-                if (window.currentUser && window.userDetails) {
-                    if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
-                    if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
-                }
             } catch (error) {
                 console.error("Error loading Messages UI:", error);
+                throw error;
             }
         }
         
