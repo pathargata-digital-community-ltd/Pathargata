@@ -2,6 +2,28 @@ import {
     ref, push, set, onValue, get, update, query, limitToLast, remove, serverTimestamp, off
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// --- SAFELY DEFINE FALLBACKS TO PREVENT CRASHES ---
+if (typeof window.escapeHTML !== 'function') {
+    window.escapeHTML = function(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+}
+
+// Map HTML button to Maya Bot
+window.initAndStartBot = () => {
+    if (typeof window.startBotChat === 'function') {
+        window.startBotChat();
+    } else {
+        console.warn("startBotChat helper not loaded yet.");
+    }
+};
+
 // --- CHAT HELPER FUNCTIONS ---
 window.getChatId = function(uid1, uid2) {
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
@@ -12,25 +34,46 @@ let showArchived = false;
 
 window.startChat = (uid, name) => {
     window.currentChatUser = { uid, name };
-    window.switchPage('messages');
     
-    document.getElementById('chat-list-view').classList.add('hidden', 'hidden-custom');
-    document.getElementById('chat-conversation-view').classList.remove('hidden', 'hidden-custom');
-    document.getElementById('chat-header-name').innerText = window.escapeHTML(name);
-    document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-green-100 flex items-center justify-center">${window.escapeHTML(name).charAt(0)}</div>`;
+    if (typeof window.switchPage === 'function') {
+        try { window.switchPage('messages'); } catch(e) { console.warn(e); }
+    }
     
-    window.getUserData(uid).then(u => {
-        if(u && u.profile_pic) {
-            document.getElementById('chat-header-img').innerHTML = `<img src="${u.profile_pic}" loading="lazy" class="w-full h-full object-cover">`;
-        }
-    });
+    const chatListView = document.getElementById('chat-list-view');
+    const chatConvView = document.getElementById('chat-conversation-view');
+    
+    if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
+    if (chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
+    
+    const escapedName = typeof window.escapeHTML === 'function' ? window.escapeHTML(name) : name;
+    
+    const headerName = document.getElementById('chat-header-name');
+    if (headerName) headerName.innerText = escapedName;
+    
+    const headerImg = document.getElementById('chat-header-img');
+    if (headerImg) {
+        headerImg.innerHTML = `<div class="w-full h-full bg-green-100 flex items-center justify-center">${escapedName.charAt(0)}</div>`;
+    }
+    
+    if (typeof window.getUserData === 'function') {
+        window.getUserData(uid).then(u => {
+            if(u && u.profile_pic && headerImg) {
+                headerImg.innerHTML = `<img src="${u.profile_pic}" loading="lazy" class="w-full h-full object-cover">`;
+            }
+        }).catch(err => console.warn("User data fetch issue:", err));
+    }
 
-    history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
-    window.loadMessages(uid);
-    window.listenToTyping(uid);
+    try {
+        history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
+    } catch(e) {}
     
-    const chatId = window.getChatId(window.currentUser.uid, uid);
-    update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 });
+    if (typeof window.loadMessages === 'function') window.loadMessages(uid);
+    if (typeof window.listenToTyping === 'function') window.listenToTyping(uid);
+    
+    if (window.currentUser && window.db) {
+        const chatId = window.getChatId(window.currentUser.uid, uid);
+        update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 }).catch(o => {});
+    }
 };
 
 window.closeChat = () => {
