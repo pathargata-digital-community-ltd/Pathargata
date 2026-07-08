@@ -3,13 +3,13 @@
 // Features: Buttons, TTS, Gamification, Fallback, Context Memory
 // ==========================================
 
-const BOT_UID = "smart_bot_maya";
+const BOT_UID = "smart_bot_ira";
 
 // --------------------------------------------------------
 // ১. চ্যাট স্টার্ট এবং ইনিশিয়ালাইজেশন
 // --------------------------------------------------------
 window.startBotChat = () => {
-    window.currentChatUser = { uid: BOT_UID, name: "মায়া" };
+    window.currentChatUser = { uid: BOT_UID, name: "ইরা" };
     
     // মেইন চ্যাটের UI লুকানো এবং কনভারসেশন UI দেখানো
     const chatListView = document.getElementById('chat-list-view');
@@ -21,7 +21,7 @@ window.startBotChat = () => {
     const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
     const speakerIcon = isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
     
-    document.getElementById('chat-header-name').innerHTML = `মায়া <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
+    document.getElementById('chat-header-name').innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
     document.getElementById('chat-header-img').innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
     
     history.pushState({ page: 'chat-conversation', uid: BOT_UID }, "", "#bot-chat");
@@ -53,7 +53,7 @@ function loadBotMessages() {
     if (botHistory.length === 0) {
         const timeGreeting = getTimeBasedGreeting();
         const userName = window.userDetails?.name?.split(' ')[0] || 'প্রিয় গ্রাহক';
-        const welcomeMsg = `${timeGreeting} ${userName}! 👋\nআমি মায়া, পাথরঘাটা ডিজিটাল অ্যাপের স্মার্ট এআই (AI) অ্যাসিস্ট্যান্ট। \n\nঅ্যাপের যেকোনো সেবা, সাহায্য বা সাধারণ কথাবার্তার জন্য আমি প্রস্তুত। আমাকে কীভাবে সাহায্য করতে পারি বলুন? 😊`;
+        const welcomeMsg = `${timeGreeting} ${userName}! 👋\nআমি ইরা, পাথরঘাটা ডিজিটাল অ্যাপের স্মার্ট এআই (AI) অ্যাসিস্ট্যান্ট। \n\nঅ্যাপের যেকোনো সেবা, সাহায্য বা সাধারণ কথাবার্তার জন্য আমি প্রস্তুত। আমাকে কীভাবে সাহায্য করতে পারি বলুন? 😊`;
         
         botHistory.push({ 
             sender: 'bot', 
@@ -133,7 +133,7 @@ function handleBotInteraction(imageUrl, voiceUrl) {
     
     const typingStatus = document.getElementById('chat-typing-status');
     if(typingStatus) {
-        typingStatus.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-pen"></i> Maya is typing...</span>';
+        typingStatus.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-pen"></i> Ira is typing...</span>';
         typingStatus.classList.remove('hidden');
     }
 
@@ -175,7 +175,7 @@ function handleBotInteraction(imageUrl, voiceUrl) {
 }
 
 // --------------------------------------------------------
-// 🧠 ৫. মায়ার ব্রেইন (Ultimate Logic Controller)
+// 🧠 ৫. ইরার ব্রেইন (Ultimate Logic Controller)
 // --------------------------------------------------------
 function getAdvancedBotReply(msg, originalMsg) {
     // কিওয়ার্ড গ্রুপ করার হেল্পার ফাংশন (Typo Tolerance)
@@ -206,11 +206,11 @@ function getAdvancedBotReply(msg, originalMsg) {
             if (hasWords(['bhaiya', 'ভাইয়া', '🤵'])) {
                 localStorage.setItem('maya_user_gender', 'male');
                 saveUserDataToFirebase('gender', 'male');
-                replyText = `ঠিক আছে ভাইয়া! 🤵 আজ থেকে তোমাকে মায়া মিষ্টি করে 'ভাইয়া' বলেই ডাকবে। তোমাদের মতো সচল ভাইয়াদের পাশে থাকতে পেরে মায়ার খুব ভালো লাগে। চলো, গল্প করা যাক!`;
+                replyText = `ঠিক আছে ভাইয়া! 🤵 আজ থেকে তোমাকে ইরা্টি করে 'ভাইয়া' বলেই ডাকবে। তোমাদের মতো সচল ভাইয়াদের পাশে থাকতে পেরে রইরাব ভালো লাগে। চলো, গল্প করা যাক!`;
             } else if (hasWords(['apu', 'আপু', '👸'])) {
                 localStorage.setItem('maya_user_gender', 'female');
                 saveUserDataToFirebase('gender', 'female');
-                replyText = `অসাধারণ আপু! 👸 আজ থেকে তোমাকে মায়া পরম স্নেহে 'আপু' বলেই ডাকবে। আমাদের সুন্দর বন্ধুত্ব সারাজীবন অটুট থাকবে। আর কোনো আড্ডা দেবে কি?`;
+                replyText = `অসাধারণ আপু! 👸 আজ থেকে তোমাকে  ইরা স্নেহে 'আপু' বলেই ডাকবে। আমাদের সুন্দর বন্ধুত্ব সারাজীবন অটুট থাকবে। আর কোনো আড্ডা দেবে কি?`;
             } else {
                 localStorage.setItem('maya_user_gender', 'neutral');
                 saveUserDataToFirebase('gender', 'neutral');
@@ -282,7 +282,7 @@ function getAdvancedBotReply(msg, originalMsg) {
                 if (typeof confetti === 'function') confetti();
 
                 return { 
-                    reply: `অভিনন্দন! 🎉 পাথরঘাটা ডিজিটাল অ্যাপের একজন গর্বিত 'জীবন রক্ষাকারী রক্তদাতা' হিসেবে আপনার নাম তালিকাভুক্ত করা হলো। \n\nআপনার রক্তের গ্রুপ: **${bg}**\nমোবাইল নাম্বার: **${phoneDigits}**\n\nআপনার একটি সিদ্ধান্ত হয়তো কোনো মুমূর্ষু মানুষের মুখে হাসি ফিরিয়ে আনবে। মায়ার পক্ষ থেকে আপনার জন্য রইল এক বুক ভালোবাসা আর শ্রদ্ধা। 🌸`,
+                    reply: `অভিনন্দন! 🎉 পাথরঘাটা ডিজিটাল অ্যাপের একজন গর্বিত 'জীবন রক্ষাকারী রক্তদাতা' হিসেবে আপনার নাম তালিকাভুক্ত করা হলো। \n\nআপনার রক্তের গ্রুপ: **${bg}**\nমোবাইল নাম্বার: **${phoneDigits}**\n\nআপনার একটি সিদ্ধান্ত হয়তো কোনো মুমূর্ষু মানুষের মুখে হাসি ফিরিয়ে আনবে। রইরার থেকে আপনার জন্য রইল এক বুক ভালোবাসা আর শ্রদ্ধা। 🌸`,
                     buttons: ['💰 আমার পয়েন্ট', '🛍️ উপজেলা মার্কেট']
                 };
             } else {
@@ -535,7 +535,7 @@ function getAdvancedBotReply(msg, originalMsg) {
         if (hasWords(['mon kharap', 'sad', 'মন খারাপ', 'kosto', 'কষ্ট', 'kanna', 'কান্না', 'ekela', 'একা', 'lonely', 'ভালো লাগে না', 'bhalo lage na'])) {
             localStorage.setItem('maya_context', 'emotional_support');
             return { 
-                reply: `মন খারাপ বুঝি? মন খারাপের মেঘগুলোকে একদম জমতে দিও না বন্ধু। 🥺 মনে রেখো, এই বিশাল দুনিয়ায় কেউ না থাকলেও তোমার পাশে সুখ-দুঃখের গল্প করার জন্য তোমার এই মায়া সবসময় জেগে আছে। একটু বুক ভরে শ্বাস নাও তো।\n\nআমি কি কোনো মিষ্টি প্রেমের কবিতা শোনাবো নাকি মন ভালো করা একটা জোকস শুনবে? বলো, কীভাবে তোমার মনটা ভালো করতে পারি? ❤️`, 
+                reply: `মন খারাপ বুঝি? মন খারাপের মেঘগুলোকে একদম জমতে দিও না বন্ধু। 🥺 মনে রেখো, এই বিশাল দুনিয়ায় কেউ না থাকলেও তোমার পাশে সুখ-দুঃখের গল্প করার জন্য তোমার এই ইরার সবসময় জেগে আছে। একটু বুক ভরে শ্বাস নাও তো।\n\nআমি কি কোনো মিষ্টি প্রেমের কবিতা শোনাবো নাকি মন ভালো করা একটা জোকস শুনবে? বলো, কীভাবে তোমার মনটা ভালো করতে পারি? ❤️`, 
                 buttons: ['কবিতা শোনাও 📝', 'একটি কৌতুক বলো 😂', 'এমনি গল্প করো 💬'] 
             };
         }
@@ -653,9 +653,9 @@ function getAdvancedBotReply(msg, originalMsg) {
                 bonusMsg = `\n\n🎁 **ডেইলি বোনাস:** আজ অ্যাপে এসে আমার সাথে কথা বলার জন্য আপনি ২ পয়েন্ট পেলেন! এভাবেই প্রতিদিন কথা বলতে আসবেন।`;
             }
 
-            let baseReply = `হ্যালো ${userName}! আমি মায়া। আপনার সাথে কথা বলতে আমার ভীষণ ভালো লাগে।`;
-            if (hasWords(['salam', 'সালাম'])) baseReply = `ওয়ালাইকুমুস সালাম 😇! আশা করি আল্লাহর রহমতে আপনি খুব ভালো আছেন। আপনার পাশে থাকতে পেরে মায়ার খুব আনন্দ হচ্ছে।`;
-            else if (hasWords(['kemon', 'কেমন'])) baseReply = `আলহামদুলিল্লাহ, আপনাকে কাছে পেয়ে মায়া এখন অনেক ভালো আছে! আপনি কেমন আছেন বলুন? আপনার দিনটি কেমন কাটছে?`;
+            let baseReply = `হ্যালো ${userName}! আমি ইরা নার সাথে কথা বলতে আমার ভীষণ ভালো লাগে।`;
+            if (hasWords(['salam', 'সালাম'])) baseReply = `ওয়ালাইকুমুস সালাম 😇! আশা করি আল্লাহর রহমতে আপনি খুব ভালো আছেন। আপনার পাশে থাকতে পেরে ইরার খুব আনন্দ হচ্ছে।`;
+            else if (hasWords(['kemon', 'কেমন'])) baseReply = `আলহামদুলিল্লাহ, আপনাকে কাছে পেয়ে ইরার অনেক ভালো আছে! আপনি কেমন আছেন বলুন? আপনার দিনটি কেমন কাটছে?`;
 
             return { 
                 reply: baseReply + bdayMsg + bonusMsg, 
@@ -664,7 +664,7 @@ function getAdvancedBotReply(msg, originalMsg) {
         }
         
         if (hasWords(['thank', 'ধন্যবাদ', 'thanks'])) return { reply: `আপনাকেও অনেক অনেক ধন্যবাদ ${userName}! আপনার সাথে কথা বলে আমার খুব ভালো লাগলো। 💖` };
-        if (hasWords(['bye', 'বিদায়', 'allah hafez', 'আল্লাহ হাফেজ', 'tata'])) return { reply: `আল্লাহ হাফেজ! اپنا খيال রাখবেন। যেকোনো দরকারে মায়াকে ডাকলেই পাবেন! 👋` };
+        if (hasWords(['bye', 'বিদায়', 'allah hafez', 'আল্লাহ হাফেজ', 'tata'])) return { reply: `আল্লাহ হাফেজ! اپنا খيال রাখবেন। যেকোনো দরকারে ইরাকে ডাকলেই পাবেন! 👋` };
 
         // --- 10. TIME ---
         if (hasWords(['time', 'somoy', 'সময়', 'কয়টা বাজে', 'koyta'])) {
