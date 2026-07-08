@@ -11,50 +11,52 @@ const BOT_UID = "smart_bot_ira";
 window.startBotChat = () => {
     window.currentChatUser = { uid: BOT_UID, name: "ইরা" };
     
-    if (typeof window.switchPage === 'function') {
-        try { window.switchPage('messages'); } catch(e) { console.warn(e); }
-    }
-    
-    // রাউটিং সম্পন্ন হওয়ার জন্য সামান্য সময় বিরতি দেওয়া হচ্ছে
-    setTimeout(() => {
+    const proceedBotChat = () => {
+        if (typeof window.switchPage === 'function') {
+            try { window.switchPage('messages'); } catch(e) { console.warn(e); }
+        }
+        
         const chatListView = document.getElementById('chat-list-view');
         const chatConvView = document.getElementById('chat-conversation-view');
         if(chatListView) chatListView.classList.add('hidden', 'hidden-custom');
         if(chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
-    }, 50);
-    
-    // হেডার পরিবর্তন (Maya Design - Green Theme & Voice Mute Switch)
-    const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
-    const speakerIcon = isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
-    
-    const hName = document.getElementById('chat-header-name');
-    const hImg = document.getElementById('chat-header-img');
-    
-    if (hName) {
-        hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
-    }
-    if (hImg) {
-        hImg.innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
-    }
-    
-    history.pushState({ page: 'chat-conversation', uid: BOT_UID }, "", "#bot-chat");
-    
-    // মেইন সেন্ড মেসেজ ওভাররাইড করা
-    if (!window.originalSendMsgBackup) {
-        window.originalSendMsgBackup = window.sendMsg; 
-    }
-    window.sendMsg = (imageUrl = null, voiceUrl = null) => {
-        if (window.currentChatUser && window.currentChatUser.uid === BOT_UID) {
-            handleBotInteraction(imageUrl, voiceUrl);
-        } else {
-            if(typeof window.originalSendMsgBackup === 'function') window.originalSendMsgBackup(imageUrl, voiceUrl);
+        
+        const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
+        const speakerIcon = isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
+        
+        const hName = document.getElementById('chat-header-name');
+        const hImg = document.getElementById('chat-header-img');
+        
+        if (hName) {
+            hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
         }
+        if (hImg) {
+            hImg.innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
+        }
+        
+        history.pushState({ page: 'chat-conversation', uid: BOT_UID }, "", "#bot-chat");
+        
+        if (!window.originalSendMsgBackup) {
+            window.originalSendMsgBackup = window.sendMsg; 
+        }
+        window.sendMsg = (imageUrl = null, voiceUrl = null) => {
+            if (window.currentChatUser && window.currentChatUser.uid === BOT_UID) {
+                handleBotInteraction(imageUrl, voiceUrl);
+            } else {
+                if(typeof window.originalSendMsgBackup === 'function') window.originalSendMsgBackup(imageUrl, voiceUrl);
+            }
+        };
+
+        localStorage.removeItem('maya_context');
+        localStorage.setItem('maya_fail_count', '0');
+        loadBotMessages();
     };
 
-    // বটের মেমোরি রিসেট করা
-    localStorage.removeItem('maya_context');
-    localStorage.setItem('maya_fail_count', '0'); // ফলব্যাক কাউন্টার রিসেট
-    loadBotMessages();
+    if (typeof window.loadMessagesUI === 'function') {
+        window.loadMessagesUI().then(proceedBotChat).catch(proceedBotChat);
+    } else {
+        proceedBotChat();
+    }
 };
 
 // --------------------------------------------------------
@@ -831,4 +833,4 @@ function getRandomUniqueItem(arr, key) {
     return chosen.item;
 }
 
-console.log("🌸 Maya AI (v3.0 Ultimate + Buttons & Voice) Loaded Successfully!");
+console.log("🌸 Ira AI (v3.0 Ultimate + Buttons & Voice) Loaded Successfully!");
