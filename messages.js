@@ -34,50 +34,57 @@ let showArchived = false;
 
 window.startChat = (uid, name) => {
     window.currentChatUser = { uid, name };
-    
-    if (typeof window.switchPage === 'function') {
-        try { window.switchPage('messages'); } catch(e) { console.warn(e); }
-    }
-    
-    // রাউটিং ট্রানজিশন শেষ হওয়ার জন্য সামান্য বিরতি দিয়ে ক্লাস পরিবর্তন করা হচ্ছে
-    setTimeout(() => {
+
+    const proceedStartChat = () => {
+        if (typeof window.switchPage === 'function') {
+            try { window.switchPage('messages'); } catch(e) { console.warn(e); }
+        }
+        
+        // ডম স্ট্রাকচার এখন সম্পূর্ণ নিশ্চিত, তাই কোনো ডিলে ছাড়াই এলিমেন্ট পাওয়া যাবে
         const chatListView = document.getElementById('chat-list-view');
         const chatConvView = document.getElementById('chat-conversation-view');
         
         if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
         if (chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
-    }, 50);
-    
-    const escapedName = typeof window.escapeHTML === 'function' ? window.escapeHTML(name) : name;
-    
-    const headerName = document.getElementById('chat-header-name');
-    if (headerName) headerName.innerText = escapedName;
-    
-    const headerImg = document.getElementById('chat-header-img');
-    if (headerImg) {
-        headerImg.innerHTML = `<div class="w-full h-full bg-green-100 flex items-center justify-center">${escapedName.charAt(0)}</div>`;
-    }
-    
-    if (typeof window.getUserData === 'function') {
-        window.getUserData(uid).then(u => {
-            if(u && u.profile_pic && headerImg) {
-                headerImg.innerHTML = `<img src="${u.profile_pic}" loading="lazy" class="w-full h-full object-cover">`;
-            }
-        }).catch(err => console.warn("User data fetch issue:", err));
-    }
-
-    try {
-        history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
-    } catch(e) {}
-    
-    if (window.currentUser) {
-        if (typeof window.loadMessages === 'function') window.loadMessages(uid);
-        if (typeof window.listenToTyping === 'function') window.listenToTyping(uid);
         
-        if (window.db) {
-            const chatId = window.getChatId(window.currentUser.uid, uid);
-            update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 }).catch(o => {});
+        const escapedName = typeof window.escapeHTML === 'function' ? window.escapeHTML(name) : name;
+        
+        const headerName = document.getElementById('chat-header-name');
+        if (headerName) headerName.innerText = escapedName;
+        
+        const headerImg = document.getElementById('chat-header-img');
+        if (headerImg) {
+            headerImg.innerHTML = `<div class="w-full h-full bg-green-100 flex items-center justify-center">${escapedName.charAt(0)}</div>`;
         }
+        
+        if (typeof window.getUserData === 'function') {
+            window.getUserData(uid).then(u => {
+                if(u && u.profile_pic && headerImg) {
+                    headerImg.innerHTML = `<img src="${u.profile_pic}" loading="lazy" class="w-full h-full object-cover">`;
+                }
+            }).catch(err => console.warn("User data fetch issue:", err));
+        }
+
+        try {
+            history.pushState({ page: 'chat-conversation', uid }, "", "#chat");
+        } catch(e) {}
+        
+        if (window.currentUser) {
+            if (typeof window.loadMessages === 'function') window.loadMessages(uid);
+            if (typeof window.listenToTyping === 'function') window.listenToTyping(uid);
+            
+            if (window.db) {
+                const chatId = window.getChatId(window.currentUser.uid, uid);
+                update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 }).catch(o => {});
+            }
+        }
+    };
+
+    // লোডিং অ্যাসিঙ্ক হ্যান্ডলার
+    if (typeof window.loadMessagesUI === 'function') {
+        window.loadMessagesUI().then(proceedStartChat).catch(proceedStartChat);
+    } else {
+        proceedStartChat();
     }
 };
 
