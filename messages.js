@@ -15,31 +15,12 @@ if (typeof window.escapeHTML !== 'function') {
     };
 }
 
-// Map HTML button to Bot (Fixed to merge safely with HTML's lazy loader)
-const originalInitAndStartBot = window.initAndStartBot;
+// Map HTML button to Maya Bot
 window.initAndStartBot = () => {
     if (typeof window.startBotChat === 'function') {
         window.startBotChat();
-    } else if (typeof originalInitAndStartBot === 'function') {
-        originalInitAndStartBot();
     } else {
-        const script = document.createElement('script');
-        script.src = 'bot.js';
-        script.id = 'ai-bot-script';
-        script.onload = () => {
-            if (typeof window.startBotChat === 'function') window.startBotChat();
-        };
-        document.body.appendChild(script);
-    }
-};
-
-// গ্লোবালি নিরাপদ উপায়ে ডাটাবেস লিসেনার বন্ধ করার ফাংশন (যাতে bot.js ফাইলে মডিউল কনফ্লিক্ট না হয়)
-window.safeTurnOffChatListener = () => {
-    if (window.currentChatListenerRef) {
-        try {
-            off(window.currentChatListenerRef);
-        } catch(e) { console.warn(e); }
-        window.currentChatListenerRef = null;
+        console.warn("startBotChat helper not loaded yet.");
     }
 };
 
@@ -52,16 +33,6 @@ let replyMessageData = null;
 let showArchived = false;
 
 window.startChat = (uid, name) => {
-    // বটের চ্যাট রিকোয়েস্ট আলাদা করে বটের মূল ফাংশনে ডাইভার্ট করা হলো
-    if (uid === "smart_bot_ira") {
-        if (typeof window.startBotChat === 'function') {
-            window.startBotChat();
-        } else {
-            window.initAndStartBot();
-        }
-        return;
-    }
-
     window.currentChatUser = { uid, name };
 
     const proceedStartChat = () => {
@@ -102,7 +73,6 @@ window.startChat = (uid, name) => {
             if (typeof window.listenToTyping === 'function') window.listenToTyping(uid);
             
             if (window.db) {
-                const chatId = window.getChatId(window.currentUser.uid, uid);
                 update(ref(window.db, `user_chats/${window.currentUser.uid}/${uid}`), { unread: 0 }).catch(o => {});
             }
         }
@@ -122,11 +92,6 @@ window.closeChat = () => {
     if (chatListView) chatListView.classList.remove('hidden', 'hidden-custom');
     if (chatConvView) chatConvView.classList.add('hidden', 'hidden-custom');
     
-    // বটের চ্যাট সেশন থেকে বের হওয়ার সময় সাধারণ সেন্ড ফাংশন পুনরুদ্ধার
-    if (window.originalSendMsgBackup) {
-        window.sendMsg = window.originalSendMsgBackup;
-    }
-
     window.currentChatUser = null;
     cancelReply();
     
@@ -139,8 +104,10 @@ window.closeChat = () => {
         set(ref(window.db, `chats_typing/${window.currentUser.uid}`), false);
     }
     
-    if (window.currentChatListenerRef) {
-        window.safeTurnOffChatListener();
+    // Unsubscribe active chat listener
+    if (window.unsubscribeChatListener) {
+        window.unsubscribeChatListener();
+        window.unsubscribeChatListener = null;
     }
 };
 
@@ -197,7 +164,7 @@ window.toggleArchivedChats = () => {
     if (window.currentUser) window.loadChatList(window.currentUser.uid);
 };
 
-// --- চ্যাট ডাটা ক্যাশিং সিস্টেম ---
+// --- DATA CACHE AND LISTENERS ---
 let chatListCache = {};
 let archivedUidsCache = null;
 let isChatListenerAttached = false;
@@ -242,11 +209,22 @@ async function renderChatListUI() {
 
         const promises = Object.entries(chatListCache).map(async ([peerUid, info]) => {
             const userData = await window.getUserData(peerUid);
-            return { peerUid, info, profilePic: userData?.profile_pic };
+            return { 
+                peerUid, 
+                info, 
+                profilePic: userData?.profile_pic || null,
+                displayName: userData?.name || info.name || "User"
+            };
         });
 
         let chatItems = await Promise.all(promises);
-        chatItems.sort((a, b) => b.info.timestamp - a.info.timestamp);
+        
+        // সর্টিং: সর্বশেষ মেসেজ আদান-প্রদান করা চ্যাটটি একদম উপরে থাকবে
+        chatItems.sort((a, b) => {
+            const timeA = a.info.timestamp || 0;
+            const timeB = b.info.timestamp || 0;
+            return timeB - timeA;
+        });
         
         if(showArchived) {
             chatItems = chatItems.filter(item => archivedUidsCache[item.peerUid]);
@@ -259,7 +237,7 @@ async function renderChatListUI() {
             return;
         }
 
-        container.innerHTML = chatItems.map(({ peerUid, info, profilePic }) => {
+        container.innerHTML = chatItems.map(({ peerUid, info, profilePic, displayName }) => {
             let rawLastMsg = info.lastMessage || "";
             let displayMsg = rawLastMsg;
             let isMe = false;
@@ -282,26 +260,26 @@ async function renderChatListUI() {
             const isUnread = info.unread > 0 && !isMe;
             const textStyle = isUnread ? 'font-extrabold text-green-600' : 'font-normal text-gray-500';
             const nameStyle = isUnread ? 'font-extrabold text-black' : 'font-semibold text-gray-800';
-            const bgStyle = isUnread ? 'bg-green-50/40' : 'bg-white';
+            const bgStyle = isUnread ? 'bg-green-50/60 border-l-4 border-l-green-500' : 'bg-white';
             const timeColor = isUnread ? 'text-green-600 font-bold' : 'text-gray-400';
 
             let av = profilePic ?
                 `<img src="${profilePic}" loading="lazy" class="w-12 h-12 rounded-full shrink-0 object-cover border border-gray-200">` :
-                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(info.name).charAt(0)}</div>`;
+                `<div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 text-xl shrink-0">${window.escapeHTML(displayName).charAt(0)}</div>`;
 
             return `
             <div id="chat-item-${peerUid}" class="chat-list-item p-4 border-b ${bgStyle} hover:bg-gray-50 cursor-pointer flex items-center gap-3 select-none" 
-                 onclick="startChat('${peerUid}', '${window.escapeHTML(info.name)}')"
-                 oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(info.name)}', ${isUnread}); return false;">
+                 onclick="startChat('${peerUid}', '${window.escapeHTML(displayName)}')"
+                 oncontextmenu="openChatListOptions(event, '${peerUid}', '${window.escapeHTML(displayName)}', ${isUnread}); return false;">
                 ${av}
                 <div class="flex-1 min-w-0 pointer-events-none">
                     <div class="flex justify-between items-center mb-0.5">
-                        <h4 class="${nameStyle} text-base truncate pr-2">${window.escapeHTML(info.name)}</h4>
+                        <h4 class="${nameStyle} text-base truncate pr-2">${window.escapeHTML(displayName)}</h4>
                         <span class="text-[10px] ${timeColor} shrink-0 whitespace-nowrap">${window.timeAgo(info.timestamp)}</span>
                     </div>
                     <p class="text-sm ${textStyle} truncate block">${window.escapeHTML(displayMsg)}</p>
                 </div>
-                ${isUnread ? '<div class="w-3 h-3 bg-green-600 rounded-full shrink-0 shadow-sm"></div>' : ''}
+                ${isUnread ? '<div class="w-3.5 h-3.5 bg-green-600 rounded-full shrink-0 shadow-sm animate-pulse"></div>' : ''}
             </div>`;
         }).join('');
         
@@ -497,19 +475,9 @@ window.resetAudio = (msgId) => {
 
 
 // --- LOAD MESSAGES ---
-window.currentChatListenerRef = null;
+window.unsubscribeChatListener = null;
 
 window.loadMessages = (otherUid) => {
-    if (otherUid === "smart_bot_ira") {
-        if (typeof window.safeTurnOffChatListener === 'function') {
-            window.safeTurnOffChatListener();
-        }
-        if (typeof loadBotMessages === 'function') {
-            loadBotMessages();
-        }
-        return;
-    }
-
     if (!window.currentUser) {
         console.warn("User state not verified.");
         return;
@@ -519,18 +487,22 @@ window.loadMessages = (otherUid) => {
     if (!div) return;
     div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
     
-    if (window.currentChatListenerRef) {
-        window.safeTurnOffChatListener();
+    // Unsubscribe previous listeners to prevent performance lags and duplicate loads
+    if (window.unsubscribeChatListener) {
+        window.unsubscribeChatListener();
     }
     
-    window.currentChatListenerRef = query(ref(window.db, `chats/${chatId}`), limitToLast(50));
+    const chatQuery = query(ref(window.db, `chats/${chatId}`), limitToLast(50));
     
-    onValue(window.currentChatListenerRef, (snap) => {
-        if (window.currentChatUser && window.currentChatUser.uid === "smart_bot_ira") return;
-
+    window.unsubscribeChatListener = onValue(chatQuery, (snap) => {
         const msgs = snap.val() || {};
+        
+        // Auto-clear unread counter if we are actively viewing this chat window
+        if (window.currentChatUser && window.currentChatUser.uid === otherUid) {
+            update(ref(window.db, `user_chats/${window.currentUser.uid}/${otherUid}`), { unread: 0 }).catch(() => {});
+        }
+
         if (Object.keys(msgs).length > 0) {
-            
             let html = "";
             let lastDateStr = "";
 
@@ -914,7 +886,17 @@ window.handleChatImageSelect = () => {
 };
 
 window.sendMsg = (imageUrl = null, voiceUrl = null) => {
-    if (!window.currentChatUser || !window.currentUser) return;
+    if (!window.currentUser || !window.currentChatUser) return;
+
+    // ১. ইউজার যদি ইরা (বট) চ্যাটে থাকে, তবে বটের ইন্টারঅ্যাকশনে ডাইরেক্ট রাউট হবে
+    if (window.currentChatUser.uid === "smart_bot_ira") {
+        if (typeof window.handleBotInteraction === 'function') {
+            window.handleBotInteraction(imageUrl, voiceUrl);
+        }
+        return;
+    }
+
+    // ২. সাধারণ চ্যাট হলে নিচের রেগুলার লজিকটি কাজ করবে
     const input = document.getElementById('msg-input');
     if (!input) return;
     const text = input.value.trim();
