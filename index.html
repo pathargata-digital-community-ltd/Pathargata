@@ -1692,8 +1692,10 @@
             <div onclick="switchPage('services')" class="nav-btn w-1/5 text-center cursor-pointer py-1" id="btn-services"><i class="fa-solid fa-layer-group mb-1"></i>
                 <p>সেবা</p>
             </div>
-            <div onclick="switchPage('messages')" class="nav-btn w-1/5 text-center cursor-pointer py-1" id="btn-messages"><i class="fa-solid fa-comments mb-1"></i>
+            <div onclick="switchPage('messages')" class="nav-btn w-1/5 text-center cursor-pointer py-1 relative" id="btn-messages">
+                <i class="fa-solid fa-comments mb-1"></i>
                 <p>মেসেজ</p>
+                <span id="nav-badge-messages" class="nav-badge">0</span>
             </div>
             <div onclick="switchPage('people')" class="nav-btn w-1/5 text-center cursor-pointer py-1" id="btn-people"><i class="fa-solid fa-users mb-1"></i>
                 <p>মানুষ</p><span id="nav-badge-people" class="nav-badge">0</span>
@@ -2415,6 +2417,8 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
                     globalDirectory = snap.val() || {};
                 });
                 listenForFriendRequests(user.uid);
+                listenForUnreadMessages(user.uid); // নতুন আনরিড মেসেজ লিসেনার চালু করা হলো
+                
                 // সেফটি চেক: ফাংশনগুলো এক্সটার্নাল ফাইল থেকে লোড হলেই কেবল কল হবে
                 if (typeof window.listenForNotificationBadge === 'function') window.listenForNotificationBadge(user.uid);
                 if (typeof window.listenForInAppPopups === 'function') window.listenForInAppPopups(user.uid); 
@@ -3621,6 +3625,31 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
         function listenForFriendRequests(uid) {
             onValue(ref(db, `friend_requests/${uid}`), updatePeopleTab);
         }
+
+        // রিয়েল-টাইম আনরিড মেসেজ কাউন্টার এবং লাল ডট আপডেট লজিক
+        function listenForUnreadMessages(uid) {
+            onValue(ref(db, `user_chats/${uid}`), (snapshot) => {
+                let totalUnread = 0;
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const chatInfo = child.val();
+                        if (chatInfo && chatInfo.unread) {
+                            totalUnread += parseInt(chatInfo.unread) || 0;
+                        }
+                    });
+                }
+                
+                const badge = document.getElementById('nav-badge-messages');
+                if (badge) {
+                    if (totalUnread > 0) {
+                        badge.innerText = totalUnread > 99 ? '99+' : totalUnread;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+        }
         
         window.acceptRequest = (fromUid) => update(ref(db), {
             [`users/${window.currentUser.uid}/friends/${fromUid}`]: true,
@@ -4428,7 +4457,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
 
             // 50ms ডিলে দেওয়া হলো যাতে স্পিনারটি আগে স্ক্রিনে ভিজিবল হয়, তারপর পেজ ক্লিয়ার হয়
             setTimeout(() => {
-                // --- DOM Bloat Fix (মেমোরি ক্লিয়ার করা) ---
+                // --- DOM Bloat Fix (মেমোরি ক্লিয়ার করা - সংশোধিত) ---
                 const activeNavBtn = document.querySelector('.nav-btn.nav-active');
                 if (activeNavBtn) {
                     const prevPage = activeNavBtn.id.replace('btn-', '');
@@ -4441,10 +4470,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                                 feed.innerHTML = '';
                             }
                         }
-                        if (prevPage === 'messages') {
-                            const msgPage = document.getElementById('page-messages');
-                            if (msgPage) msgPage.innerHTML = ''; 
-                        }
+                        // নোট: মেসেজ পেজের HTML স্ট্রাকচার ডিলিট করা বন্ধ করা হলো যাতে ২য় বার প্রবেশের সময় ক্র্যাশ না করে।
                     }
                 }
 
@@ -4508,11 +4534,23 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 } else if (id === 'messages' && window.currentUser) {
                     loadMessagesUI().then(() => {
                         import('./messages.js').then(() => {
-                            if (typeof window.loadChatList === 'function') window.loadChatList(window.currentUser.uid);
-                            if (typeof window.loadQuickChatFriends === 'function') window.loadQuickChatFriends();
+                            if (typeof window.loadChatList === 'function') {
+                                window.loadChatList(window.currentUser.uid);
+                            }
+                            if (typeof window.loadQuickChatFriends === 'function') {
+                                window.loadQuickChatFriends();
+                            }
                             hideLoader();
-                        }).catch(e => { console.error("Error importing messages.js", e); hideLoader(); });
-                    }).catch(e => { console.error("Error loading Messages UI structure", e); hideLoader(); });
+                        }).catch(e => { 
+                            console.error("Error importing messages.js", e); 
+                            showToast("মেসেজ স্ক্রিপ্ট লোড হতে সমস্যা হয়েছে", "error");
+                            hideLoader(); 
+                        });
+                    }).catch(e => { 
+                        console.error("Error loading Messages UI structure", e); 
+                        showToast("মেসেজ লেআউট লোড করা যায়নি", "error");
+                        hideLoader(); 
+                    });
                 } else if (id === 'market') {
                     import('./market.js').then(() => hideLoader()).catch(e => { hideLoader(); });
                 } else if (id === 'blood') {
