@@ -33,6 +33,16 @@ window.initAndStartBot = () => {
     }
 };
 
+// গ্লোবালি নিরাপদ উপায়ে ডাটাবেস লিসেনার বন্ধ করার ফাংশন (যাতে bot.js ফাইলে মডিউল কনফ্লিক্ট না হয়)
+window.safeTurnOffChatListener = () => {
+    if (window.currentChatListenerRef) {
+        try {
+            off(window.currentChatListenerRef);
+        } catch(e) { console.warn(e); }
+        window.currentChatListenerRef = null;
+    }
+};
+
 // --- CHAT HELPER FUNCTIONS ---
 window.getChatId = function(uid1, uid2) {
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
@@ -130,8 +140,7 @@ window.closeChat = () => {
     }
     
     if (window.currentChatListenerRef) {
-        off(window.currentChatListenerRef);
-        window.currentChatListenerRef = null;
+        window.safeTurnOffChatListener();
     }
 };
 
@@ -491,11 +500,9 @@ window.resetAudio = (msgId) => {
 window.currentChatListenerRef = null;
 
 window.loadMessages = (otherUid) => {
-    // যদি বটের চ্যাট উইন্ডো ওপেন করতে বলা হয়
     if (otherUid === "smart_bot_ira") {
-        if (window.currentChatListenerRef) {
-            try { off(window.currentChatListenerRef); } catch(e) {}
-            window.currentChatListenerRef = null;
+        if (typeof window.safeTurnOffChatListener === 'function') {
+            window.safeTurnOffChatListener();
         }
         if (typeof loadBotMessages === 'function') {
             loadBotMessages();
@@ -513,13 +520,12 @@ window.loadMessages = (otherUid) => {
     div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
     
     if (window.currentChatListenerRef) {
-        off(window.currentChatListenerRef);
+        window.safeTurnOffChatListener();
     }
     
     window.currentChatListenerRef = query(ref(window.db, `chats/${chatId}`), limitToLast(50));
     
     onValue(window.currentChatListenerRef, (snap) => {
-        // সেফটি চেক: যদি ইতিমধ্যে চ্যাট উইন্ডো পরিবর্তন হয়ে যায়
         if (window.currentChatUser && window.currentChatUser.uid === "smart_bot_ira") return;
 
         const msgs = snap.val() || {};
