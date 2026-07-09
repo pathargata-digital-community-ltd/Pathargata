@@ -11,13 +11,9 @@ const BOT_UID = "smart_bot_ira";
 window.startBotChat = () => {
     window.currentChatUser = { uid: BOT_UID, name: "ইরা" };
     
-    // পূর্ববর্তী কোনো বন্ধুদের চ্যাটের ডাটাবেস লিসেনার সচল থাকলে তা বন্ধ করুন
-    if (window.currentChatListenerRef) {
-        try {
-            const { off } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-            off(window.currentChatListenerRef);
-        } catch(e) { console.warn(e); }
-        window.currentChatListenerRef = null;
+    // messages.js থেকে লিসেনার বন্ধ করার নিরাপদ ফাংশনটি কল করা হচ্ছে
+    if (typeof window.safeTurnOffChatListener === 'function') {
+        window.safeTurnOffChatListener();
     }
 
     const proceedBotChat = () => {
@@ -37,7 +33,7 @@ window.startBotChat = () => {
         const hImg = document.getElementById('chat-header-img');
         
         if (hName) {
-            hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
+            hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়ার্স মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
         }
         if (hImg) {
             hImg.innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
@@ -239,7 +235,7 @@ function getAdvancedBotReply(msg, originalMsg) {
                 localStorage.setItem('maya_context', 'donor_reg_blood_group');
                 return { 
                     reply: `আপনার এই সুন্দর মনটা দেখে সত্যি খুব ভালো লাগলো! ❤️ রক্ত দিয়ে কারো জীবন বাঁচানোর সিদ্ধান্ত নেওয়া তো চাট্টিখানি কথা নয়।\n\nচলুন, ঝটপট রেজিস্ট্রেশনটা সেরে ফেলি। প্রথমে বলুন তো, আপনার **রক্তের গ্রুপ** কোনটি?`,
-                    buttons: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'বাতিল করুন']
+                    buttons: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']
                 };
             } else if (hasWords(['na', 'না', 'no', 'pore', 'পরে', 'not now'])) {
                 localStorage.removeItem('maya_context');
@@ -328,7 +324,7 @@ function getAdvancedBotReply(msg, originalMsg) {
             if (hasWords(['valo', 'ভালো', 'katse', 'কাটছে', 'shundor', 'সুন্দর', 'alhamdulillah', 'আলহামদুলিল্লাহ'])) {
                 return { reply: `শুনে খুব ভালো লাগলো! আপনার দিনটি আরও সুন্দর হোক। 🌸\n\nআপনার কি এখন কোনো সাহায্য লাগবে? নাকি কুইজ খেলতে চান?`, buttons: ['পাথরঘাটা কুইজ', 'উপজেলা মার্কেট'] };
             }
-            return { reply: `ওহ! আশা করি দিনটি খুব দ্রুত ভালো হয়ে যাবে। মন ভালো করতে চাইলে আমি কি একটা কৌতুক শোনাবো? 😇`, buttons: ['হ্যাঁ, কৌতুক শোনাও', 'ধাঁধা'] };
+            return { reply: `오হ! আশা করি দিনটি খুব দ্রুত ভালো হয়ে যাবে। মন ভালো করতে চাইলে আমি কি একটা কৌতুক শোনাবো? 😇`, buttons: ['হ্যাঁ, কৌতুক শোনাও', 'ধাঁধা'] };
         }
 
         if (currentContext === 'ask_hobby') {
@@ -341,7 +337,7 @@ function getAdvancedBotReply(msg, originalMsg) {
             localStorage.removeItem('maya_context');
             if (hasWords(['pukur', 'পুকুর'])) {
                 if (typeof window.addRewardPoints === 'function') window.addRewardPoints(5); 
-                return { reply: `🎉 একদম সঠিক উত্তর! পুকুর কাটলেই বড় হয়। আপনার ব্রেন তো খুব শার্প!\n\n🎁 **উপহার:** সঠিক উত্তরের জন্য আপনার একাউন্টে ৫ পয়েন্ট যোগ করা হয়েছে!`, buttons: ['আরেকটি ধাঁধা', 'আমার পয়েন্ট'] };
+                return { reply: `🎉 একদম সঠিক উত্তর! পুকুর কাটলেই বড় হয়।\n\n🎁 **উপহার:** সঠিক উত্তরের জন্য আপনার একাউন্টে ৫ পয়েন্ট যোগ করা হয়েছে!`, buttons: ['আরেকটি ধাঁধা', 'আমার পয়েন্ট'] };
             }
             return { reply: `ইশশ! একটু ভুল হয়ে গেল। সঠিক উত্তরটি হবে "পুকুর" (পুকুর কাটলে বড় হয়)। কোনো ব্যাপার না, আবার চেষ্টা করতে চাইলে 'ধাঁধা' লিখুন। 😉`, buttons: ['ধাঁধা'] };
         }
@@ -352,7 +348,7 @@ function getAdvancedBotReply(msg, originalMsg) {
                 if (typeof window.addRewardPoints === 'function') window.addRewardPoints(5);
                 return { reply: `🎉 কংগ্রাচুলেশনস! সঠিক উত্তর! মাথা খারাপ হলেই মানুষ সেটা অন্যের ঘাড়ে চাপাতে চায়। \n\n🎁 **উপহার:** ৫ পয়েন্ট! 😎`, buttons: ['পয়েন্ট চেক করুন'] };
             }
-            return { reply: `হলো না! উত্তরটা হতো "মাথা" (মাথা খারাপ হলেই মানুষ অন্যের ঘাড়ে চাপায়)। মজাই লাগলো, তাই না? 😂` };
+            return { reply: `হলো না! উত্তরটা হতো "মাথা" (মাথা খারাপ হলেই মানুষ অন্যের ঘাড়ে চাপায়)।` };
         }
 
         if (currentContext === 'ask_ptg_quiz_1') {
@@ -386,7 +382,7 @@ function getAdvancedBotReply(msg, originalMsg) {
             return { reply: `🔐 **পাসওয়ার্ড পরিবর্তন গাইড:**\nপাসওয়ার্ড ভুলে গেলে লগইন পেজের "পাসওয়ার্ড ভুলে গেছেন?" অপশনে ক্লিক করে আপনার ইমেইল দিন। সেখানে একটি রিসেট লিংক পাঠানো হবে।` };
         }
         if (hasWords(['number change', 'নাম্বার চেঞ্জ', 'email change', 'ইমেইল পরিবর্তন'])) {
-            return { reply: `📱 **정보 পরিবর্তন:**\nআপনি অ্যাপের 'প্রোফাইল' > 'একাউন্ট ডিটেইলস' থেকে আপনার মোবাইল নাম্বার ও ইমেইল পরিবর্তন করতে পারবেন।` };
+            return { reply: `📱 **তথ্য পরিবর্তন:**\nআপনি অ্যাপের 'প্রোফাইল' > 'একাউন্ট ডিটেইলস' থেকে আপনার মোবাইল নাম্বার ও ইমেইল পরিবর্তন করতে পারবেন।` };
         }
 
         if (currentContext === 'creating_ticket') {
