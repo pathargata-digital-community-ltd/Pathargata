@@ -15,12 +15,21 @@ if (typeof window.escapeHTML !== 'function') {
     };
 }
 
-// Map HTML button to Maya Bot
+// Map HTML button to Bot (Fixed to merge safely with HTML's lazy loader)
+const originalInitAndStartBot = window.initAndStartBot;
 window.initAndStartBot = () => {
     if (typeof window.startBotChat === 'function') {
         window.startBotChat();
+    } else if (typeof originalInitAndStartBot === 'function') {
+        originalInitAndStartBot();
     } else {
-        console.warn("startBotChat helper not loaded yet.");
+        const script = document.createElement('script');
+        script.src = 'bot.js';
+        script.id = 'ai-bot-script';
+        script.onload = () => {
+            if (typeof window.startBotChat === 'function') window.startBotChat();
+        };
+        document.body.appendChild(script);
     }
 };
 
@@ -33,6 +42,16 @@ let replyMessageData = null;
 let showArchived = false;
 
 window.startChat = (uid, name) => {
+    // বটের চ্যাট রিকোয়েস্ট আলাদা করে বটের মূল ফাংশনে ডাইভার্ট করা হলো
+    if (uid === "smart_bot_ira") {
+        if (typeof window.startBotChat === 'function') {
+            window.startBotChat();
+        } else {
+            window.initAndStartBot();
+        }
+        return;
+    }
+
     window.currentChatUser = { uid, name };
 
     const proceedStartChat = () => {
@@ -40,7 +59,6 @@ window.startChat = (uid, name) => {
             try { window.switchPage('messages'); } catch(e) { console.warn(e); }
         }
         
-        // ডম স্ট্রাকচার এখন সম্পূর্ণ নিশ্চিত, তাই কোনো ডিলে ছাড়াই এলিমেন্ট পাওয়া যাবে
         const chatListView = document.getElementById('chat-list-view');
         const chatConvView = document.getElementById('chat-conversation-view');
         
@@ -80,7 +98,6 @@ window.startChat = (uid, name) => {
         }
     };
 
-    // লোডিং অ্যাসিঙ্ক হ্যান্ডলার
     if (typeof window.loadMessagesUI === 'function') {
         window.loadMessagesUI().then(proceedStartChat).catch(proceedStartChat);
     } else {
@@ -95,6 +112,11 @@ window.closeChat = () => {
     if (chatListView) chatListView.classList.remove('hidden', 'hidden-custom');
     if (chatConvView) chatConvView.classList.add('hidden', 'hidden-custom');
     
+    // বটের চ্যাট সেশন থেকে বের হওয়ার সময় সাধারণ সেন্ড ফাংশন পুনরুদ্ধার
+    if (window.originalSendMsgBackup) {
+        window.sendMsg = window.originalSendMsgBackup;
+    }
+
     window.currentChatUser = null;
     cancelReply();
     
@@ -166,23 +188,21 @@ window.toggleArchivedChats = () => {
     if (window.currentUser) window.loadChatList(window.currentUser.uid);
 };
 
-// ⭐️ ডেটা ক্যাশ এবং লিসেনার ভেরিয়েবল যাতে বারবার লোড না হয়
+// --- চ্যাট ডাটা ক্যাশিং সিস্টেম ---
 let chatListCache = {};
 let archivedUidsCache = null;
 let isChatListenerAttached = false;
 
 window.loadChatList = async (uid) => {
     const container = document.getElementById('chat-list-container');
-    if (!container) return; // এলিমেন্ট না থাকলে লোড করা বন্ধ করবে
+    if (!container) return;
     
-    // ক্যাশে ডেটা থাকলে দ্রুত দেখিয়ে দেওয়া হবে (Loading স্ক্রিন এড়াতে)
     if (Object.keys(chatListCache).length > 0) {
         renderChatListUI();
     } else if (!isChatListenerAttached) {
         container.innerHTML = '<p class="text-center text-gray-400 mt-10 text-sm">লোড হচ্ছে...</p>';
     }
 
-    // লিসেনার আগে থেকেই যুক্ত থাকলে আর নতুন করে কল করা হবে না
     if (isChatListenerAttached) {
         renderChatListUI();
         return;
@@ -190,13 +210,11 @@ window.loadChatList = async (uid) => {
     
     isChatListenerAttached = true;
 
-    // আর্কাইভ চ্যাটের রিয়েল-টাইম লিসেনার
     onValue(ref(window.db, `user_archived_chats/${uid}`), (archSnap) => {
         archivedUidsCache = archSnap.val() || {};
         renderChatListUI();
     });
 
-    // ইউজার চ্যাটের রিয়েল-টাইম লিসেনার
     onValue(ref(window.db, `user_chats/${uid}`), (snap) => {
         chatListCache = snap.val() || {};
         renderChatListUI();
@@ -219,8 +237,6 @@ async function renderChatListUI() {
         });
 
         let chatItems = await Promise.all(promises);
-        
-        // ⭐️ সর্বশেষ মেসেজটা একদম উপরে দেখাবে
         chatItems.sort((a, b) => b.info.timestamp - a.info.timestamp);
         
         if(showArchived) {
@@ -239,7 +255,6 @@ async function renderChatListUI() {
             let displayMsg = rawLastMsg;
             let isMe = false;
 
-            // ⭐️ আপডেট: শুধু নিজে পাঠালেই "You: " লেখাটি থাকবে
             if (rawLastMsg.startsWith("You: ")) {
                 isMe = true;
                 rawLastMsg = rawLastMsg.substring(5).trim();
@@ -255,7 +270,6 @@ async function renderChatListUI() {
                 displayMsg = (isMe ? "You: " : "") + decrypted;
             }
             
-            // ⭐️ আপডেট: আনসিন হলে লেখা "সবুজ" এবং হাইলাইট হবে
             const isUnread = info.unread > 0 && !isMe;
             const textStyle = isUnread ? 'font-extrabold text-green-600' : 'font-normal text-gray-500';
             const nameStyle = isUnread ? 'font-extrabold text-black' : 'font-semibold text-gray-800';
@@ -282,7 +296,6 @@ async function renderChatListUI() {
             </div>`;
         }).join('');
         
-        // Add Touch Long Press Logic for Mobile
         document.querySelectorAll('.chat-list-item').forEach(el => {
             let timer;
             el.addEventListener('touchstart', (e) => {
@@ -291,7 +304,7 @@ async function renderChatListUI() {
                 const isUnread = el.querySelector('.bg-green-600') !== null;
                 timer = setTimeout(() => {
                     openChatListOptions(e, uid, name, isUnread);
-                }, 600); // 600ms long press
+                }, 600);
             });
             el.addEventListener('touchend', () => clearTimeout(timer));
             el.addEventListener('touchmove', () => clearTimeout(timer));
@@ -478,6 +491,18 @@ window.resetAudio = (msgId) => {
 window.currentChatListenerRef = null;
 
 window.loadMessages = (otherUid) => {
+    // যদি বটের চ্যাট উইন্ডো ওপেন করতে বলা হয়
+    if (otherUid === "smart_bot_ira") {
+        if (window.currentChatListenerRef) {
+            try { off(window.currentChatListenerRef); } catch(e) {}
+            window.currentChatListenerRef = null;
+        }
+        if (typeof loadBotMessages === 'function') {
+            loadBotMessages();
+        }
+        return;
+    }
+
     if (!window.currentUser) {
         console.warn("User state not verified.");
         return;
@@ -487,7 +512,6 @@ window.loadMessages = (otherUid) => {
     if (!div) return;
     div.innerHTML = '<p class="text-center text-xs text-gray-400 mt-4">লোড হচ্ছে...</p>';
     
-    // ⭐️ বারবার চ্যাটে ঢুকলে যাতে মেমরি লিক বা লেটেন্সি না হয় তার জন্য পুরোনো লিসেনার রিমুভ
     if (window.currentChatListenerRef) {
         off(window.currentChatListenerRef);
     }
@@ -495,6 +519,9 @@ window.loadMessages = (otherUid) => {
     window.currentChatListenerRef = query(ref(window.db, `chats/${chatId}`), limitToLast(50));
     
     onValue(window.currentChatListenerRef, (snap) => {
+        // সেফটি চেক: যদি ইতিমধ্যে চ্যাট উইন্ডো পরিবর্তন হয়ে যায়
+        if (window.currentChatUser && window.currentChatUser.uid === "smart_bot_ira") return;
+
         const msgs = snap.val() || {};
         if (Object.keys(msgs).length > 0) {
             
