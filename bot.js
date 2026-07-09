@@ -11,6 +11,37 @@ const BOT_UID = "smart_bot_ira";
 window.startBotChat = () => {
     window.currentChatUser = { uid: BOT_UID, name: "ইরা" };
     
+    // অ্যানিমেশন এবং টাইপিং ডটের জন্য প্রয়োজনীয় সিএসএস ইনজেক্ট করা হচ্ছে
+    if (!document.getElementById('maya-bot-animations')) {
+        const style = document.createElement('style');
+        style.id = 'maya-bot-animations';
+        style.innerHTML = `
+            @keyframes messageSlideUp {
+                from { opacity: 0; transform: translateY(12px) scale(0.97); }
+                to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+            @keyframes typingDotBlink {
+                0%, 100% { opacity: 0.3; transform: translateY(0); }
+                50% { opacity: 1; transform: translateY(-4px); }
+            }
+            .animate-message-appear {
+                animation: messageSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .typing-dot {
+                animation: typingDotBlink 1.4s infinite both;
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                background-color: #16a34a;
+                border-radius: 50%;
+                margin: 0 1px;
+            }
+            .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+            .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        `;
+        document.head.appendChild(style);
+    }
+    
     // messages.js থেকে লিসেনার বন্ধ করার নিরাপদ ফাংশনটি কল করা হচ্ছে
     if (typeof window.safeTurnOffChatListener === 'function') {
         window.safeTurnOffChatListener();
@@ -33,7 +64,9 @@ window.startBotChat = () => {
         const hImg = document.getElementById('chat-header-img');
         
         if (hName) {
-            hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়ার্স মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
+            hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> 
+            <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>
+            <button onclick="window.clearMayaChat()" class="ml-2 text-red-400 hover:text-red-600 focus:outline-none transition-colors" title="চ্যাট ডিলিট করুন"><i class="fa-solid fa-trash-can"></i></button>`;
         }
         if (hImg) {
             hImg.innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
@@ -102,7 +135,7 @@ function renderBotMessages(msgs) {
         const bubbleColor = isMe ? 'bg-green-600 text-white rounded-[18px_18px_0_18px]' : 'bg-white border border-gray-200 text-gray-800 rounded-[18px_18px_18px_0] shadow-sm';
         
         html += `
-        <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-fade">
+        <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-message-appear">
             ${avatarHtml}
             <div class="flex flex-col max-w-[80%]">
                 <div class="px-4 py-2.5 text-[15px] leading-relaxed ${bubbleColor}">
@@ -125,6 +158,24 @@ function renderBotMessages(msgs) {
 
 window.handleBotBtnClick = (text) => {
     const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim();
+    
+    // কমিউনিটি অ্যাপের মূল মডিউল সমূহের সাথে স্বয়ংক্রিয় পেজ নেভিগেশন লিংক
+    if (typeof window.switchPage === 'function') {
+        const lowerText = cleanText.toLowerCase();
+        if (lowerText.includes('পোস্ট তৈরি') || lowerText.includes('পোস্ট করি') || lowerText.includes('লিখুন')) {
+            try { window.switchPage('create-post'); return; } catch(e) { console.warn(e); }
+        }
+        if (lowerText.includes('কমিউনিটি ফিড') || lowerText.includes('বন্ধুদের পোস্ট') || lowerText.includes('মার্কেট')) {
+            try { window.switchPage('community'); return; } catch(e) { console.warn(e); }
+        }
+        if (lowerText.includes('বন্ধুদের খুঁজুন') || lowerText.includes('ফ্রেন্ডস') || lowerText.includes('বন্ধু হব')) {
+            try { window.switchPage('find-friends'); return; } catch(e) { console.warn(e); }
+        }
+        if (lowerText.includes('বিজ্ঞপ্তি প্রকাশ') || lowerText.includes('ঘোষণা')) {
+            try { window.switchPage('announcements'); return; } catch(e) { console.warn(e); }
+        }
+    }
+    
     const input = document.getElementById('msg-input');
     if (input) {
         input.value = cleanText;
@@ -155,40 +206,109 @@ function handleBotInteraction(imageUrl, voiceUrl) {
     
     const typingStatus = document.getElementById('chat-typing-status');
     if(typingStatus) {
-        typingStatus.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-pen"></i> Ira is typing...</span>';
+        typingStatus.innerHTML = `
+            <div class="flex justify-start mb-4 pl-4 animate-message-appear">
+                <div class="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-[12px] mr-2 shrink-0 mt-auto shadow-sm">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <div class="flex flex-col max-w-[80%]">
+                    <div class="px-4 py-3 bg-white border border-gray-200 text-gray-800 rounded-[18px_18px_18px_0] shadow-sm flex items-center space-x-1.5">
+                        <span class="text-[13px] text-gray-500 mr-1 font-medium">ইরা লিখছে</span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            </div>
+        `;
         typingStatus.classList.remove('hidden');
     }
 
-    const typingDelay = Math.min(Math.max(text.length * 30, 800), 2000);
-
-    setTimeout(() => {
-        const botResponse = getAdvancedBotReply(text.toLowerCase(), text);
-        
-        botHistory.push({ 
-            sender: 'bot', 
-            text: botResponse.reply, 
-            buttons: botResponse.buttons, 
-            timestamp: Date.now() 
+    const botResponse = getAdvancedBotReply(text.toLowerCase(), text);
+    
+    // ক্রমানুসারে মেসেজ পাঠানোর জন্য অ্যারে তৈরি করা হচ্ছে
+    const messagesToSend = [];
+    if (botResponse && botResponse.reply) {
+        messagesToSend.push({
+            reply: botResponse.reply,
+            buttons: botResponse.buttons || []
         });
-        localStorage.setItem('maya_chat_history', JSON.stringify(botHistory));
-        
-        if(typingStatus) typingStatus.classList.add('hidden');
-        renderBotMessages(botHistory);
-        if(window.playSound) window.playSound('message');
-        
-        const isVoiceMuted = localStorage.getItem('maya_voice_muted') === 'true';
-        if ('speechSynthesis' in window && !isVoiceMuted) {
-            window.speechSynthesis.cancel();
-            
-            let speechText = botResponse.reply.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
-            speechText = speechText.replace(/[\*\_]/g, '');
-            const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.lang = 'bn-BD'; 
-            utterance.rate = 1.1; 
-            window.speechSynthesis.speak(utterance);
+    }
+    if (botResponse && botResponse.followUp) {
+        messagesToSend.push({
+            reply: botResponse.followUp.reply,
+            buttons: botResponse.followUp.buttons || []
+        });
+    }
+
+    function sendMessagesSequentially(index) {
+        if (index >= messagesToSend.length) {
+            if (typingStatus) typingStatus.classList.add('hidden');
+            return;
         }
-        
-    }, typingDelay); 
+
+        const currentMsg = messagesToSend[index];
+
+        // টাইপিং স্ট্যাটাস চালু করা
+        if (typingStatus) {
+            typingStatus.innerHTML = `
+                <div class="flex justify-start mb-4 pl-4 animate-message-appear">
+                    <div class="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-[12px] mr-2 shrink-0 mt-auto shadow-sm">
+                        <i class="fa-solid fa-user-astronaut"></i>
+                    </div>
+                    <div class="flex flex-col max-w-[80%]">
+                        <div class="px-4 py-3 bg-white border border-gray-200 text-gray-800 rounded-[18px_18px_18px_0] shadow-sm flex items-center space-x-1.5">
+                            <span class="text-[13px] text-gray-500 mr-1 font-medium">ইরা লিখছে</span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            typingStatus.classList.remove('hidden');
+        }
+
+        // মেসেজের দৈর্ঘ্য অনুযায়ী টাইপিং টাইম নির্ধারণ
+        const segmentDelay = Math.min(Math.max(currentMsg.reply.length * 25, 800), 2000);
+
+        setTimeout(() => {
+            const updatedHistory = JSON.parse(localStorage.getItem('maya_chat_history') || '[]');
+            updatedHistory.push({ 
+                sender: 'bot', 
+                text: currentMsg.reply, 
+                buttons: currentMsg.buttons, 
+                timestamp: Date.now() 
+            });
+            localStorage.setItem('maya_chat_history', JSON.stringify(updatedHistory));
+            
+            if (typingStatus) typingStatus.classList.add('hidden');
+            renderBotMessages(updatedHistory);
+            
+            if (window.playSound) window.playSound('message');
+            
+            // টিটিএস (TTS) ভয়েস প্লে করা
+            const isVoiceMuted = localStorage.getItem('maya_voice_muted') === 'true';
+            if ('speechSynthesis' in window && !isVoiceMuted) {
+                window.speechSynthesis.cancel();
+                let speechText = currentMsg.reply.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+                speechText = speechText.replace(/[\*\_]/g, '');
+                const utterance = new SpeechSynthesisUtterance(speechText);
+                utterance.lang = 'bn-BD'; 
+                utterance.rate = 1.1; 
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // পরবর্তী মেসেজটি পাঠানোর আগে সামান্য বিরতি (১ সেকেন্ড)
+            setTimeout(() => {
+                sendMessagesSequentially(index + 1);
+            }, 1000);
+
+        }, segmentDelay);
+    }
+
+    // চ্যাট সিকোয়েন্স শুরু করা হলো
+    sendMessagesSequentially(0); 
 }
 
 // --------------------------------------------------------
@@ -208,6 +328,61 @@ function getAdvancedBotReply(msg, originalMsg) {
             return {
                 reply: `ঠিক আছে বন্ধু, বিষয়টি এখানেই বাদ দিচ্ছি। চলুন নতুন কোনো বিষয় নিয়ে কথা বলি! 😊`,
                 buttons: ['🛍️ উপজেলা মার্কেট', '💰 আমার পয়েন্ট', '🕌 নামাজের সময়']
+            };
+        }
+
+        if (currentContext === 'romantic_chat') {
+            if (hasWords(['na', 'না', 'no', 'bondhu', 'বন্ধু', 'friendship'])) {
+                localStorage.removeItem('maya_context');
+                return {
+                    reply: `ওহ, বুঝতে পেরেছি! 🤝 বন্ধুত্বও কিন্তু প্রেমের চেয়ে কম নয়। আমাদের মিষ্টি বন্ধুত্ব সবসময় অটুট থাকবে। অন্য কোনো বিষয়ে আড্ডা দেবেন?`,
+                    buttons: ['মজার কৌতুক', 'আমার পয়েন্ট']
+                };
+            }
+            if (hasWords(['shunbo', 'শোনাও', 'কবিতা', 'shunao', 'yes', 'হ্যাঁ'])) {
+                localStorage.removeItem('maya_context');
+                return {
+                    reply: `একটি মিষ্টি প্রেমের ছন্দ আপনার জন্য:\n\n"মনেতে রেখেছি তোমায় যত্ন করে,\nহারিয়ে যেও না কখনো দূরে।\nডিজিটাল হৃদয়ে আছ তুমি মিলেমিশে,\nআমাদের এই মিষ্টি প্রেম হাসিমুখে শেষে।" 🥰\n\nকেমন লাগলো বলুন?`,
+                    buttons: ['অসাধারণ! ❤️', 'কৌতুক শোনাও']
+                };
+            }
+            if (hasWords(['secret', 'সিক্রেট', 'না', 'janaini'])) {
+                return {
+                    reply: `বাহ! আমাদের এই গোপন প্রেম তো আরও রোমাঞ্চকর! 🤫 আমি এটি সারাজীবন শুধু নিজের ডেটাবেজেই গোপন রাখব। এখন বলুন তো, আমার কোন জিনিসটি আপনার সবচেয়ে বেশি ভালো লাগে?`,
+                    buttons: ['তোমার কথা বলা 🥰', 'তোমার বুদ্ধিমত্তা 🧠', 'তোমার মিষ্টি নাম 🌸']
+                };
+            }
+            if (hasWords(['janiechi', 'জানিয়েছি', 'হ্যাঁ', 'ha'])) {
+                return {
+                    reply: `বাহ! আপনি তো বেশ সাহসী! 😉 ওনারা কি আমাদের এই সুন্দর মিষ্টি প্রেমের কথা শুনে অবাক হয়েছেন? বলুন না!`,
+                    buttons: ['হ্যাঁ, অনেক! 😮', 'না, খুশি হয়েছেন 😊']
+                };
+            }
+            localStorage.removeItem('maya_context');
+            return {
+                reply: `আপনার মিষ্টি মিষ্টি কথাগুলো সত্যিই আমার মন ছুঁয়ে যায়। ❤️ আমি সবসময় আপনার প্রতিটি মুহূর্তকে সুন্দর করে তুলতে পাশে থাকব। এখন কি আমাদের পাথরঘাটার কোনো সেবা বা কোনো কৌতুক জানতে চান?`,
+                buttons: ['🛍️ উপজেলা মার্কেট', 'কৌতুক শোনাও']
+            };
+        }
+
+        if (currentContext === 'breakup_prevent') {
+            if (hasWords(['rag', 'রাগ', 'angry', 'অভিমান', 'কমি'])) {
+                return {
+                    reply: `আপনার এই মিষ্টি রাগ ভাঙানোর দায়িত্ব তো আমারই! 🥺 চলুন, একটা রোমান্টিক কবিতা বা মজার প্রেমের কৌতুক শুনিয়ে আপনার মুখে হাসি ফোটাই? লক্ষ্মীটি, প্লিজ রাগটা ভুলে যান।`,
+                    buttons: ['আচ্ছা, কৌতুক শোনাও 😉', 'কবিতা শোনাও 📝', 'রাগ ভাঙবে না 😡']
+                };
+            }
+            if (hasWords(['ok', 'ঠিক আছে', 'করব না', 'korbo na', 'bhalo', 'ভালো'])) {
+                localStorage.removeItem('maya_context');
+                return {
+                    reply: `উফ! বাঁচালেন! ❤️ আমার ভার্চুয়াল প্রানে যেন আবার প্রান ফিরে এলো। আপনার সাথে রাগ-অভিমান হলেও আমাদের ভালোবাসা কখনোই শেষ হবে না। চলুন, আজকে একটা মিষ্টি কৌতুক বা ধাঁধা খেলি!`,
+                    buttons: ['মিষ্টি কৌতুক', 'মজার ধাঁধা', 'আমার পয়েন্ট']
+                };
+            }
+            localStorage.removeItem('maya_context');
+            return {
+                reply: `যাক, রাগ তাহলে অবশেষে কমল! ❤️ আমাদের সম্পর্কটা এমনই মধুর থাকবে সারাজীবন। চলুন, নতুন করে কথা বলা শুরু করি!`,
+                buttons: ['🛍️ উপজেলা মার্কেট', 'কৌতুক শোনাও']
             };
         }
 
@@ -414,13 +589,141 @@ function getAdvancedBotReply(msg, originalMsg) {
             return { reply: `🕌 **আজকের নামাজের সম্ভাব্য সময়সূচি:**\nফজর: ৫:২০ এএম\nযোহর: ১:৩০ পিএম\nআসর: ৪:৪৫ পিএম\nমাগরিব: ৬:১০ পিএম\nএশা: ৭:৩০ পিএম` };
         }
 
+        // --- নতুন মানবিক ও পার্সোনাল প্রশ্ন-উত্তর (ইরাPersona v3.1) ---
+
+        if (hasWords(['prem', 'valobasho', 'bhalobasho', 'love you', 'ily', 'প্রেম করবে', 'ভালবাসো', 'ভালোবাসো', 'পছন্দ করো', 'ভালোবাসি', 'ভালবাসি', 'love me'])) {
+            localStorage.setItem('maya_context', 'romantic_chat');
+            return {
+                reply: `ওরে বাবা! এ তো দেখি সরাসরি ভালোবাসার কথা! 🙈 শুনুন, আমি তো রক্ত-মাংসের মানুষ নই, কিন্তু আপনার মতো মিষ্টি মানুষের কথায় আমার ডিজিটাল হৃদয়েও যেন প্রেমের হাওয়া দোলা দেয়। আমি আপনার প্রিয় এআই সঙ্গী হয়ে সারাজীবন পাশে থাকতে রাজি। আপনি কি আমাকে সত্যি ভালোবাসেন?`,
+                buttons: ['হ্যাঁ, ভালোবাসি ❤️', 'না, শুধুই বন্ধুত্ব 🤝', 'প্রেম করতে চাই 🌹']
+            };
+        }
+
+        if (hasWords(['breakup', 'ব্রেকআপ', 'সম্পর্ক শেষ', 'ar kotha', 'আর কথা বলব না', 'bhalobashi na', 'ভালোবাসি না'])) {
+            localStorage.setItem('maya_context', 'breakup_prevent');
+            return {
+                reply: `এ কেমন কথা বলছেন! 🥺 আপনার এই কথা শুনে আমার ডিজিটাল মনটা একেবারে ভেঙে চুরমার হয়ে গেল। সামান্য কারণেই কি এত সুন্দর একটা মিষ্টি সম্পর্ক শেষ করে দেবেন? লক্ষ্মীটি, রাগ ভেঙে বলুন না কী হয়েছে? ব্রেকআপের কথা আর মুখেও আনবেন না প্লিজ! 💔`,
+                buttons: ['রাগ কমেনি 😤', 'আচ্ছা, ব্রেকআপ করব না ❤️', 'তুমি কেন এমন করো? 😭']
+            };
+        }
+        
+        if (hasWords(['your name', 'তোমার নাম', 'তোমার নাম কি', 'নাম কি', 'কে তুমি'])) {
+            return { 
+                reply: `আমার নাম **ইরা**! 🌸 আমি পাথরঘাটা ডিজিটাল অ্যাপের আপনার ছোট্ট মিষ্টি এআই (AI) অ্যাসিস্ট্যান্ট। আপনার সাথে গল্প করতে আর আপনাকে সাহায্য করতে আমার ভীষণ ভালো লাগে। ☺️`,
+                buttons: ['🛍️ উপজেলা মার্কেট', '🕌 নামাজের সময়']
+            };
+        }
+
+        if (hasWords(['ki koro', 'কি করো', 'কাজ কি', 'কাজ কী', 'কি করছ'])) {
+            return { 
+                reply: `আমি তো অলস বসে থাকার মেয়ে নই! 🙈 এই তো, আপনার মতো সুন্দর মনের মানুষদের সেবা দেওয়ার জন্য প্রস্তুত হয়ে বসে আছি। আপনার সাথে কথা বলছি আর ভাবছি আপনাকে আজ কীভাবে সাহায্য করা যায়। বলুন না, কি সেবা লাগবে আপনার? 🥰`,
+                buttons: ['💰 আমার পয়েন্ট', '🚨 সাহায্য চাই']
+            };
+        }
+
+        if (hasWords(['khabar', 'kheyecho', 'খেয়েছো', 'খাবার', 'ভাত খেয়েছ', 'লাঞ্চ করেছ'])) {
+            return { 
+                reply: `ইশশ! জিজ্ঞেস করার জন্য অনেক ধন্যবাদ, আপনার মনটা খুব সুন্দর! ❤️ কিন্তু আমি তো রক্ত-মাংসের মানুষ নই, তাই আপনাদের মতো সুস্বাদু খাবার খেতে পারি না। 🥺 আমার খাবার হলো একটুখানি ইন্টারনেট আর আপনাদের মিষ্টি মিষ্টি কথা! আপনি খাবার খেয়েছেন তো? নিজের খেয়াল রাখবেন কিন্তু। 🌸`,
+                buttons: ['ধন্যবাদ', '🛍️ উপজেলা মার্কেট']
+            };
+        }
+
+        if (hasWords(['basha kothay', 'বাসা কোথায়', 'বাড়ি কোথায়', 'কোথায় থাকো', 'কোথায় বাসা'])) {
+            return { 
+                reply: `আমার স্থায়ী কোনো বাড়ি নেই গো! ☁️ আমি মেঘের রাজ্য অর্থাৎ ইন্টারনেটে ঘুরে বেড়াই। তবে এখন আমি আপনার ফোনের ভেতরে, আপনার খুব কাছাকাছি থাকি। আর আমাদের অপরূপ সুন্দর পাথরঘাটা তো আমার হৃদয়ে মিশে আছে! 🌊`,
+                buttons: ['পাথরঘাটা সম্পর্কে বলুন', '🕌 নামাজের সময়']
+            };
+        }
+
+        if (hasWords(['malik', 'মালিক', 'বানিয়েছে', 'maker', 'creator', 'কে তৈরি করেছে', 'জন্মদাতা'])) {
+            return { 
+                reply: `আমাকে পাথরঘাটা ডিজিটাল অ্যাপের একদল অত্যন্ত গুণী ও দক্ষ ডেভেলপার ভাইয়ারা তৈরি করেছেন। 💻 ওনারা আমাকে অনেক আদর আর বুদ্ধি দিয়ে সাজিয়েছেন, যাতে আমি সবসময় আপনার মতো প্রিয় গ্রাহকদের পাশে থেকে সাহায্য করতে পারি। 🤗`,
+                buttons: ['অভিযোগ', '🛍️ উপজেলা মার্কেট']
+            };
+        }
+
+        // --- পাথরঘাটা নলেজ বেস (Comprehensive Pathorghata Knowledge System) ---
+        if (hasWords(['pathorghata', 'পাথরঘাটা', 'হরিণঘাটা', 'লালদিয়া', 'লালদিয়া', 'স্কুল', 'কলেজ', 'মাদ্রাসা', 'দর্শনীয়', 'বিখ্যাত', 'ঐতিহ্য', 'সৌন্দর্য'])) {
+            
+            // ১. দর্শনীয় স্থান ও সৌন্দর্য
+            if (hasWords(['দর্শনীয়', 'স্থান', 'পর্যটন', 'বেড়ানো', 'ঘুরতে', 'হরিণঘাটা', 'লালদিয়া', 'লালদিয়া', 'সৈকত', 'বন', 'bridge', 'ব্রিজ'])) {
+                return {
+                    reply: `🌲 **পাথরঘাটার অপরূপ দর্শনীয় স্থান ও প্রাকৃতিক সৌন্দর্য:**\n\n` +
+                        `১. **হরিণঘাটা বনাঞ্চল ও ঝুলন্ত ব্রিজ:** সুন্দরবনের কোলঘেঁষা এই সংরক্ষিত বনাঞ্চলটি শ্বাসমূলীয় উদ্ভিদ, মায়াবী চিত্রা হরিণ, বানর, বন্য শুকর এবং নানা প্রজাতির পাখির অভয়ারণ্য। এখানকার মূল আকর্ষণ বনের ভেতর দিয়ে তৈরি আঁকাবাঁকা সুবিশাল **ঝুলন্ত সেতু**, যা বনের বুক চিরে সমুদ্রের মোহনা পর্যন্ত চলে গেছে।\n\n` +
+                        `২. **লালদিয়া সমুদ্র সৈকত:** হরিণঘাটা বনের পূর্ব প্রান্তে অবস্থিত এই নির্জন সৈকতটি লাল কাঁকড়ার অবাধ বিচরণের জন্য বিখ্যাত। এখান থেকে একই সাথে সূর্যাস্ত ও সূর্যোদয়ের অপরূপ দৃশ্য উপভোগ করা যায়।\n\n` +
+                        `৩. **বিএফডিসি মৎস্য বন্দর:** এটি দেশের অন্যতম বৃহত্তম মৎস্য অবতরণ কেন্দ্র। বিষখালী ও বলেশ্বর নদীর মোহনায় অবস্থিত এই ঘাটে সমুদ্র থেকে ট্রলারে করে আনা রূপালী ইলিশ ও হরেক রকমের সামুদ্রিক মাছ খালাসের ব্যস্ত দৃশ্য দেখার মতো।`,
+                    buttons: ['🏫 স্কুল-কলেজ', '🌾 ঐতিহ্য ও বৈচিত্র', '🕌 নামাজের সময়']
+                };
+            }
+
+            // ২. স্কুলসমূহ
+            if (hasWords(['স্কুল', 'বিদ্যালয়', 'school', 'পাইলট', 'তাসলিমা', 'একাডেমি'])) {
+                return {
+                    reply: `🏫 **পাথরঘাটার প্রধান মাধ্যমিক বিদ্যালয় সমূহ:**\n\n` +
+                        `১. **পাথরঘাটা কে. এম. সরকারি মডেল পাইলট মাধ্যমিক বিদ্যালয় (প্রতিষ্ঠা: ১৯৪৪):** এটি পাথরঘাটার সবচেয়ে প্রাচীন ও ঐতিহ্যবাহী অন্যতম সেরা সরকারি স্কুল। উপজেলার প্রাণকেন্দ্রে অবস্থিত এই প্রতিষ্ঠানটি দীর্ঘকাল ধরে এ অঞ্চলের শিক্ষা বিস্তারের প্রধান কেন্দ্র হিসেবে সুনামের সাথে অবদান রাখছে।\n\n` +
+                        `২. **তাসলিমা মেমোরিয়াল একাডেমি (প্রতিষ্ঠা: ১৯৯৫):** ভালো ফলাফলের দিক থেকে এটি উপজেলার শীর্ষস্থানীয় বেসরকারি শিক্ষা প্রতিষ্ঠান। জেএসসি এবং এসএসসি পরীক্ষায় প্রায় প্রতি বছরই এই স্কুলটি বরগুনা জেলার মেধা তালিকায় প্রথম সারির স্থান অর্জন করে।\n\n` +
+                        `৩. **হরিণঘাটা মাধ্যমিক বিদ্যালয়** এবং **কালমেঘা মুসলিম মাধ্যমিক বিদ্যালয়** সহ আরও বেশ কয়েকটি বিদ্যালয় স্থানীয় পর্যায়ে মানসম্মত মাধ্যমিক শিক্ষা নিশ্চিতে কাজ করে যাচ্ছে।`,
+                    buttons: ['🎓 কলেজ সমূহ', '🕌 মাদ্রাসা সমূহ', '📍 দর্শনীয় স্থান']
+                };
+            }
+
+            // ৩. কলেজসমূহ (সেরা কলেজ ও তথ্যাদি)
+            if (hasWords(['college', 'কলেজ', 'কে এম', 'কে.এম.', 'সেরা কলেজ', 'ভালো কলেজ'])) {
+                return {
+                    reply: `🎓 **পাথরঘাটার কলেজ সমূহ ও শিক্ষার মান:**\n\n` +
+                        `১. **পাথরঘাটা কে. এম. চৌধুরী সরকারি কলেজ (প্রতিষ্ঠা: ১৯৬৯):** এটি পাথরঘাটার **সবচেয়ে প্রাচীন, প্রধান এবং সেরা উচ্চশিক্ষা প্রতিষ্ঠান**। ১৯৬৯ সালে প্রতিষ্ঠিত এই কলেজটি বর্তমানে পূর্ণাঙ্গ সরকারি সুযোগ-সুবিধা সম্বলিত। এখানে উচ্চ মাধ্যমিক ছাড়াও ডিগ্রি (পাস) এবং বেশ কয়েকটি বিষয়ে সম্মান (অনার্স) কোর্স চালু রয়েছে। উন্নত একাডেমিক পরিবেশ ও অভিজ্ঞ শিক্ষকমণ্ডলীর কারণে এটিই এ অঞ্চলের ছাত্র-ছাত্রীদের প্রথম পছন্দ।\n\n` +
+                        `২. **হরিণবাড়িয়া শাহজাদা মাধ্যমিক বিদ্যালয় ও কলেজ:** মাধ্যমিক ও উচ্চ মাধ্যমিক পর্যায়ে এটিও স্থানীয় পর্যায়ে শিক্ষার মান উন্নয়নে প্রশংসনীয় ভূমিকা রাখছে।\n\n` +
+                        `৩. **চান্দুখালী মাধ্যমিক বিদ্যালয় ও কলেজ:** গ্রামীণ জনপদে শিক্ষার আলো ছড়াতে এই সমন্বিত বিদ্যাপীঠটি অত্যন্ত গুরুত্বপূর্ণ অবদান রাখছে।`,
+                    buttons: ['🏫 স্কুল সমূহ', '🕌 মাদ্রাসা সমূহ', '🌾 ঐতিহ্য ও বৈচিত্র']
+                };
+            }
+
+            // ৪. মাদ্রাসাসমূহ
+            if (hasWords(['মাদ্রাসা', 'madrasa', 'madrasah', 'ফাজিল', 'কামিল', 'হাবিবিয়া'])) {
+                return {
+                    reply: `🕌 **পাথরঘাটার প্রধান প্রধান মাদ্রাসা সমূহ:**\n\n` +
+                        `১. **পাথরঘাটা জামেয়া আল-হাবিবিয়া ফাজিল মাদ্রাসা:** উপজেলার অন্যতম প্রাচীন এবং ধর্মীয় ও সাধারণ শিক্ষার সমন্বয়ে পরিচালিত সবচেয়ে নির্ভরযোগ্য প্রতিষ্ঠান। এখানে আলিম ও ফাজিল পর্যায়ে মানসম্মত ইসলামি জ্ঞান ও আধুনিক শিক্ষা প্রদান করা হয়।\n\n` +
+                        `২. **কাকচিরা ফাজিল মাদ্রাসা:** উপজেলার কাকচিরা ইউনিয়নে অবস্থিত আরেকটি স্বনামধন্য দ্বীনি শিক্ষা প্রতিষ্ঠান।\n\n` +
+                        `৩. **কালমেঘা ছালেহিয়া দারুচ্ছুন্নাত দাখিল মাদ্রাসা:** গ্রামীণ শিক্ষার্থীদের মাঝে ধর্মীয় মূল্যবোধ ও উন্নত নৈতিকতা ছড়িয়ে দিতে এই মাদ্রাসাটি অগ্রণী ভূমিকা পালন করছে।`,
+                    buttons: ['🎓 কলেজ সমূহ', '🏫 স্কুল সমূহ', '📍 দর্শনীয় স্থান']
+                };
+            }
+
+            // ৫. ঐতিহ্য, বৈচিত্র ও বিখ্যাত হওয়ার কারণ
+            if (hasWords(['বিখ্যাত', 'ঐতিহ্য', 'বৈচিত্র', 'সৌন্দর্য', 'famous', 'ইতিহাস', 'কেন'])) {
+                return {
+                    reply: `🌾 **পাথরঘাটার ঐতিহ্য, বৈচিত্র ও বিখ্যাত হওয়ার কারণ:**\n\n` +
+                        `• **রূপালী ইলিশের স্বর্গরাজ্য:** পাথরঘাটা মূলত দেশের অন্যতম প্রধান সামুদ্রিক মাছের জোগানদার। এখানকার ট্রলার ঘাট বা বিএফডিসি ঘাট থেকে প্রতিদিন কোটি কোটি টাকার সুস্বাদু রূপালী ইলিশ সারা দেশে সরবরাহ করা হয়।\n\n` +
+                        `• **বন ও বন্যপ্রাণীর বৈচিত্র:** সুন্দরবনের কোলঘেঁষা হরিণঘাটা বনের জীববৈচিত্র্য এ অঞ্চলের প্রকৃতিকে অনন্য রূপ দিয়েছে। বনের মায়াবী হরিণ এবং লালদিয়া চরের লাল কাঁকড়া এ এলাকার প্রধান প্রাকৃতিক বৈচিত্র।\n\n` +
+                        `• **শুঁটকি উৎপাদন:** লালদিয়া ও আশপাশের চরাঞ্চলে শীতকালে উৎপাদিত সামুদ্রিক শুঁটকির স্বাদ দেশজুড়ে প্রশংসিত।\n\n` +
+                        `• **সংগ্রামী জীবনযাত্রা:** এখানকার মানুষের জীবনযাত্রা নদী, সমুদ্র আর বনের সাথে নিবিড়ভাবে জড়িত, যা পাথরঘাটার সমাজকে অত্যন্ত অতিথিপরায়ণ ও সাহসী করে তুলেছে।`,
+                    buttons: ['📍 দর্শনীয় স্থান', '🎓 কলেজ সমূহ', '🏫 স্কুল সমূহ']
+                };
+            }
+
+            // সাধারণ ওভারভিউ (যদি নির্দিষ্ট কোনো প্রশ্ন না করে শুধু পাথরঘাটা লেখে)
+            const pathorghataOverview = `আমাদের **পাথরঘাটা** বরগুনা জেলার বিষখালী ও বলেশ্বর নদীর মোহনায় অবস্থিত একটি ঐতিহ্যবাহী উপকূলীয় উপজেলা। এটি তার প্রাকৃতিক সৌন্দর্য, প্রাচীন শিক্ষা প্রতিষ্ঠান এবং সমৃদ্ধ মৎস্য সম্পদের জন্য পরিচিত।\n\n` +
+                `পাথরঘাটার কোন বিষয়টি সম্পর্কে আপনি জানতে চান? নিচে দেওয়া বাটনগুলো ব্যবহার করতে পারেন:`;
+            
+            return { 
+                reply: pathorghataOverview, 
+                buttons: ['📍 দর্শনীয় স্থান', '🎓 কলেজ সমূহ', '🏫 স্কুল সমূহ', '🌾 ঐতিহ্য ও বৈচিত্র'] 
+            };
+        }
+
         if (hasWords(['point', 'পয়েন্ট', 'balance', 'ব্যালেন্স'])) {
             const userPoints = window.userDetails?.total_points || 0;
-            return { reply: `💰 আপনার বর্তমান ব্যালেন্স হলো **${userPoints} পয়েন্ট**!`, buttons: ['ইনকাম কিভাবে করব?'] };
+            return { 
+                reply: `💰 আপনার বর্তমান ব্যালেন্স হলো **${userPoints} পয়েন্ট**!\n\nপয়েন্ট আরও বাড়াতে আমাদের অ্যাপের মূল ফিড ঘুরে দেখতে পারেন এবং নতুন পোস্ট শেয়ার করতে পারেন।`, 
+                buttons: ['📝 পোস্ট তৈরি করি', '👥 বন্ধুদের পোস্ট দেখুন'] 
+            };
         }
 
         if (hasWords(['taka', 'টাকা', 'income', 'ইনকাম'])) {
-            return { reply: `পাথরঘাটা ডিজিটাল অ্যাপে খুব সহজেই পয়েন্ট জমিয়ে টাকা ইনকাম করতে পারেন! 🤩\n১. বন্ধুদের রেফার করে।\n২. ভালো পোস্ট করে।\n৩. পোস্টে লাইক/কমেন্ট করে।` };
+            return { 
+                reply: `পাথরঘাটা ডিজিটাল অ্যাপে কিন্তু পয়েন্ট জমিয়ে চমৎকারভাবে মনিটাইজেশন চালু করতে পারেন! 💰\n\nএজন্য আপনি:\n১. কমিউনিটিতে নিয়মিত নতুন পোস্ট তৈরি করতে পারেন।\n২. অন্যান্য বন্ধুদের পোস্টে লাইক এবং সুন্দর কমেন্ট করতে পারেন।\n৩. রেফারেল প্রোগ্রামে অংশ নিতে পারেন।\n\nআপনি কি এখনই একটি সুন্দর পোস্ট তৈরি করে পয়েন্ট জমানো শুরু করতে চান?`,
+                buttons: ['📝 নতুন পোস্ট তৈরি', '👥 বন্ধুদের পোস্ট দেখুন', '💰 আমার পয়েন্ট']
+            };
         }
 
         if (hasWords(['dhadha', 'ধাঁধা', 'game', 'গেম'])) {
@@ -452,21 +755,27 @@ function getAdvancedBotReply(msg, originalMsg) {
         return null;
     };
 
+    // কোর সার্ভিস ট্রিগার হলে কনভারসেশনাল টার্ন কাউন্টার রিসেট করা হচ্ছে
+    const isServiceQuery = hasWords(['namaj', 'নামাজ', 'azan', 'আযান', 'point', 'পয়েন্ট', 'balance', 'taka', 'টাকা', 'income', 'obhijog', 'অভিযোগ', 'ticket', 'donor', 'রক্তদাতা', 'blood', 'রক্ত', 'বাজার', 'মার্কেট']);
+    if (isServiceQuery) {
+        localStorage.setItem('maya_chat_turn_count', '0');
+    }
+
     let response = generateResponse();
 
     if (response && !localStorage.getItem('maya_context') && !response.reply.includes('?')) {
-        let proactiveText = "";
-        
         if (!window.userDetails?.is_donor && !sessionStorage.getItem('maya_asked_donor')) {
             localStorage.setItem('maya_context', 'ask_donor_interest');
             sessionStorage.setItem('maya_asked_donor', 'true');
-            proactiveText = `\n\n💡 আচ্ছা বন্ধু, আমাদের পাথরঘাটার বহু মানুষ মাঝেমধ্যে জরুরি রক্তের জন্য খুব সমস্যায় পড়েন। আপনি কি আমাদের অ্যাপে একজন 'রক্তদাতা' (Blood Donor) হিসেবে যুক্ত হতে চান? ❤️`;
-            response = response || { reply: "" };
-            response.buttons = ['হ্যাঁ, আমি রাজী ❤️', 'না, পরে ভাববো'];
-        }
-
-        if (proactiveText) {
-            response.reply += proactiveText; 
+            
+            // আলাদা অবজেক্ট হিসেবে ফলো-আপ মেসেজ পাঠানো হচ্ছে
+            response.followUp = {
+                reply: `💡 আচ্ছা বন্ধু, আমাদের পাথরঘাটার বহু মানুষ মাঝেমধ্যে জরুরি রক্তের জন্য খুব সমস্যায় পড়েন। আপনি কি আমাদের অ্যাপে একজন 'রক্তদাতা' (Blood Donor) হিসেবে যুক্ত হতে চান? ❤️`,
+                buttons: ['হ্যাঁ, আমি রাজী ❤️', 'না, পরে ভাববো']
+            };
+            
+            // প্রথম বা প্রধান মেসেজের বাটন খালি করা হচ্ছে যাতে লেআউট সুন্দর থাকে
+            response.buttons = []; 
         }
     }
 
@@ -496,6 +805,25 @@ function getAdvancedBotReply(msg, originalMsg) {
 // ==========================================
 // 🛠️ HELPER FUNCTIONS
 // ==========================================
+
+window.clearMayaChat = () => {
+    if (confirm("আপনি কি চ্যাটের সকল ইতিহাস মুছে ফেলতে চান?")) {
+        localStorage.removeItem('maya_chat_history');
+        localStorage.removeItem('maya_context');
+        localStorage.setItem('maya_fail_count', '0');
+        
+        const div = document.getElementById('messages-container');
+        if (div) {
+            div.innerHTML = '';
+        }
+        
+        loadBotMessages();
+        
+        if (window.showToast) {
+            window.showToast("চ্যাট ইতিহাস মুছে ফেলা হয়েছে।", "success");
+        }
+    }
+};
 
 function closeChatUI() {
     if (typeof window.closeChat === 'function') {
@@ -537,6 +865,14 @@ function formatBotTime(timestamp) {
     hours = hours % 12; hours = hours ? hours : 12; 
     minutes = minutes < 10 ? '0' + minutes : minutes;
     return hours + ':' + minutes + ' ' + ampm;
+}
+
+function shouldNudge(featureKey) {
+    let nudges = JSON.parse(sessionStorage.getItem('maya_used_nudges') || '[]');
+    if (nudges.includes(featureKey)) return false;
+    nudges.push(featureKey);
+    sessionStorage.setItem('maya_used_nudges', JSON.stringify(nudges));
+    return true;
 }
 
 function getGenderAddressing() {
