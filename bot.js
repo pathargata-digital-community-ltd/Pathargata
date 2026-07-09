@@ -32,7 +32,7 @@ window.startBotChat = () => {
                 display: inline-block;
                 width: 8px;
                 height: 8px;
-                background-color: #22c55e; /* ইমেজের থিমের সাথে মিল রেখে সবুজ পানির বুদবুদ */
+                background-color: #22c55e;
                 border: 1px solid #86efac;
                 border-radius: 50%;
                 margin: 0 2.5px;
@@ -44,58 +44,49 @@ window.startBotChat = () => {
         document.head.appendChild(style);
     }
     
-    // messages.js থেকে লিসেনার বন্ধ করার নিরাপদ ফাংশনটি কল করা হচ্ছে
-    if (typeof window.safeTurnOffChatListener === 'function') {
-        window.safeTurnOffChatListener();
+    // ফায়ারবেস মেসেজ লিসেনার বন্ধ করে ডাটা সেভ করা
+    if (window.unsubscribeChatListener) {
+        window.unsubscribeChatListener();
+        window.unsubscribeChatListener = null;
     }
 
-    const proceedBotChat = () => {
-        if (typeof window.switchPage === 'function') {
-            try { window.switchPage('messages'); } catch(e) { console.warn(e); }
-        }
-        
-        const chatListView = document.getElementById('chat-list-view');
-        const chatConvView = document.getElementById('chat-conversation-view');
-        if(chatListView) chatListView.classList.add('hidden', 'hidden-custom');
-        if(chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
-        
-        const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
-        const speakerIcon = isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
-        
-        const hName = document.getElementById('chat-header-name');
-        const hImg = document.getElementById('chat-header-img');
-        
-        if (hName) {
-            hName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> 
-            <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>
-            <button onclick="window.clearMayaChat()" class="ml-2 text-red-400 hover:text-red-600 focus:outline-none transition-colors" title="চ্যাট ডিলিট করুন"><i class="fa-solid fa-trash-can"></i></button>`;
-        }
-        if (hImg) {
-            hImg.innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
-        }
-        
-        history.pushState({ page: 'chat-conversation', uid: BOT_UID }, "", "#bot-chat");
-        
-        if (!window.originalSendMsgBackup) {
-            window.originalSendMsgBackup = window.sendMsg; 
-        }
-        window.sendMsg = (imageUrl = null, voiceUrl = null) => {
-            if (window.currentChatUser && window.currentChatUser.uid === BOT_UID) {
-                handleBotInteraction(imageUrl, voiceUrl);
-            } else {
-                if(typeof window.originalSendMsgBackup === 'function') window.originalSendMsgBackup(imageUrl, voiceUrl);
-            }
-        };
+    // রেগুলার চ্যাট উইন্ডো বন্ধ করা এবং বটের উইন্ডো অন করা
+    const chatListView = document.getElementById('chat-list-view');
+    const botConvView = document.getElementById('bot-conversation-view');
+    
+    if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
+    if (botConvView) botConvView.classList.remove('hidden', 'hidden-custom');
 
-        localStorage.removeItem('maya_context');
-        localStorage.setItem('maya_fail_count', '0');
-        loadBotMessages();
-    };
+    // স্পিকার মিউট/আনমিউট আইকন রিসেট
+    const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
+    const muteIcon = document.getElementById('bot-mute-icon');
+    if (muteIcon) {
+        muteIcon.className = isMuted ? 'fa-solid fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
+    }
 
-    if (typeof window.loadMessagesUI === 'function') {
-        window.loadMessagesUI().then(proceedBotChat).catch(proceedBotChat);
-    } else {
-        proceedBotChat();
+    localStorage.removeItem('maya_context');
+    localStorage.setItem('maya_fail_count', '0');
+    loadBotMessages();
+};
+
+// বটের চ্যাট উইন্ডো বন্ধ করার মেথড
+window.closeBotChat = () => {
+    const chatListView = document.getElementById('chat-list-view');
+    const botConvView = document.getElementById('bot-conversation-view');
+    
+    if (chatListView) chatListView.classList.remove('hidden', 'hidden-custom');
+    if (botConvView) botConvView.classList.add('hidden', 'hidden-custom');
+
+    // মিউজিক বা ভয়েস ক্যানসেল
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+};
+
+// এন্টার প্রেস করে মেসেজ পাঠানো
+window.handleBotEnter = (e) => {
+    if (e.key === 'Enter') {
+        sendBotMsg();
     }
 };
 
@@ -126,7 +117,7 @@ function loadBotMessages() {
 // ৩. মেসেজ এবং বাটন রেন্ডারিং (UI)
 // --------------------------------------------------------
 function renderBotMessages(msgs) {
-    const div = document.getElementById('messages-container');
+    const div = document.getElementById('bot-messages-container');
     if (!div) return;
     
     let html = "";
@@ -178,30 +169,24 @@ window.handleBotBtnClick = (text) => {
         }
     }
     
-    const input = document.getElementById('msg-input');
+    const input = document.getElementById('bot-msg-input');
     if (input) {
         input.value = cleanText;
-        window.sendMsg(); 
+        sendBotMsg(); 
     }
 };
 
 // --------------------------------------------------------
-// ৪. ইউজার ইন্টারঅ্যাকশন এবং টাইপিং ইফেক্ট
+// ৪. ইউজার ইন্টারঅ্যাকশন এবং টাইপিং ইফেক্ট (Isolated sendBotMsg Method)
 // --------------------------------------------------------
-function handleBotInteraction(imageUrl, voiceUrl) {
-    const input = document.getElementById('msg-input');
+window.sendBotMsg = () => {
+    const input = document.getElementById('bot-msg-input');
     if (!input) return;
     const text = input.value.trim();
     
-    if (!text && !imageUrl && !voiceUrl) return;
-    
-    if (imageUrl || voiceUrl) {
-        if(window.showToast) window.showToast("দুঃখিত, আমি এখনো ছবি বা ভয়েস বুঝতে পারি না। দয়া করে লিখে জানান।", "error");
-        input.value = "";
-        return;
-    }
+    if (!text) return;
 
-    // চ্যাট হিস্ট্রি রিড, পুশ এবং সরাসরি লোকাল স্টোরেজে সেভ (মেসেজ উধাও হওয়া প্রতিরোধের সমাধান)
+    // চ্যাট হিস্ট্রি রিড, পুশ এবং সরাসরি লোকাল স্টোরেজে সেভ
     const botHistory = JSON.parse(localStorage.getItem('maya_chat_history') || '[]');
     botHistory.push({ sender: 'me', text: text, timestamp: Date.now() });
     localStorage.setItem('maya_chat_history', JSON.stringify(botHistory));
@@ -209,7 +194,7 @@ function handleBotInteraction(imageUrl, voiceUrl) {
     renderBotMessages(botHistory);
     input.value = "";
 
-    // টাইপিং ইন্ডিকেটর অন করা (চ্যাটের নিচে পজিশনিং নিশ্চিতকরণ)
+    // টাইপিং ইন্ডিকেটর অন করা
     showTypingIndicator();
 
     const botResponse = getAdvancedBotReply(text.toLowerCase(), text);
@@ -238,8 +223,8 @@ function handleBotInteraction(imageUrl, voiceUrl) {
         const currentMsg = messagesToSend[index];
         showTypingIndicator();
 
-        // বটের চিন্তা করার ও লেখার জন্য স্বাভাবিক সময় (১.৫ থেকে ৩.৫ সেকেন্ড) নির্ধারণ করা হলো
-        const segmentDelay = Math.min(Math.max(currentMsg.reply.length * 40, 1500), 3500);
+        // ব্যান্ডউইথ ও মেমরি সেভিংস টাইপিং ডিলে
+        const segmentDelay = Math.min(Math.max(currentMsg.reply.length * 30, 1200), 2800);
 
         setTimeout(() => {
             hideTypingIndicator();
@@ -261,15 +246,13 @@ function handleBotInteraction(imageUrl, voiceUrl) {
             const isVoiceMuted = localStorage.getItem('maya_voice_muted') === 'true';
             if ('speechSynthesis' in window && !isVoiceMuted) {
                 window.speechSynthesis.cancel();
-                let speechText = currentMsg.reply.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
-                speechText = speechText.replace(/[\*\_]/g, '');
+                let speechText = currentMsg.reply.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').replace(/[\*\_]/g, '');
                 const utterance = new SpeechSynthesisUtterance(speechText);
                 utterance.lang = 'bn-BD'; 
                 utterance.rate = 1.1; 
                 window.speechSynthesis.speak(utterance);
             }
 
-            // পরবর্তী মেসেজটি পাঠানোর আগে সামান্য বিরতি (০.৫ সেকেন্ড)
             setTimeout(() => {
                 sendMessagesSequentially(index + 1);
             }, 500);
@@ -277,16 +260,21 @@ function handleBotInteraction(imageUrl, voiceUrl) {
         }, segmentDelay);
     }
 
-    // চ্যাট সিকোয়েন্স শুরু করা হলো
     sendMessagesSequentially(0); 
-}
+};
 
-// টাইপিং ইন্ডিকেটর শো করার নির্ভরযোগ্য ফাংশন (যা স্ক্রললিস্টের একদম নিচে যুক্ত হবে)
+// মিডিয়া ব্লকিং হ্যান্ডলার
+window.handleBotInteraction = (imageUrl, voiceUrl) => {
+    if (imageUrl || voiceUrl) {
+        if(window.showToast) window.showToast("দুঃখিত, আমি এখনো ছবি বা ভয়েস বুঝতে পারি না। দয়া করে লিখে জানান।", "error");
+    }
+};
+
+// টাইপিং ইন্ডিকেটর শো করার নির্ভরযোগ্য ফাংশন
 function showTypingIndicator() {
-    const div = document.getElementById('messages-container');
+    const div = document.getElementById('bot-messages-container');
     if (!div) return;
     
-    // কোনো পূর্ববর্তী ডুপ্লিকেট রিমুভ করার প্রচেষ্টা
     hideTypingIndicator();
     
     const typingHtml = `
@@ -804,7 +792,7 @@ window.clearMayaChat = () => {
         localStorage.removeItem('maya_context');
         localStorage.setItem('maya_fail_count', '0');
         
-        const div = document.getElementById('messages-container');
+        const div = document.getElementById('bot-messages-container');
         if (div) {
             div.innerHTML = '';
         }
