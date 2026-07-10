@@ -56,6 +56,8 @@ window.startChat = (uid, name) => {
     // মানুষের সাথে সাধারণ চ্যাট শুরু হলে বটের ওভাররাইড করা সেন্ড মেসেজ রিস্টোর করা হবে
     if (window.originalSendMsgBackup) {
         window.sendMsg = window.originalSendMsgBackup;
+    } else if (typeof window.sendMsg === 'function' && window.sendMsg !== window.handleBotInteraction) {
+        window.originalSendMsgBackup = window.sendMsg;
     }
 
     window.currentChatUser = { uid, name };
