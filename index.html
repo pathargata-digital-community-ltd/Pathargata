@@ -3392,8 +3392,8 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                 showToast("ত্রুটি: " + e.message, 'error');
                 btn.disabled = false;
             });
-        };        
-
+        };
+        
         window.handleLogout = async () => {
             if (confirm("লগআউট করবেন?")) {
                 // আগের একাউন্টের ক্যাশ মুছে ফেলা হচ্ছে
