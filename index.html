@@ -4533,7 +4533,9 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     }).catch(e => { hideLoader(); });
                 } else if (id === 'messages' && window.currentUser) {
                     loadMessagesUI().then(() => {
-                        import('./messages.js').then(() => {
+                        // জাভাস্ক্রিপ্ট মডিউলের জন্য সঠিক অ্যাবসোলেট পাথ রেজোলিউশন
+                        const jsUrl = new URL('messages.js', window.location.origin + window.location.pathname).href;
+                        import(jsUrl).then(() => {
                             if (typeof window.loadChatList === 'function') {
                                 window.loadChatList(window.currentUser.uid);
                             }
@@ -4542,7 +4544,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                             }
                             hideLoader();
                         }).catch(e => { 
-                            console.error("Error importing messages.js", e); 
+                            console.error("Error importing messages.js from: " + jsUrl, e); 
                             showToast("মেসেজ স্ক্রিপ্ট লোড হতে সমস্যা হয়েছে", "error");
                             hideLoader(); 
                         });
@@ -4788,21 +4790,22 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             }
         }
 
-        // Messages HTML Fetcher
+        // Messages HTML Fetcher (Strict Relative Path Resolution)
         async function loadMessagesUI() {
             const container = document.getElementById('page-messages');
-            // যদি ইতিমধ্যে UI লোড হয়ে থাকে, তাহলে আর পুনরায় ফেচ করার দরকার নেই
             if (container && container.innerHTML.trim() !== '') {
                 return Promise.resolve();
             }
             try {
-                const response = await fetch('messages-ui.html');
-                if (!response.ok) throw new Error('Failed to load Messages UI');
+                // হ্যাশ রাউট ও সাবডিরেক্টরি এড়াতে উইন্ডোর অরিজিন ও পাথনেম থেকে সরাসরি ইউআরএল তৈরি
+                const uiUrl = new URL('messages-ui.html', window.location.origin + window.location.pathname).href;
+                const response = await fetch(uiUrl);
+                if (!response.ok) throw new Error('Failed to load Messages UI: ' + response.statusText);
                 
                 const htmlText = await response.text();
                 if (container) {
                     container.innerHTML = htmlText;
-                    console.log("Messages Design Loaded Successfully!");
+                    console.log("Messages Design Loaded Successfully from:", uiUrl);
                 }
                 return Promise.resolve();
             } catch (error) {
@@ -4810,7 +4813,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 return Promise.reject(error);
             }
         }
-        window.loadMessagesUI = loadMessagesUI; // গ্লোবাল উইন্ডো অবজেক্টে এক্সপোজ করা হলো
+        window.loadMessagesUI = loadMessagesUI;
         
         // Notifications HTML Fetcher
         async function loadNotificationsUI() {
