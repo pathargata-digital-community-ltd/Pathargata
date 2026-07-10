@@ -52,9 +52,10 @@ window.startBotChat = () => {
 
     // ফায়ারবেস চ্যাট লিসেনার বন্ধ করে লোকাল হিস্ট্রি লোড করা হচ্ছে
     if (window.currentChatListenerRef) {
-        const { off } = import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-        off(window.currentChatListenerRef);
-        window.currentChatListenerRef = null;
+        import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
+            module.off(window.currentChatListenerRef);
+            window.currentChatListenerRef = null;
+        }).catch(err => console.error("Error turning off listener:", err));
     }
 
     localStorage.removeItem('maya_context');
