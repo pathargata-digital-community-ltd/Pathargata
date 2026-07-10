@@ -2466,10 +2466,11 @@ loadMyComplaints();
             }, 1500);
         });
 
-        // --- SCROLL HANDLER (UPDATED for Profile Infinite Scroll) ---
+        // --- SCROLL HANDLER (UPDATED for Profile Infinite Scroll with Safe Checks) ---
         window.onscroll = function() {
             // FAB, Header & Tabs Scroll Logic (Only on Home Page)
-            if (document.getElementById('page-home') && !document.getElementById('page-home').classList.contains('hidden')) {
+            const pageHome = document.getElementById('page-home');
+            if (pageHome && !pageHome.classList.contains('hidden')) {
                 let st = window.pageYOffset || document.documentElement.scrollTop;
                 const fabContainer = document.getElementById('fab-container');
                 const mainHeader = document.getElementById('main-header');
@@ -2489,12 +2490,18 @@ loadMyComplaints();
                 lastScrollTop = st <= 0 ? 0 : st;
             }
 
-            // Profile Infinite Scroll Logic
-            if ((document.getElementById('page-profile').classList.contains('hidden') === false) ||
-                (document.getElementById('page-view-profile').classList.contains('hidden') === false)) {
+            // Profile Infinite Scroll Logic (Strict Null Checks)
+            const pageProfile = document.getElementById('page-profile');
+            const pageViewProfile = document.getElementById('page-view-profile');
+            
+            const isProfileVisible = pageProfile && !pageProfile.classList.contains('hidden');
+            const isViewProfileVisible = pageViewProfile && !pageViewProfile.classList.contains('hidden');
 
+            if (isProfileVisible || isViewProfileVisible) {
                 if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                    renderProfileChunk();
+                    if (typeof window.renderProfileChunk === 'function') {
+                        window.renderProfileChunk();
+                    }
                 }
             }
         };
@@ -4533,9 +4540,26 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     }).catch(e => { hideLoader(); });
                 } else if (id === 'messages' && window.currentUser) {
                     loadMessagesUI().then(() => {
-                        // জাভাস্ক্রিপ্ট মডিউলের জন্য সঠিক অ্যাবসোলেট পাথ রেজোলিউশন
                         const jsUrl = new URL('messages.js', window.location.origin + window.location.pathname).href;
-                        import(jsUrl).then(() => {
+                        
+                        // WebView সামঞ্জস্যপূর্ণ মডিউল স্ক্রিপ্ট ইনজেক্টর মেথড
+                        const loadModuleScript = (src) => {
+                            return new Promise((resolve, reject) => {
+                                const existing = document.querySelector(`script[src="${src}"]`);
+                                if (existing) {
+                                    resolve();
+                                    return;
+                                }
+                                const script = document.createElement('script');
+                                script.type = 'module';
+                                script.src = src;
+                                script.onload = resolve;
+                                script.onerror = reject;
+                                document.head.appendChild(script);
+                            });
+                        };
+
+                        loadModuleScript(jsUrl).then(() => {
                             if (typeof window.loadChatList === 'function') {
                                 window.loadChatList(window.currentUser.uid);
                             }
