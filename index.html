@@ -1522,8 +1522,12 @@
             </div>
 
             <div id="page-messages" class="hidden p-0 min-h-screen bg-white pb-20">
-                <!-- messages-ui.html এর ডিজাইন এখানে ডাইনামিকভাবে লোড হবে -->
-            </div>
+    <!-- সাদা স্ক্রিন প্রতিরোধ করতে ডিফল্ট লোডার -->
+    <div class="flex flex-col items-center justify-center min-h-[60vh] py-10">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-green-200 border-t-green-600 mb-3 shadow-lg"></div>
+        <p class="text-sm font-bold text-gray-500">মেসেজ লোড হচ্ছে...</p>
+    </div>
+</div>
 
             <div id="market-ui-container"></div>
             
@@ -4504,38 +4508,14 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     }).catch(e => { hideLoader(); });
                 } else if (id === 'messages' && window.currentUser) {
                     loadMessagesUI().then(() => {
-                        const jsUrl = new URL('messages.js', window.location.origin + window.location.pathname).href;
-                        
-                        // WebView সামঞ্জস্যপূর্ণ মডিউল স্ক্রিপ্ট ইনজেক্টর মেথড
-                        const loadModuleScript = (src) => {
-                            return new Promise((resolve, reject) => {
-                                const existing = document.querySelector(`script[src="${src}"]`);
-                                if (existing) {
-                                    resolve();
-                                    return;
-                                }
-                                const script = document.createElement('script');
-                                script.type = 'module';
-                                script.src = src;
-                                script.onload = resolve;
-                                script.onerror = reject;
-                                document.head.appendChild(script);
-                            });
-                        };
-
-                        loadModuleScript(jsUrl).then(() => {
-                            if (typeof window.loadChatList === 'function') {
-                                window.loadChatList(window.currentUser.uid);
-                            }
-                            if (typeof window.loadQuickChatFriends === 'function') {
-                                window.loadQuickChatFriends();
-                            }
-                            hideLoader();
-                        }).catch(e => { 
-                            console.error("Error importing messages.js from: " + jsUrl, e); 
-                            showToast("মেসেজ স্ক্রিপ্ট লোড হতে সমস্যা হয়েছে", "error");
-                            hideLoader(); 
-                        });
+                        // স্ক্রিপ্ট ইতিমধ্যে গ্লোবালি লোড থাকায় সরাসরি ফাংশন কল হবে
+                        if (typeof window.loadChatList === 'function') {
+                            window.loadChatList(window.currentUser.uid);
+                        }
+                        if (typeof window.loadQuickChatFriends === 'function') {
+                            window.loadQuickChatFriends();
+                        }
+                        hideLoader();
                     }).catch(e => { 
                         console.error("Error loading Messages UI structure", e); 
                         showToast("মেসেজ লেআউট লোড করা যায়নি", "error");
@@ -4781,19 +4761,22 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         // Messages HTML Fetcher (Strict Relative Path Resolution)
         async function loadMessagesUI() {
             const container = document.getElementById('page-messages');
-            if (container && container.innerHTML.trim() !== '') {
+            // যদি ডিজাইন ইতিমধ্যে লোড হয়ে থাকে তবে পুনরায় ফেচ করার প্রয়োজন নেই
+            if (container && container.querySelector('#chat-list-view')) {
                 return Promise.resolve();
             }
             try {
-                // হ্যাশ রাউট ও সাবডিরেক্টরি এড়াতে উইন্ডোর অরিজিন ও পাথনেম থেকে সরাসরি ইউআরএল তৈরি
-                const uiUrl = new URL('messages-ui.html', window.location.origin + window.location.pathname).href;
-                const response = await fetch(uiUrl);
-                if (!response.ok) throw new Error('Failed to load Messages UI: ' + response.statusText);
+                // WebView-এর জন্য অত্যন্ত সুরক্ষিত ও সরাসরি পাথ মেথড
+                let response = await fetch('messages-ui.html');
+                if (!response.ok) {
+                    response = await fetch('./messages-ui.html'); // Fallback পাথ
+                }
+                if (!response.ok) throw new Error('Failed to load Messages UI');
                 
                 const htmlText = await response.text();
                 if (container) {
                     container.innerHTML = htmlText;
-                    console.log("Messages Design Loaded Successfully from:", uiUrl);
+                    console.log("Messages Design Loaded Successfully!");
                 }
                 return Promise.resolve();
             } catch (error) {
@@ -5061,6 +5044,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="comments.js"></script>
     <script type="module" src="notifications.js"></script>
     <script type="module" src="notes.js"></script>
+    <script type="module" src="messages.js"></script>
 <!-- সাউন্ড ইফেক্টস -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
