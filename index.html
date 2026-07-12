@@ -1067,7 +1067,7 @@
                 <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('monetization'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 text-lg"><i class="fa-solid fa-sack-dollar"></i></div> <span class="font-bold text-base">মনিটাইজেশন</span>
                 </li>
-                <li onclick="toggleSidebar(false); setTimeout(()=>openDynamicCategory('history_tourism', 'ইতিহাস ও পর্যটন'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-purple-700 hover:bg-purple-50 transition-all duration-300">
+                <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('tourism'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-purple-700 hover:bg-purple-50 transition-all duration-300">
                     <div class="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-lg"><i class="fa-solid fa-landmark"></i></div> <span class="font-bold text-base">ইতিহাস ও পর্যটন</span>
                 </li>
                 <li onclick="toggleSidebar(false); setTimeout(()=>switchPage('directory'), 50)" class="sidebar-item px-6 py-3.5 cursor-pointer flex items-center gap-4 text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all duration-300">
@@ -1543,6 +1543,8 @@
             </div>
 
             <div id="blood-ui-container"></div>
+            
+            <div id="tourism-ui-container"></div>
 
             <div id="transport-ui-container"></div>
 
@@ -4450,7 +4452,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 }
 
                 // Hide all pages & reset nav buttons
-                ['home', 'services', 'market', 'blood', 'emergency', 'directory', 'directory-list', 'profile', 'people', 'messages', 'notifications', 'view-profile', 'friends-list', 'complaints', 'settings', 'dynamic-content', 'monetization', 'verification', 'invite', 'transport', 'rent-a-car', 'bus'].forEach(p => {
+                ['home', 'services', 'market', 'blood', 'emergency', 'directory', 'directory-list', 'profile', 'people', 'messages', 'notifications', 'view-profile', 'friends-list', 'complaints', 'settings', 'dynamic-content', 'monetization', 'verification', 'invite', 'transport', 'rent-a-car', 'bus', 'tourism'].forEach(p => {
                     document.getElementById('page-' + p)?.classList.add('hidden');
                     document.getElementById('btn-' + p)?.classList.replace('nav-active', 'text-gray-500');
                     document.getElementById('btn-' + p)?.classList.remove('text-green-600');
@@ -4665,7 +4667,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     history.back();
                 } else if (event.state.page === 'chat-conversation') {
                     if (event.state.uid && window.startChat) {
-                        const cachedUser = userCache[event.state.uid];
+                        const cachedUser = window.userCache ? window.userCache[event.state.uid] : null;
                         window.startChat(event.state.uid, cachedUser ? cachedUser.name : 'User');
                     }
                 } else {
