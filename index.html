@@ -4528,10 +4528,37 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                         hideLoader();
                     }).catch(e => { console.error("Profile JS load failed", e); hideLoader(); });
                 } else if (id === 'monetization' && window.currentUser) {
-                    import('./monetization.js').then(() => {
-                        if (typeof window.checkMonetizationStatus === 'function') window.checkMonetizationStatus();
+                    const container = document.getElementById('monetization-ui-container');
+                    // যদি আগে লোড করা না থাকে, তবেই কেবল ফাইলগুলো ফেচ করবে
+                    if (container && !container.innerHTML.trim()) {
+                        showLoader();
+                        fetch('monetization-ui.html')
+                            .then(res => {
+                                if (!res.ok) throw new Error('Failed to load Monetization HTML');
+                                return res.text();
+                            })
+                            .then(html => {
+                                container.innerHTML = html;
+                                return import('./monetization.js');
+                            })
+                            .then(() => {
+                                if (typeof window.checkMonetizationStatus === 'function') {
+                                    window.checkMonetizationStatus();
+                                }
+                                hideLoader();
+                            })
+                            .catch(e => {
+                                console.error("Monetization lazy load failed", e);
+                                hideLoader();
+                                showToast("মনিটাইজেশন লোড করা যায়নি!", "error");
+                            });
+                    } else {
+                        // আগে থেকে লোড করা থাকলে সরাসরি স্ট্যাটাস চেক করবে
+                        if (typeof window.checkMonetizationStatus === 'function') {
+                            window.checkMonetizationStatus();
+                        }
                         hideLoader();
-                    }).catch(e => { hideLoader(); });
+                    }
                 } else if (id === 'verification' && window.currentUser) {
                     import('./verification.js').then(() => {
                         if (typeof window.checkVerificationStatus === 'function') window.checkVerificationStatus();
@@ -4967,29 +4994,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             } catch (error) {
                 console.error("Error loading Settings UI:", error);
             }
-        }
-        
-        // Monetization UI Fetcher
-        async function loadMonetizationUI() {
-            try {
-                const response = await fetch('monetization-ui.html');
-                if (!response.ok) throw new Error('Failed to load Monetization UI');
-                
-                const htmlText = await response.text();
-                const container = document.getElementById('monetization-ui-container');
-                if (container) {
-                    container.innerHTML = htmlText;
-                    console.log("Monetization Design Loaded Successfully!");
-                    
-                    // ডিজাইন লোড হওয়ার পর ডাটাগুলো কল করা (যদি ইউজার লগইন থাকে)
-                    if (window.currentUser && typeof window.checkMonetizationStatus === 'function') {
-                        window.checkMonetizationStatus();
-                    }
-                }
-            } catch (error) {
-                console.error("Error loading Monetization UI:", error);
-            }
-        }
+        }                
         
         // Transport UI Fetcher
         async function loadTransportUI() {
@@ -5019,8 +5024,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             loadCommentsUI();
             loadPostUI();
             loadVerificationUI();
-            loadSettingsUI();
-            loadMonetizationUI();
+            loadSettingsUI();            
             loadTransportUI();
 
             // ডাইনামিক অ্যাপ ভার্সন সেট করার জন্য ফাংশন
