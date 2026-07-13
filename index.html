@@ -2563,6 +2563,8 @@ loadMyComplaints();
                     // কোন সার্ভিসে ক্লিক করলে কোথায় যাবে তার লজিক
                     if (['directory', 'blood', 'complaints', 'market', 'emergency', 'transport'].includes(key)) {
                         onclick = `switchPage('${key}')`;
+                    } else if (key === 'history_tourism') {
+                        onclick = `switchPage('tourism')`;
                     } else if (key === 'birth_reg') {
                         onclick = `window.openInAppWebview('${cat.title}', 'https://bdris.gov.bd/')`;
                     } else if (key === 'tin_cert') {
@@ -4493,6 +4495,33 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     if (typeof window.loadFeed === 'function') window.loadFeed(window.currentFeedFilter || 'all', true);
                     if (typeof window.loadNotes === 'function') window.loadNotes();
                     hideLoader();
+                } else if (id === 'tourism') {
+                    const container = document.getElementById('tourism-ui-container');
+                    if (container && !container.innerHTML.trim()) {
+                        showLoader();
+                        fetch('tourism-ui.html')
+                            .then(res => res.text())
+                            .then(html => {
+                                container.innerHTML = html;
+                                return import('./tourism.js');
+                            })
+                            .then(() => {
+                                if (typeof window.loadTourismContent === 'function') {
+                                    window.loadTourismContent();
+                                }
+                                hideLoader();
+                            })
+                            .catch(e => {
+                                console.error("Lazy loading failed for Tourism", e);
+                                hideLoader();
+                                showToast("ফিচারটি লোড করা যায়নি!", "error");
+                            });
+                    } else {
+                        if (typeof window.loadTourismContent === 'function') {
+                            window.loadTourismContent();
+                        }
+                        hideLoader();
+                    }
                 } else if (id === 'profile' && window.currentUser) {
                     import('./profile.js').then(() => {
                         window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
