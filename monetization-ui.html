@@ -1,12 +1,14 @@
 <!-- DYNAMIC MONETIZATION PAGE -->
 <div id="page-monetization" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
     <div class="bg-white p-3 sticky top-0 z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl pt-safe">
-        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600">
+            <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
         <h2 class="font-bold text-lg text-gray-800">মনিটাইজেশন ও ড্যাশবোর্ড</h2>
     </div>
 
     <!-- STATE 1: PRE-MONETIZATION (QUALIFICATION) -->
-    <div id="monetization-qualification-view" class="hidden">
+    <div id="monetization-qualification-view" class="hidden animate-fade">
         <div class="bg-gradient-to-br from-blue-900 to-indigo-800 text-white p-6 rounded-2xl shadow-lg mb-6 relative overflow-hidden">
             <i class="fa-solid fa-coins absolute -right-4 -bottom-4 text-7xl opacity-20 transform -rotate-12"></i>
             <h3 class="text-2xl font-extrabold mb-1">কন্টেন্ট ক্রিয়েটর হোন</h3>
@@ -14,16 +16,16 @@
             <div class="mt-4 bg-white/10 p-3 rounded-lg border border-white/20">
                 <p class="text-xs text-white/80"><i class="fa-solid fa-circle-info text-yellow-400"></i> বর্তমানে আপনি শুধুমাত্র <b>রেফারেল</b> থেকে পয়েন্ট পাচ্ছেন।</p>
             </div>
-        </div>
-        
-        <div class="mt-4 flex gap-3">
-            <div class="bg-white/10 p-2 rounded-lg border border-white/20 flex-1 text-center">
-                <p class="text-[10px] opacity-70">মোট পয়েন্ট</p>
-                <p class="font-bold text-lg" id="qual-points">0</p>
-            </div>
-            <div class="bg-white/10 p-2 rounded-lg border border-white/20 flex-1 text-center">
-                <p class="text-[10px] opacity-70">মোট রেফার</p>
-                <p class="font-bold text-lg" id="qual-refer">0</p>
+            
+            <div class="mt-4 flex gap-3">
+                <div class="bg-white/15 p-2 rounded-lg border border-white/10 flex-1 text-center">
+                    <p class="text-[10px] opacity-70">মোট পয়েন্ট</p>
+                    <p class="font-bold text-lg" id="qual-points">0</p>
+                </div>
+                <div class="bg-white/15 p-2 rounded-lg border border-white/10 flex-1 text-center">
+                    <p class="text-[10px] opacity-70">মোট রেফার</p>
+                    <p class="font-bold text-lg" id="qual-refer">0</p>
+                </div>
             </div>
         </div>
 
@@ -55,15 +57,15 @@
     </div>
 
     <!-- STATE 2: POST-MONETIZATION (DASHBOARD) -->
-    <div id="monetization-dashboard-view" class="hidden">
+    <div id="monetization-dashboard-view" class="hidden animate-fade">
         <div class="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-6 text-white shadow-lg mb-6 flex flex-col items-center justify-center relative">
             <p class="text-sm text-green-100 mb-1">আপনার মোট পয়েন্ট</p>
             <h2 class="text-5xl font-extrabold drop-shadow-md flex items-center gap-2" id="dash-total-points">0 <i class="fa-solid fa-coins text-yellow-300 text-3xl"></i></h2>
-        </div>
-        
-        <!-- মোট রেফারেল সংখ্যা দেখানোর জন্য -->
-        <div class="mt-4 bg-white/10 px-4 py-2 rounded-full border border-white/20 text-xs font-bold">
-            <i class="fa-solid fa-users mr-1"></i> মোট রেফার: <span id="dash-total-refer">0</span> জন
+            
+            <!-- মোট রেফারেল সংখ্যা -->
+            <div class="mt-4 bg-white/20 px-4 py-1.5 rounded-full border border-white/10 text-xs font-bold">
+                <i class="fa-solid fa-users mr-1"></i> মোট রেফার: <span id="dash-total-refer">0</span> জন
+            </div>
         </div>
 
         <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-teal-500 pl-3">আজকের পয়েন্ট ট্র্যাকার</h4>
@@ -86,10 +88,10 @@
         </div>
 
         <!-- WITHDRAWAL SECTION -->
-        <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-orange-500 pl-3">পয়েন্ট উত্তলন করুন</h4>
+        <h4 class="font-bold text-gray-700 mb-3 border-l-4 border-orange-500 pl-3">পয়েন্ট উত্তোলন করুন</h4>
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
             
-            <!-- Point Value Info Box (Admin Controlled) -->
+            <!-- Point Value Info Box -->
             <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4 flex items-center justify-between">
                 <span class="text-xs font-bold text-blue-800"><i class="fa-solid fa-circle-info mr-1"></i> পয়েন্ট রেট:</span>
                 <span class="text-xs font-bold text-blue-900 bg-blue-200 px-3 py-1 rounded-full"><span id="point-value-display">1000</span> পয়েন্ট = <span id="taka-value-display">10</span> টাকা</span>
@@ -111,7 +113,7 @@
                 <label class="block text-xs font-bold text-gray-500 mb-2">পয়েন্ট পরিমাণ (সর্বনিম্ন <span id="min-withdraw-text">1000</span>)</label>
                 <input type="number" id="withdraw-amount" placeholder="কত পয়েন্ট তুলতে চান?" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
             </div>
-            <button onclick="submitWithdrawal()" id="btn-withdraw" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow hover:bg-orange-600 transition active:scale-95">উত্তলন রিকোয়েস্ট পাঠান</button>
+            <button onclick="submitWithdrawal()" id="btn-withdraw" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow hover:bg-orange-600 transition active:scale-95">উত্তোলন রিকোয়েস্ট পাঠান</button>
         </div>
 
         <!-- WITHDRAWAL HISTORY SECTION -->
