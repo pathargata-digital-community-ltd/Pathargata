@@ -838,11 +838,25 @@ window.createPostHTML = function(post, id) {
         }
     }
 
-    let menuOptions = `<li onclick="window.copyPostText('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-regular fa-copy w-5"></i> টেক্সট কপি করুন</li>`;
+    // থ্রি-ডট মেনু অপশনসমূহ (টেক্সট কপি, লিংক কপি, সেভ এবং নোটিফিকেশন অফ/অন সকলের জন্য প্রযোজ্য)
+    let menuOptions = `
+        <li onclick="window.copyPostText('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-regular fa-copy w-5"></i> টেক্সট কপি করুন</li>
+        <li onclick="window.copyPostLink('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-solid fa-link w-5"></i> লিংক কপি করুন</li>
+        <li onclick="window.savePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-regular fa-bookmark w-5"></i> পোস্ট সেভ করুন</li>
+        <li onclick="window.mutePostNotifications('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-regular fa-bell-slash w-5"></i> নোটিফিকেশন অফ / অন</li>
+    `;
     if (post.uid === window.currentUser.uid) {
-        menuOptions += `<li onclick="window.openEditPostModal('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-blue-600"><i class="fa-solid fa-pen w-5"></i> এডিট করুন</li><li onclick="window.deletePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-600"><i class="fa-solid fa-trash w-5"></i> ডিলিট করুন</li>`;
+        // শুধুমাত্র নিজের পোস্টের জন্য এডিট ও ডিলিট অপশন
+        menuOptions += `
+            <li onclick="window.openEditPostModal('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-blue-600"><i class="fa-solid fa-pen w-5"></i> এডিট করুন</li>
+            <li onclick="window.deletePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-red-600"><i class="fa-solid fa-trash w-5"></i> ডিলিট করুন</li>
+        `;
     } else {
-        menuOptions += `<li onclick="window.reportPost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-yellow-600"><i class="fa-solid fa-triangle-exclamation w-5"></i> রিপোর্ট করুন</li><li onclick="window.hidePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer"><i class="fa-regular fa-eye-slash w-5"></i> পোস্ট হাইড করুন</li>`;
+        // অন্যের পোস্টের জন্য রিপোর্ট এবং ফিড থেকে হাইড করার অপশন
+        menuOptions += `
+            <li onclick="window.reportPost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-yellow-600"><i class="fa-solid fa-triangle-exclamation w-5"></i> রিপোর্ট করুন</li>
+            <li onclick="window.hidePost('${id}')" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-600"><i class="fa-regular fa-eye-slash w-5"></i> পোস্ট হাইড করুন</li>
+        `;
     }
 
     let actionButtons = (post.mobile || post.socialLink) ? `<div class="grid grid-cols-2 gap-2 mt-3 mb-2">${post.mobile ? `<a href="tel:${post.mobile}" class="flex items-center justify-center gap-2 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-sm hover:bg-green-100 transition border border-green-200"><i class="fa-solid fa-phone"></i> Call Now</a>` : '<div></div>'}${post.socialLink ? `<a href="${post.socialLink}" target="_blank" class="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-2 rounded-lg font-bold text-sm hover:bg-blue-100 transition border border-blue-200"><i class="fa-brands fa-whatsapp"></i> Message</a>` : '<div></div>'}</div>` : '';
@@ -1088,6 +1102,75 @@ window.handleSmartImageClick = (postId, imgSrc) => {
         imageClickTimer = null;
         if(window.handleDoubleTapLike) window.handleDoubleTapLike(postId); 
     }
+};
+
+// --- ১. পোস্ট সেভ / বুকমার্ক করার ফাংশন ---
+window.savePost = (postId) => {
+    const userSaveRef = ref(getDb(), `users/${window.currentUser.uid}/saved_posts/${postId}`);
+    get(userSaveRef).then((snap) => {
+        if (snap.exists()) {
+            set(userSaveRef, null).then(() => {
+                window.showToast("সেভ তালিকা থেকে সরানো হয়েছে", "success");
+            });
+        } else {
+            set(userSaveRef, true).then(() => {
+                window.showToast("পোস্টটি বুকমার্ক সেকশনে সেভ করা হয়েছে!", "success");
+            });
+        }
+    }).catch(e => window.showToast("ত্রুটি: " + e.message, "error"));
+};
+
+// --- ২. পোস্ট লিংক কপি করার ফাংশন ---
+window.copyPostLink = (postId) => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?post=${postId}#single-post-modal`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        window.showToast("পোস্ট লিংক ক্লিপবোর্ডে কপি হয়েছে!", "success");
+    }).catch(() => {
+        window.showToast("লিংক কপি করা যায়নি", "error");
+    });
+};
+
+// --- ৩. পোস্ট রিপোর্ট করার ফাংশন ---
+window.reportPost = (postId) => {
+    const reason = prompt("রিপোর্ট করার কারণটি উল্লেখ করুন (যেমন: ভুয়া তথ্য, আপত্তিকর ভাষা ইত্যাদি):");
+    if (reason === null) return; // ব্যবহারকারী ক্যানসেল করলে
+    if (!reason.trim()) return window.showToast("কারণ লেখা বাধ্যতামূলক", "error");
+    
+    const reportRef = ref(getDb(), `reports/${postId}/${window.currentUser.uid}`);
+    set(reportRef, {
+        reason: reason.trim(),
+        timestamp: Date.now(),
+        reporterName: window.userDetails.name || "Unknown User"
+    }).then(() => {
+        window.showToast("অ্যাডমিন প্যানেলে রিপোর্ট পাঠানো হয়েছে। ধন্যবাদ।", "success");
+    }).catch(e => window.showToast("রিপোর্ট পাঠানো যায়নি: " + e.message, "error"));
+};
+
+// --- ৪. পোস্টের নোটিফিকেশন অফ/অন (Mute) করার ফাংশন ---
+window.mutePostNotifications = (postId) => {
+    const muteRef = ref(getDb(), `users/${window.currentUser.uid}/muted_posts/${postId}`);
+    get(muteRef).then((snap) => {
+        if (snap.exists()) {
+            set(muteRef, null).then(() => {
+                window.showToast("পোস্টের নোটিফিকেশন পুনরায় চালু করা হয়েছে।");
+            });
+        } else {
+            set(muteRef, true).then(() => {
+                window.showToast("এই পোস্টের নতুন নোটিফিকেশন বন্ধ করা হয়েছে।");
+            });
+        }
+    }).catch(e => window.showToast("ত্রুটি: " + e.message, "error"));
+};
+
+// --- ৫. পোস্ট হাইড করার ফাংশন (আপগ্রেডেড স্মুথ এনিমেশন সহ) ---
+window.hidePost = (postId) => {
+    document.querySelectorAll(`#post-card-${postId}`).forEach(card => {
+        card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => card.remove(), 300);
+    });
+    window.showToast("পোস্টটি আপনার ফিড থেকে লুকানো হয়েছে।");
 };
 
 // পেজ লোড হওয়ার সাথে সাথে অ্যালার্ট লিসেনার চালু করা
