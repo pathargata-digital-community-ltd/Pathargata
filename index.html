@@ -1596,38 +1596,7 @@
                 </div>
             </div>
 
-            <div id="page-complaints" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-                <button onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
-                <h2 class="text-xl font-bold mb-5 border-l-4 border-red-500 pl-3 text-gray-700">স্মার্ট অভিযোগ বক্স</h2>
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
-                    <h3 class="font-bold text-gray-800 mb-3 text-base">নতুন অভিযোগ করুন</h3>
-                    <div class="space-y-3">
-                        <div><label class="block text-xs font-bold text-gray-500 mb-1">কাকে জানাবেন?</label><select id="complaint-to" class="w-full bg-gray-50 border p-3 rounded-lg text-sm">
-                                <option value="UNO">উপজেলা নির্বাহী কর্মকর্তা (UNO)</option>
-                                <option value="OC">থানা পুলিশ (OC)</option>
-                                <option value="Chairman">উপজেলা চেয়ারম্যান</option>
-                                <option value="ViceChairman">ভাইস চেয়ারম্যান</option>
-                                <option value="General">সাধারণ অভিযোগ</option>
-                            </select></div>
-                        <div><label class="block text-xs font-bold text-gray-500 mb-1">বিষয়</label><select id="complaint-type" class="w-full bg-gray-50 border p-3 rounded-lg text-sm">
-                                <option value="Road">রাস্তাঘাট সংস্কার</option>
-                                <option value="Water">পানি ও পয়নিষ্কাশন</option>
-                                <option value="Dispute">পারিবারিক/জমি বিরোধ</option>
-                                <option value="Corruption">অনিয়ম ও দুর্নীতি</option>
-                                <option value="Other">অন্যান্য</option>
-                            </select></div>
-                        <textarea id="complaint-text" rows="3" placeholder="বিস্তারিত লিখুন..." class="w-full bg-gray-50 border p-3 rounded-lg text-sm"></textarea>
-                        <div class="flex items-center gap-2"><input type="checkbox" id="complaint-anon" class="w-5 h-5 text-green-600 rounded"><label for="complaint-anon" class="text-sm text-gray-600 font-medium">নাম গোপন রাখুন (Anonymous)</label></div>
-                        <button onclick="submitComplaint()" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow hover:bg-red-700 text-base mt-2">জমা দিন</button>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="font-bold text-gray-700 mb-3 text-sm">আমার অভিযোগসমূহ</h3>
-                    <div id="my-complaints-list" class="space-y-3">
-                        <p class="text-center text-gray-400 text-xs py-4">কোনো অভিযোগ নেই</p>
-                    </div>
-                </div>
-            </div>
+            <div id="page-complaints" class="hidden p-4 bg-gray-50 min-h-screen pb-20"></div>
 
             <div id="settings-ui-container"></div>
 
@@ -1980,6 +1949,26 @@
         // --- OTA UPDATE SYSTEM END ---
         window.myFriends = [];
         window.currentChatUser = null;
+
+        // --- প্রোফাইল ভিউয়ার বুটস্ট্র্যাপার ফাংশন ---
+        window.openUserProfile = (uid) => {
+            if (!uid) return;
+            switchPage('view-profile');
+            
+            // ডাইনামিকভাবে profile.js লোড করে প্রোফাইল প্রদর্শন নিশ্চিত করা হচ্ছে
+            import('./profile.js').then(() => {
+                if (typeof window.loadUserProfile === 'function') {
+                    window.loadUserProfile(uid);
+                } else if (typeof window.loadProfilePosts === 'function') {
+                    window.loadProfilePosts(uid, 'view-profile-posts-feed');
+                } else {
+                    console.warn("প্রোফাইল রেন্ডার করার ফাংশনটি পাওয়া যায়নি।");
+                }
+            }).catch(err => {
+                console.error("প্রোফাইল স্ক্রিপ্ট লোড করতে সমস্যা হয়েছে:", err);
+                showToast("প্রোফাইল লোড করা যায়নি", "error");
+            });
+        };
 
         let userDetails = {},
             allUsers = [],
@@ -2440,7 +2429,6 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
     window.AndroidBridge.startBackgroundListener(user.uid);
 }
 
-loadMyComplaints();
                 loadEmergencyAlerts();
 
                 loadAds();
@@ -3713,49 +3701,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
                     return `<div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500"><div class="flex justify-between items-start mb-2"><span class="text-xs font-bold px-2 py-0.5 rounded ${badgeColor}">${alert.type}</span><span class="text-[10px] text-gray-400">${timeAgo(alert.timestamp)}</span></div><h3 class="font-bold text-gray-800 text-base mb-1">${escapeHTML(alert.title)}</h3><p class="text-sm text-gray-600 mb-2">${escapeHTML(alert.desc)}</p><div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-100"><span class="text-xs text-gray-500 font-bold"><i class="fa-solid fa-user mr-1"></i> ${escapeHTML(alert.authorName)}</span>${alert.contact ? `<a href="tel:${alert.contact}" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow"><i class="fa-solid fa-phone mr-1"></i> কল করুন</a>` : ''}</div></div>`;
                 }).join('');
             });
-        }
-        
-        window.submitComplaint = () => {
-            const text = document.getElementById('complaint-text').value.trim();
-            if (!text) return showToast("অভিযোগের বিস্তারিত লিখুন", 'error');
-            push(ref(db, 'complaints'), {
-                uid: window.currentUser.uid,
-                authorName: document.getElementById('complaint-anon').checked ? "নাম প্রকাশে অনিচ্ছুক" : userDetails.name,
-                type: document.getElementById('complaint-type').value,
-                submitTo: document.getElementById('complaint-to').value,
-                text,
-                timestamp: Date.now(),
-                status: 'Pending',
-                union: userDetails.union || 'Unknown',
-                village: userDetails.village || 'Unknown'
-            }).then(() => {
-                showToast("অভিযোগ জমা হয়েছে!");
-                document.getElementById('complaint-text').value = "";
-                document.getElementById('complaint-anon').checked = false;
-            }).catch(e => showToast("ত্রুটি: " + e.message, 'error'));
-        };
-        window.loadMyComplaints = () => {
-            onValue(query(ref(db, 'complaints'), orderByChild('uid'), startAt(window.currentUser.uid), endAt(window.currentUser.uid)), (snap) => {
-                const data = Object.values(snap.val() || {}).sort((a, b) => b.timestamp - a.timestamp);
-                document.getElementById('my-complaints-list').innerHTML = data.length > 0 ? data.map(c => {
-                    const statusMap = {
-                        'Processing': {
-                            c: 'text-blue-600 bg-blue-100',
-                            t: 'কাজ চলছে'
-                        },
-                        'Resolved': {
-                            c: 'text-green-600 bg-green-100',
-                            t: 'সমাধান হয়েছে'
-                        }
-                    };
-                    const st = statusMap[c.status] || {
-                        c: 'text-yellow-600 bg-yellow-100',
-                        t: 'জমা হয়েছে'
-                    };
-                    return `<div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100"><div class="flex justify-between items-start mb-1"><span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">To: ${c.submitTo}</span><span class="text-[10px] font-bold px-2 py-0.5 rounded ${st.c}">${st.t}</span></div><p class="text-sm text-gray-800 mt-2">${escapeHTML(c.text)}</p><p class="text-[10px] text-gray-400 mt-2 text-right">${timeAgo(c.timestamp)}</p></div>`;
-                }).join('') : '<p class="text-center text-gray-400 text-xs py-4">কোনো অভিযোগ নেই</p>';
-            });
-        };        
+        }                        
 
         window.toggleGlobalSearch = (open) => {
             const m = document.getElementById('search-modal');
@@ -4595,6 +4541,36 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     import('./market.js').then(() => hideLoader()).catch(e => { hideLoader(); });
                 } else if (id === 'blood') {
                     import('./blood.js').then(() => hideLoader()).catch(e => { hideLoader(); });
+                } else if (id === 'complaints' && window.currentUser) {
+                    const container = document.getElementById('page-complaints');
+                    if (container && !container.innerHTML.trim()) {
+                        showLoader();
+                        fetch('complaints-ui.html')
+                            .then(res => {
+                                if (!res.ok) throw new Error('Failed to load Complaints HTML');
+                                return res.text();
+                            })
+                            .then(html => {
+                                container.innerHTML = html;
+                                return import('./complaints.js');
+                            })
+                            .then(() => {
+                                if (typeof window.loadMyComplaints === 'function') {
+                                    window.loadMyComplaints();
+                                }
+                                hideLoader();
+                            })
+                            .catch(e => {
+                                console.error("Complaints lazy load failed:", e);
+                                hideLoader();
+                                showToast("অভিযোগ বক্স লোড করা যায়নি!", "error");
+                            });
+                    } else {
+                        if (typeof window.loadMyComplaints === 'function') {
+                            window.loadMyComplaints();
+                        }
+                        hideLoader();
+                    }
                 } else if (id === 'settings') {
                     import('./settings.js').then(() => {
                         if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
