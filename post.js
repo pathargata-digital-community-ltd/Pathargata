@@ -1177,3 +1177,23 @@ window.hidePost = (postId) => {
 if(window.currentUser) {
     window.listenForNewPosts();
 }
+
+// --- শেয়ার করা ইউআরএল লিংক থেকে সরাসরি নির্দিষ্ট পোস্ট ওপেন করার লজিক (Deep Linking) ---
+(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const postIdParam = urlParams.get('post');
+    if (postIdParam) {
+        // ফায়ারবেস অথেন্টিকেশন এবং কোর উইন্ডো ফাংশন লোড হওয়া পর্যন্ত অপেক্ষা করা হবে
+        const checkAuthInterval = setInterval(() => {
+            if (window.currentUser && typeof window.openSinglePostModal === 'function') {
+                clearInterval(checkAuthInterval);
+                setTimeout(() => {
+                    window.openSinglePostModal(postIdParam);
+                }, 1000); // ইউজার ইন্টারফেস সম্পূর্ণ রেন্ডার হওয়ার জন্য সাময়িক ১ সেকেন্ডের বিরতি
+            }
+        }, 300);
+        
+        // ফেইল-সেফ গার্ড: কোনো কারণে লোড না হলে ১০ সেকেন্ড পর লুপ বন্ধ হবে
+        setTimeout(() => clearInterval(checkAuthInterval), 10000);
+    }
+})();
