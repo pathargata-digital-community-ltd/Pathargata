@@ -66,6 +66,9 @@ export function loadEducationContent() {
     loadNotices();
 }
 
+// গ্লোবাল উইন্ডো অবজেক্টে বাইন্ড করা (যাতে index.html এটি সরাসরি খুঁজে পায়)
+window.loadEducationContent = loadEducationContent;
+
 // ৪. ডাটাবেস থেকে শিক্ষা প্রতিষ্ঠান লোড করা
 function loadInstitutions() {
     const target = document.getElementById('institutions-list-target');
