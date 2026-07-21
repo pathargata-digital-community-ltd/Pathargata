@@ -1548,6 +1548,9 @@
 
             <div id="transport-ui-container"></div>
 
+            <!-- Education UI Container -->
+            <div id="education-ui-container"></div>
+
             <!-- NEW EMERGENCY ALERT PAGE -->
             <div id="page-emergency" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
                 <button onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
@@ -2561,7 +2564,7 @@ loadMyComplaints();
                     let onclick;
 
                     // কোন সার্ভিসে ক্লিক করলে কোথায় যাবে তার লজিক
-                    if (['directory', 'blood', 'complaints', 'market', 'emergency', 'transport'].includes(key)) {
+                    if (['directory', 'blood', 'complaints', 'market', 'emergency', 'transport', 'education'].includes(key)) {
                         onclick = `switchPage('${key}')`;
                     } else if (key === 'history_tourism') {
                         onclick = `switchPage('tourism')`;
@@ -4454,7 +4457,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 }
 
                 // Hide all pages & reset nav buttons
-                ['home', 'services', 'market', 'blood', 'emergency', 'directory', 'directory-list', 'profile', 'people', 'messages', 'notifications', 'view-profile', 'friends-list', 'complaints', 'settings', 'dynamic-content', 'monetization', 'verification', 'invite', 'transport', 'rent-a-car', 'bus', 'tourism'].forEach(p => {
+                ['home', 'services', 'market', 'blood', 'emergency', 'directory', 'directory-list', 'profile', 'people', 'messages', 'notifications', 'view-profile', 'friends-list', 'complaints', 'settings', 'dynamic-content', 'monetization', 'verification', 'invite', 'transport', 'rent-a-car', 'bus', 'tourism', 'education'].forEach(p => {
                     document.getElementById('page-' + p)?.classList.add('hidden');
                     document.getElementById('btn-' + p)?.classList.replace('nav-active', 'text-gray-500');
                     document.getElementById('btn-' + p)?.classList.remove('text-green-600');
@@ -4586,6 +4589,11 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 } else if (id === 'settings') {
                     import('./settings.js').then(() => {
                         if (typeof window.initSettingsPage === 'function') window.initSettingsPage();
+                        hideLoader();
+                    }).catch(e => { hideLoader(); });
+                } else if (id === 'education') {
+                    import('./education.js').then(() => {
+                        if (typeof window.loadEducationContent === 'function') window.loadEducationContent();
                         hideLoader();
                     }).catch(e => { hideLoader(); });
                 } else if (id === 'transport') {
@@ -4750,6 +4758,22 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             }
         });
         
+        // Education HTML Fetcher
+        async function loadEducationUI() {
+            try {
+                const response = await fetch('education-ui.html');
+                if (!response.ok) throw new Error('Failed to load Education UI');
+                const htmlText = await response.text();
+                const container = document.getElementById('education-ui-container');
+                if (container) {
+                    container.innerHTML = htmlText;
+                    console.log("Education Design Loaded Successfully!");
+                }
+            } catch (error) {
+                console.error("Error loading Education UI:", error);
+            }
+        }
+
         // Profile HTML Fetcher
         async function loadProfileUI() {
             try {
@@ -5014,6 +5038,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            loadEducationUI();
             loadProfileUI();
             loadContestUI();
             loadMessagesUI();
