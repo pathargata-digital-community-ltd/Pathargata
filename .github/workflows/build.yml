@@ -40,6 +40,9 @@ jobs:
 
       - name: Configure Capacitor
         run: |
+          # Remove any auto-generated TS configuration to prevent compilation issues
+          rm -f capacitor.config.ts
+          
           cat <<EOF > capacitor.config.json
           {
             "appId": "com.pathargata.digital",
