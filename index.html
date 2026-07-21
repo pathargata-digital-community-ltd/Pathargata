@@ -3444,8 +3444,12 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
 
             const frPreviewDiv = document.getElementById('my-friends-preview-list');
             if (window.myFriends && window.myFriends.length > 0) {
-                // সরাসরি ডাটাবেস/ক্যাশ থেকে বন্ধুদের ডাটা লোড করা হচ্ছে
-                Promise.all(window.myFriends.slice(0, 10).map(uid => getUserData(uid))).then(friendsData => {
+                // সরাসরি ডাটাবেস/ক্যাশ থেকে বন্ধুদের ডাটা লোড করা হচ্ছে এবং নিশ্চিত করা হচ্ছে uid ঠিক আছে কিনা
+                Promise.all(window.myFriends.slice(0, 10).map(async (uid) => {
+                    const data = await getUserData(uid);
+                    if (data) return { ...data, uid };
+                    return null;
+                })).then(friendsData => {
                     let html = '';
                     friendsData.forEach(u => {
                         if (u) {
@@ -3533,7 +3537,12 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             container.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
             
             if (window.myFriends && window.myFriends.length > 0) {
-                Promise.all(window.myFriends.map(uid => getUserData(uid))).then(friendsData => {
+                // নিশ্চিত করা হচ্ছে প্রতিটি অবজেক্টে সঠিক uid প্রোপার্টি সংযুক্ত আছে
+                Promise.all(window.myFriends.map(async (uid) => {
+                    const data = await getUserData(uid);
+                    if (data) return { ...data, uid };
+                    return null;
+                })).then(friendsData => {
                     let html = '';
                     friendsData.forEach(u => {
                         if (u) {
