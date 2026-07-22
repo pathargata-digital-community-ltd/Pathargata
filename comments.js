@@ -353,7 +353,9 @@ window.deleteComment = (postId, commentId) => {
 // ============================================================================
 window.getCommentSuggestions = (post) => {
     const text = (post.content || '').toLowerCase();
-    const feeling = post.feeling ? post.feeling.text.toLowerCase() : '';
+    const feeling = (post.feeling && typeof post.feeling === 'object' && typeof post.feeling.text === 'string') 
+        ? post.feeling.text.toLowerCase() 
+        : '';
     const type = post.type;
     const hasImage = (post.images && post.images.length > 0) || post.image;
 
