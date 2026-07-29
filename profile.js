@@ -1,4 +1,4 @@
-import { ref, get, update, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, get, update, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 // প্রোফাইল পেজিনেশন এর ভেরিয়েবলগুলো
 window.profilePostsFullList = [];
@@ -51,7 +51,7 @@ window.renderProfileChunk = () => {
 
     let html = '';
     nextBatch.forEach(post => {
-        html += window.createPostHTML(post, post.id); // মেইন ফাইলের গ্লোবাল ফাংশন
+        html += window.createPostHTML(post, post.id);
     });
 
     container.insertAdjacentHTML('beforeend', html);
@@ -59,7 +59,7 @@ window.renderProfileChunk = () => {
     window.isProfileRendering = false;
 }
 
-// ৩. অন্যের প্রোফাইল ওপেন করা
+// ৩. অন্যের প্রোফাইল ওপেন করা (প্রোফাইল লক, অনলাইন স্ট্যাটাস ও সোশ্যাল লিংকসহ)
 window.openUserProfile = (uid) => {
     if (uid === window.currentUser.uid) return window.switchPage('profile');
     window.switchPage('view-profile');
@@ -79,19 +79,83 @@ window.openUserProfile = (uid) => {
     const coverImg = document.getElementById('view-profile-cover-img');
     if(coverImg) coverImg.classList.add('hidden');
     
-    get(ref(window.db, 'users/' + uid)).then(snap => {
+    // অনলাইন সক্রিয়তা স্ট্যাটাস রিয়েল-টাইম সাবস্ক্রিপশন
+    const presenceRef = ref(window.db, `status/${uid}`);
+    onValue(presenceRef, (statusSnap) => {
+        const pBadge = document.getElementById('view-profile-presence-status');
+        if (pBadge && statusSnap.exists()) {
+            const status = statusSnap.val().state;
+            pBadge.className = status === 'online' ? 
+                'absolute bottom-1 right-2 w-5 h-5 bg-green-500 border-4 border-white rounded-full' : 
+                'absolute bottom-1 right-2 w-5 h-5 bg-gray-400 border-4 border-white rounded-full';
+        }
+    });
+
+    get(ref(window.db, 'users/' + uid)).then(async snap => {
         const user = snap.val();
         if (!user) return window.switchPage('home');
         
-        document.getElementById('view-profile-avatar-container').innerHTML = user.profile_pic ? `<img src="${user.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : `<span class="text-5xl font-bold">${user.name ? window.escapeHTML(user.name).charAt(0).toUpperCase() : 'U'}</span>`;
+        document.getElementById('view-profile-avatar-container').innerHTML = user.profile_pic ? `<img src="${user.profile_pic}" loading="lazy" class="w-full h-full object-cover cursor-pointer" onclick="window.viewFullScreenImage('${user.profile_pic}')">` : `<span class="text-5xl font-bold">${user.name ? window.escapeHTML(user.name).charAt(0).toUpperCase() : 'U'}</span>`;
         document.getElementById('view-profile-name').innerHTML = (window.escapeHTML(user.name) || "অজ্ঞাত") + window.checkUserBadge(user);
         document.getElementById('view-profile-union-badge').innerText = user.union || "ইউনিয়ন নেই";
         document.getElementById('view-profile-village-text').innerText = user.village || "গ্রাম উল্লেখ নেই";
         document.getElementById('view-profile-profession').innerText = window.escapeHTML(user.profession) || "পেশা উল্লেখ নেই";
         document.getElementById('view-profile-location').innerText = window.escapeHTML(user.location) || "ঠিকানা উল্লেখ নেই";
-        document.getElementById('view-profile-bio').innerText = window.escapeHTML(user.bio) || "কোনো তথ্য নেই";
-        document.getElementById('view-profile-phone').innerText = user.privacy_hide_contact ? "গোপনীয়" : (user.phone || "ফোন নেই");
+        document.getElementById('view-profile-bio').innerText = window.escapeHTML(user.bio) || "কোনো বায়ো তথ্য নেই";
         
+        // ফোন নম্বর গোপনীয়তা সেটিং চেক
+        const phoneContainer = document.getElementById('view-profile-phone-container');
+        if (phoneContainer) {
+            if (user.hide_phone && uid !== window.currentUser.uid) {
+                phoneContainer.classList.add('hidden-custom');
+            } else {
+                phoneContainer.classList.remove('hidden-custom');
+                document.getElementById('view-profile-phone').innerText = user.phone || "ফোন নেই";
+            }
+        }
+
+        // সোশ্যাল প্রোফাইল লিংক রেন্ডার
+        ['fb', 'wa', 'web'].forEach(type => {
+            const el = document.getElementById(`view-link-${type}`);
+            if (el) el.classList.add('hidden'); 
+        });
+
+        if (user.facebook) {
+            const fbLink = document.getElementById('view-link-fb');
+            if (fbLink) { fbLink.href = user.facebook; fbLink.classList.remove('hidden'); fbLink.classList.add('flex'); }
+        }
+        if (user.whatsapp) {
+            const waLink = document.getElementById('view-link-wa');
+            if (waLink) { waLink.href = `https://wa.me/${user.whatsapp}`; waLink.classList.remove('hidden'); waLink.classList.add('flex'); }
+        }
+        if (user.website) {
+            const webLink = document.getElementById('view-link-web');
+            if (webLink) { webLink.href = user.website; webLink.classList.remove('hidden'); webLink.classList.add('flex'); }
+        }
+
+        // প্রোফাইল লক নিরাপত্তা চেক
+        const isFriend = window.myFriends && window.myFriends.includes(uid);
+        const lockNotice = document.getElementById('view-profile-locked-notice');
+        const contentArea = document.getElementById('view-profile-content-area');
+        const lockBadge = document.getElementById('view-profile-lock-badge');
+
+        if (user.profile_locked && !isFriend) {
+            if (lockNotice) lockNotice.classList.remove('hidden');
+            if (contentArea) contentArea.classList.add('hidden-custom');
+            if (lockBadge) lockBadge.classList.remove('hidden');
+        } else {
+            if (lockNotice) lockNotice.classList.add('hidden');
+            if (contentArea) contentArea.classList.remove('hidden-custom');
+            if (lockBadge) {
+                if (user.profile_locked) lockBadge.classList.remove('hidden');
+                else lockBadge.classList.add('hidden');
+            }
+            
+            // ডাটা লকড না থাকলে পোস্ট লোড হবে
+            window.loadProfilePosts(uid, 'view-profile-posts-feed');
+            window.loadFriendsPreview(uid, 'other');
+        }
+
         // আপডেট কাউন্টারস
         document.getElementById('view-stats-join-date').innerText = user.joinDate || "---";
         get(query(ref(window.db, 'posts'), orderByChild('uid'), equalTo(uid))).then(postSnap => {
@@ -105,26 +169,35 @@ window.openUserProfile = (uid) => {
         if (user.cover_pic && coverImg) {
             coverImg.src = user.cover_pic;
             coverImg.classList.remove('hidden');
+            coverImg.onclick = () => window.viewFullScreenImage(user.cover_pic);
+            coverImg.classList.add('cursor-pointer');
         }
         
         window.checkFriendshipStatus(uid, user.name);
-        window.loadProfilePosts(uid, 'view-profile-posts-feed');
-        window.loadFriendsPreview(uid, 'other');
     }).catch(() => window.switchPage('home'));
 };
 
-// ৪. ফ্রেন্ডস প্রিভিউ লোড করা (FIXED)
+// ৪. ফ্রেন্ডস প্রিভিউ লোড করা (উন্নত ও নিরাপদ আইডি ফলব্যাক সহ)
 window.loadFriendsPreview = (uid, mode) => {
-    const container = document.getElementById(mode === 'me' ? 'profile-friends-preview-me' : 'profile-friends-preview-other');
-    const countSpan = document.getElementById(mode === 'me' ? 'friends-count-me' : 'friends-count-other');
+    let container = document.getElementById(mode === 'me' ? 'profile-friends-preview-me' : 'profile-friends-preview-other');
+    if (!container) container = document.getElementById(mode === 'me' ? 'friends-preview-me' : 'friends-preview-other');
+    if (!container && mode === 'me') container = document.getElementById('my-friends-preview-list');
     
-    if (!container || !countSpan) return;
+    let countSpan = document.getElementById(mode === 'me' ? 'friends-count-me' : 'friends-count-other');
+    if (!countSpan && mode === 'me') countSpan = document.getElementById('stats-friends-count');
+    
+    if (!container) {
+        console.warn("Friends container matching IDs not found in DOM yet.");
+        return;
+    }
     
     container.innerHTML = '<div class="col-span-3 flex justify-center py-2"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div></div>';
     
     get(ref(window.db, `users/${uid}/friends`)).then(async snap => {
-        const friends = Object.keys(snap.val() || {});
-        countSpan.innerText = `${friends.length} জন বন্ধু`;
+        const friends = snap.exists() ? Object.keys(snap.val()) : [];
+        if (countSpan) {
+            countSpan.innerText = `${friends.length} জন বন্ধু`;
+        }
         
         if (friends.length === 0) {
             container.innerHTML = '<p class="col-span-3 text-center text-xs text-gray-400 py-2">এখনো ফ্রেন্ড নেই</p>';
@@ -132,10 +205,8 @@ window.loadFriendsPreview = (uid, mode) => {
         }
 
         try {
-            // Promise.all ব্যবহার করে বন্ধুদের ডেটা ফায়ারবেস থেকে আনা
             const profiles = await Promise.all(friends.slice(0, 6).map(async fUid => {
                 let data = await window.getUserData(fUid);
-                // যদি Cache বা Database থেকে ডেটা না পাওয়া যায়, তবে নতুন করে Fetch করার ট্রাই করবে
                 if(!data) {
                     const freshSnap = await get(ref(window.db, `users/${fUid}`));
                     data = freshSnap.val();
@@ -143,7 +214,6 @@ window.loadFriendsPreview = (uid, mode) => {
                 return data ? { ...data, uid: fUid } : null;
             }));
             
-            // ফিল্টার করে null ভ্যালুগুলো বাদ দেওয়া
             const validProfiles = profiles.filter(p => p !== null);
 
             container.innerHTML = validProfiles.map(uData => {
@@ -151,7 +221,7 @@ window.loadFriendsPreview = (uid, mode) => {
                 const firstLetter = name.charAt(0).toUpperCase();
                 
                 let av = uData.profile_pic ? 
-                    `<img src="${uData.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : 
+                    `<img src="${uData.profile_pic}" loading="lazy" class="w-full h-full object-cover cursor-pointer" onclick="window.viewFullScreenImage('${uData.profile_pic}')">` : 
                     `<span class="text-2xl">${firstLetter}</span>`;
                 
                 return `
@@ -168,10 +238,88 @@ window.loadFriendsPreview = (uid, mode) => {
             console.error("Error loading friends preview:", error);
             container.innerHTML = '<p class="col-span-3 text-center text-xs text-red-400">লোড করতে সমস্যা হয়েছে</p>';
         }
+    }).catch(err => {
+        console.error("Firebase friends fetch error:", err);
+        container.innerHTML = '<p class="col-span-3 text-center text-xs text-red-400">অনাকাঙ্ক্ষিত ত্রুটি</p>';
     });
 }
 
-// ৫. সকল বন্ধু দেখানো (FIXED)
+// ৫. নিজের অনলাইন সক্রিয়তা নির্দেশক রিয়েল-টাইম লোড
+if (window.currentUser) {
+    const myPresenceRef = ref(window.db, `status/${window.currentUser.uid}`);
+    onValue(myPresenceRef, (statusSnap) => {
+        const pBadge = document.getElementById('profile-presence-status');
+        if (pBadge && statusSnap.exists()) {
+            const status = statusSnap.val().state;
+            pBadge.className = status === 'online' ? 
+                'absolute bottom-1 right-2 w-5 h-5 bg-green-500 border-4 border-white rounded-full transition-colors duration-300' : 
+                'absolute bottom-1 right-2 w-5 h-5 bg-gray-400 border-4 border-white rounded-full transition-colors duration-300';
+        }
+    });
+}
+
+// ৬. সংরক্ষিত বুকমার্ক বা আমার পোস্ট ট্যাব সুইচিং সিস্টেম
+window.switchProfileTab = (tabName) => {
+    const postTabBtn = document.getElementById('tab-profile-posts');
+    const savedTabBtn = document.getElementById('tab-profile-saved');
+    const postsFeed = document.getElementById('my-posts-feed');
+    const savedFeed = document.getElementById('my-saved-feed');
+
+    if (!postTabBtn || !savedTabBtn || !postsFeed || !savedFeed) return;
+
+    if (tabName === 'posts') {
+        postTabBtn.className = "flex-1 text-center py-3.5 text-sm font-bold text-green-600 border-b-2 border-green-600 transition-all";
+        savedTabBtn.className = "flex-1 text-center py-3.5 text-sm font-bold text-gray-400 transition-all";
+        postsFeed.classList.remove('hidden-custom');
+        savedFeed.classList.add('hidden-custom');
+        window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
+    } else if (tabName === 'saved') {
+        savedTabBtn.className = "flex-1 text-center py-3.5 text-sm font-bold text-green-600 border-b-2 border-green-600 transition-all";
+        postTabBtn.className = "flex-1 text-center py-3.5 text-sm font-bold text-gray-400 transition-all";
+        postsFeed.classList.add('hidden-custom');
+        savedFeed.classList.remove('hidden-custom');
+        window.loadSavedBookmarks();
+    }
+};
+
+// ৭. সংরক্ষিত বুকমার্কসমূহ রেন্ডার
+window.loadSavedBookmarks = () => {
+    const container = document.getElementById('my-saved-feed');
+    if (!container) return;
+
+    container.innerHTML = '<div class="flex justify-center py-6"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div></div>';
+
+    get(ref(window.db, `users/${window.currentUser.uid}/saved`)).then(async (snap) => {
+        const savedIds = snap.exists() ? Object.keys(snap.val()) : [];
+        if (savedIds.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 text-sm py-10"><i class="fa-regular fa-bookmark text-2xl block mb-2 text-gray-300"></i>কোনো তথ্য সংরক্ষিত নেই</p>';
+            return;
+        }
+
+        try {
+            const savedPosts = await Promise.all(savedIds.map(async (postId) => {
+                const postSnap = await get(ref(window.db, `posts/${postId}`));
+                return postSnap.exists() ? { id: postId, ...postSnap.val() } : null;
+            }));
+
+            const validSavedPosts = savedPosts.filter(p => p !== null);
+            container.innerHTML = '';
+
+            if (validSavedPosts.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 text-sm py-10">সংরক্ষিত পোস্টগুলো পাওয়া যায়নি</p>';
+                return;
+            }
+
+            validSavedPosts.forEach(post => {
+                container.insertAdjacentHTML('beforeend', window.createPostHTML(post, post.id));
+            });
+        } catch (err) {
+            container.innerHTML = '<p class="text-center text-red-400 py-10">লোড ব্যর্থ হয়েছে</p>';
+        }
+    });
+};
+
+// ৮. সকল বন্ধু দেখানো
 window.showAllFriends = (uid) => {
     const targetUid = uid === 'me' ? window.currentUser.uid : uid;
     window.switchPage('friends-list');
@@ -221,12 +369,12 @@ window.showAllFriends = (uid) => {
             }).join('');
         } catch (error) {
             console.error("Error loading all friends:", error);
-            container.innerHTML = '<p class="text-center text-red-500 mt-10">বন্ধুদের তালিকা লোড করতে সমস্যা হয়েছে।</p>';
+            container.innerHTML = '<p class="text-center text-red-500 mt-10">তালিকা লোড করতে সমস্যা হয়েছে</p>';
         }
     });
 };
 
-// ৬. কভার ফটো আপলোড
+// ৯. কভার ফটো আপলোড
 window.handleCoverPhotoUpload = async (input) => {
     if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -248,7 +396,7 @@ window.handleCoverPhotoUpload = async (input) => {
     }
 }
 
-// ৭. প্রোফাইল এডিট সেভ করা
+// ১০. প্রোফাইল এডিট সেভ করা (সামাজিক লিংক ও প্রাইভেসি প্রোপার্টি সহ)
 window.saveProfileChanges = async () => {
     const name = document.getElementById('edit-name').value.trim(),
           file = document.getElementById('edit-profile-img').files[0];
@@ -267,13 +415,25 @@ window.saveProfileChanges = async () => {
             const res = await window.uploadMediaToCloudinary(file);
             profilePicUrl = res.url;
         }
+
+        const facebook = document.getElementById('edit-facebook').value.trim();
+        const whatsapp = document.getElementById('edit-whatsapp').value.trim();
+        const website = document.getElementById('edit-website').value.trim();
+        const profile_locked = document.getElementById('edit-profile-lock').checked;
+        const hide_phone = document.getElementById('edit-hide-phone').checked;
+
         await update(ref(window.db, 'users/' + window.currentUser.uid), {
             name,
             nickname: document.getElementById('edit-nickname').value.trim(),
             profession: document.getElementById('edit-profession').value.trim(),
             location: document.getElementById('edit-location').value.trim(),
             bio: document.getElementById('edit-bio').value.trim(),
-            profile_pic: profilePicUrl
+            profile_pic: profilePicUrl,
+            facebook: facebook || null,
+            whatsapp: whatsapp || null,
+            website: website || null,
+            profile_locked: profile_locked,
+            hide_phone: hide_phone
         });
         
         window.showToast("প্রোফাইল আপডেট হয়েছে!");
@@ -289,16 +449,35 @@ window.saveProfileChanges = async () => {
     }
 };
 
-// ৮. প্রোফাইল এডিট মডাল টগল করা
+// ১১. প্রোফাইল এডিট মডাল টগল করা ও তথ্য ইনজেক্ট
 window.toggleEditProfile = (s) => {
-    if (s) window.openModalWithHistory('edit-profile-modal', "#edit-profile");
-    else {
+    if (s) {
+        window.openModalWithHistory('edit-profile-modal', "#edit-profile");
+        // বর্তমান তথ্যগুলো এডিট ফর্মে সেটআপ
+        const u = window.userDetails;
+        if (u) {
+            document.getElementById('edit-name').value = u.name || "";
+            document.getElementById('edit-nickname').value = u.nickname || "";
+            document.getElementById('edit-profession').value = u.profession || "";
+            document.getElementById('edit-location').value = u.location || "";
+            document.getElementById('edit-bio').value = u.bio || "";
+            document.getElementById('edit-facebook').value = u.facebook || "";
+            document.getElementById('edit-whatsapp').value = u.whatsapp || "";
+            document.getElementById('edit-website').value = u.website || "";
+            document.getElementById('edit-profile-lock').checked = u.profile_locked || false;
+            document.getElementById('edit-hide-phone').checked = u.hide_phone || false;
+            
+            // অ-পরিবর্তনযোগ্য বিষয়াদি
+            document.getElementById('edit-union').value = u.union || "Unknown";
+            document.getElementById('edit-village').value = u.village || "Unknown";
+        }
+    } else {
         document.getElementById('edit-profile-modal').classList.add('hidden-custom');
         if (history.state?.modal === 'edit-profile-modal') history.back();
     }
 };
 
-// ৯. প্রোফাইল কার্ড ওপেন করা (My Smart ID Card)
+// ১২. প্রোফাইল কার্ড ওপেন করা
 window.openProfileCard = () => {
     if (!window.userDetails) {
         return window.showToast("ডাটা লোড হয়নি। একটু অপেক্ষা করুন।", "error");
@@ -308,7 +487,7 @@ window.openProfileCard = () => {
     
     document.getElementById('card-user-name').innerText = u.name || "অজ্ঞাত নাম";
     document.getElementById('card-user-profession').innerText = u.profession || "পেশা উল্লেখ নেই";
-    document.getElementById('card-user-phone').innerText = u.privacy_hide_contact ? "গোপন রাখা হয়েছে" : (u.phone || "দেওয়া নেই");
+    document.getElementById('card-user-phone').innerText = u.hide_phone ? "গোপন রাখা হয়েছে" : (u.phone || "দেওয়া নেই");
     
     const address = (u.village && u.union) ? `${u.village},\n${u.union}` : (u.village || u.union || "পাথরঘাটা");
     document.getElementById('card-user-address').innerHTML = address;
@@ -344,8 +523,57 @@ window.openProfileCard = () => {
     window.openModalWithHistory('profile-card-modal', "#my-card");
 };
 
-// ১০. প্রোফাইল কার্ড ক্লোজ করা
+// ১৩. প্রোফাইল কার্ড ক্লোজ করা
 window.closeProfileCard = () => {
     document.getElementById('profile-card-modal').classList.add('hidden-custom');
     if (history.state?.modal === 'profile-card-modal') history.back();
 };
+
+// ১৪. মূল অ্যাকাউন্ট আপডেট ট্র্যাকিং ও পয়েন্ট ওয়ালেট ইন্টিগ্রেশন
+window.initMyProfileStats = () => {
+    if (!window.currentUser) return;
+    const uid = window.currentUser.uid;
+
+    // সোশ্যাল আইকন ও ওয়ালেট ডাইনামিক আপডেট
+    get(ref(window.db, `users/${uid}`)).then(snap => {
+        const u = snap.val();
+        if (!u) return;
+
+        // সোশ্যাল লিংক হ্যান্ডলিং
+        ['fb', 'wa', 'web'].forEach(t => {
+            const el = document.getElementById(`link-${t}`);
+            if(el) el.classList.add('hidden');
+        });
+
+        if (u.facebook) {
+            const el = document.getElementById('link-fb');
+            if(el) { el.href = u.facebook; el.classList.remove('hidden'); el.classList.add('flex'); }
+        }
+        if (u.whatsapp) {
+            const el = document.getElementById('link-wa');
+            if(el) { el.href = `https://wa.me/${u.whatsapp}`; el.classList.remove('hidden'); el.classList.add('flex'); }
+        }
+        if (u.website) {
+            const el = document.getElementById('link-web');
+            if(el) { el.href = u.website; el.classList.remove('hidden'); el.classList.add('flex'); }
+        }
+
+        // ওয়ালেট ও অবদান তথ্য সেটআপ
+        const ptsWallet = document.getElementById('profile-wallet-points');
+        if (ptsWallet) ptsWallet.innerText = u.total_points || 0;
+
+        const bloodDonations = document.getElementById('profile-blood-donations');
+        if (bloodDonations) bloodDonations.innerText = u.blood_donations || 0;
+
+        const lockBadge = document.getElementById('profile-lock-badge');
+        if (lockBadge) {
+            if (u.profile_locked) lockBadge.classList.remove('hidden');
+            else lockBadge.classList.add('hidden');
+        }
+    });
+};
+
+// ইনস্ট্যান্ট কল
+setTimeout(() => {
+    window.initMyProfileStats();
+}, 800);
