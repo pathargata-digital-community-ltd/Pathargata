@@ -1,0 +1,93 @@
+<!-- page-directory শুরু -->
+<div id="page-directory" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
+    <div class="flex items-center gap-3 mb-6">
+        <button onclick="switchPage('services')" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm active:scale-95">
+            <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
+        <h2 class="text-xl font-bold border-l-4 border-green-600 pl-3 text-gray-800">ডিরেক্টরি ও জরুরি সেবা</h2>
+    </div>
+
+    <!-- প্রশাসন সেকশন -->
+    <h4 class="font-bold text-gray-500 text-xs mb-3 tracking-wider uppercase">প্রশাসনিক দপ্তর</h4>
+    <div class="grid grid-cols-3 gap-3 mb-6">
+        <div onclick="openDirectoryCategory('uno', 'ইউএনও অফিস')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-building-flag"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">ইউএনও</span>
+        </div>
+        <div onclick="openDirectoryCategory('acland', 'ভূমি অফিস')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">ভূমি অফিস</span>
+        </div>
+        <div onclick="openDirectoryCategory('police', 'থানা পুলিশ')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">থানা</span>
+        </div>
+    </div>
+
+    <!-- জরুরি সেবা সেকশন -->
+    <h4 class="font-bold text-gray-500 text-xs mb-3 tracking-wider uppercase">জরুরি সেবা</h4>
+    <div class="grid grid-cols-3 gap-3 mb-6">
+        <div onclick="openDirectoryCategory('health', 'উপজেলা স্বাস্থ্য কমপ্লেক্স')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-hospital animate-pulse"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">হাসপাতাল</span>
+        </div>
+        <div onclick="openDirectoryCategory('electricity', 'পল্লী বিদ্যুৎ')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">বিদ্যুৎ</span>
+        </div>
+        <div onclick="openDirectoryCategory('fire', 'ফায়ার সার্ভিস')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-fire-extinguisher"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">ফায়ার</span>
+        </div>
+    </div>
+
+    <!-- অন্যান্য সেকশন -->
+    <h4 class="font-bold text-gray-500 text-xs mb-3 tracking-wider uppercase">অন্যান্য বিভাগ</h4>
+    <div class="grid grid-cols-3 gap-3">
+        <div onclick="openDirectoryCategory('doctor', 'ডাক্তারগণ')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-sky-50 text-sky-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-user-doctor"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">ডাক্তার</span>
+        </div>
+        <div onclick="openDirectoryCategory('ambulance', 'জরুরি অ্যাম্বুলেন্স')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-truck-medical"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">অ্যাম্বুলেন্স</span>
+        </div>
+        <div onclick="openDirectoryCategory('union', 'ইউনিয়ন পরিষদ')" class="bg-white p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md hover:border-green-300 border border-transparent transition transform active:scale-95 duration-150">
+            <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-building-columns"></i>
+            </div>
+            <span class="text-xs font-bold text-gray-700 text-center leading-tight">ইউপি অফিস</span>
+        </div>
+    </div>
+</div>
+
+<!-- page-directory-list শুরু -->
+<div id="page-directory-list" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
+    <div class="flex items-center gap-3 mb-5">
+        <button onclick="switchPage('directory')" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm active:scale-95">
+            <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
+        <h2 id="directory-list-title" class="text-xl font-bold text-gray-800">তালিকা</h2>
+    </div>
+
+    <!-- ডাইনামিক কন্টাক্ট লিস্ট কন্টেইনার -->
+    <div id="directory-items-container" class="space-y-3">
+        <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
+    </div>
+</div>
