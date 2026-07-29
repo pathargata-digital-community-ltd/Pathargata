@@ -6,6 +6,17 @@ window.currentProfileRenderCount = 0;
 window.isProfileRendering = false;
 window.currentProfileViewMode = '';
 
+// এলিমেন্ট নাল থাকলেও ক্র্যাশ প্রতিরোধ করার জন্য নিরাপদ ফাংশনসমূহ (Safe Setters)
+const safeSetVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+};
+
+const safeSetChecked = (id, checked) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = checked;
+};
+
 // ১. প্রোফাইল পোস্ট লোড করা
 window.loadProfilePosts = (targetUid, containerId) => {
     const feedDiv = document.getElementById(containerId);
@@ -449,30 +460,30 @@ window.saveProfileChanges = async () => {
     }
 };
 
-// ১১. প্রোফাইল এডিট মডাল টগল করা ও তথ্য ইনজেক্ট
+// ১১. প্রোফাইল এডিট মডাল টগল করা ও নিরাপদ তথ্য ইনজেক্ট (TypeError Fix)
 window.toggleEditProfile = (s) => {
     if (s) {
         window.openModalWithHistory('edit-profile-modal', "#edit-profile");
-        // বর্তমান তথ্যগুলো এডিট ফর্মে সেটআপ
         const u = window.userDetails;
         if (u) {
-            document.getElementById('edit-name').value = u.name || "";
-            document.getElementById('edit-nickname').value = u.nickname || "";
-            document.getElementById('edit-profession').value = u.profession || "";
-            document.getElementById('edit-location').value = u.location || "";
-            document.getElementById('edit-bio').value = u.bio || "";
-            document.getElementById('edit-facebook').value = u.facebook || "";
-            document.getElementById('edit-whatsapp').value = u.whatsapp || "";
-            document.getElementById('edit-website').value = u.website || "";
-            document.getElementById('edit-profile-lock').checked = u.profile_locked || false;
-            document.getElementById('edit-hide-phone').checked = u.hide_phone || false;
+            // এলিমেন্ট নাল থাকলেও যাতে ক্র্যাশ না করে সেজন্য safeSetVal ও safeSetChecked ব্যবহার করা হয়েছে
+            safeSetVal('edit-name', u.name || "");
+            safeSetVal('edit-nickname', u.nickname || "");
+            safeSetVal('edit-profession', u.profession || "");
+            safeSetVal('edit-location', u.location || "");
+            safeSetVal('edit-bio', u.bio || "");
+            safeSetVal('edit-facebook', u.facebook || "");
+            safeSetVal('edit-whatsapp', u.whatsapp || "");
+            safeSetVal('edit-website', u.website || "");
+            safeSetChecked('edit-profile-lock', u.profile_locked || false);
+            safeSetChecked('edit-hide-phone', u.hide_phone || false);
             
-            // অ-পরিবর্তনযোগ্য বিষয়াদি
-            document.getElementById('edit-union').value = u.union || "Unknown";
-            document.getElementById('edit-village').value = u.village || "Unknown";
+            safeSetVal('edit-union', u.union || "Unknown");
+            safeSetVal('edit-village', u.village || "Unknown");
         }
     } else {
-        document.getElementById('edit-profile-modal').classList.add('hidden-custom');
+        const modal = document.getElementById('edit-profile-modal');
+        if (modal) modal.classList.add('hidden-custom');
         if (history.state?.modal === 'edit-profile-modal') history.back();
     }
 };
@@ -529,10 +540,35 @@ window.closeProfileCard = () => {
     if (history.state?.modal === 'profile-card-modal') history.back();
 };
 
-// ১৪. মূল অ্যাকাউন্ট আপডেট ট্র্যাকিং ও পয়েন্ট ওয়ালেট ইন্টিগ্রেশন
+// ১৪. মূল অ্যাকাউন্ট আপডেট ট্র্যাকিং ও পয়েন্ট ওয়ালেট এবং ইমেজ জুম ভিউ বাইন্ডিং
 window.initMyProfileStats = () => {
     if (!window.currentUser) return;
     const uid = window.currentUser.uid;
+
+    // নিজের প্রোফাইল ছবি ও কভার ফটো ক্লিকে ফুল ভিউ করার প্রোগ্রাম্যাটিক বাইন্ডিং
+    const myAvatarContainer = document.getElementById('profile-avatar-container');
+    if (myAvatarContainer) {
+        myAvatarContainer.onclick = () => {
+            if (window.userDetails && window.userDetails.profile_pic) {
+                window.viewFullScreenImage(window.userDetails.profile_pic);
+            } else {
+                window.showToast("কোনো প্রোফাইল ছবি সেট করা নেই", "error");
+            }
+        };
+        myAvatarContainer.classList.add('cursor-pointer');
+    }
+
+    const myCoverImg = document.getElementById('profile-cover-img');
+    if (myCoverImg) {
+        myCoverImg.onclick = () => {
+            if (window.userDetails && window.userDetails.cover_pic) {
+                window.viewFullScreenImage(window.userDetails.cover_pic);
+            } else {
+                window.showToast("কোনো কভার ছবি সেট করা নেই", "error");
+            }
+        };
+        myCoverImg.classList.add('cursor-pointer');
+    }
 
     // সোশ্যাল আইকন ও ওয়ালেট ডাইনামিক আপডেট
     get(ref(window.db, `users/${uid}`)).then(snap => {
