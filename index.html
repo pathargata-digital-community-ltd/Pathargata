@@ -4228,7 +4228,33 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     </script>
 
     <script>
-        function toggleAuth(v) {
+    // --- হ্যাশট্যাগ রূপান্তর এবং ক্লিক হ্যান্ডলিং ফাংশন ---
+    window.parseHashtags = function(escapedText) {
+        if (!escapedText) return "";
+        // বাংলা এবং ইংরেজি উভয় হ্যাশট্যাগ শনাক্ত করার Regex (\u0980-\u09FF দিয়ে বাংলা অক্ষর নির্দেশ করে)
+        const hashtagRegex = /#([a-zA-Z0-9_\u0980-\u09FF]+)/g;
+        
+        return escapedText.replace(hashtagRegex, (match, tagName) => {
+            return `<span class="text-blue-600 font-bold cursor-pointer hover:underline" onclick="window.handleHashtagClick('${tagName}', event)">${match}</span>`;
+        });
+    };
+
+    window.handleHashtagClick = function(tagName, event) {
+        if(event) event.stopPropagation(); // পোস্ট কার্ডের অন্যান্য ক্লিক ইভেন্ট থামানোর জন্য
+        
+        if (typeof toggleGlobalSearch === 'function') {
+            toggleGlobalSearch(true); // গ্লোবাল সার্চ মডাল ওপেন হবে
+            const searchInput = document.getElementById('global-search-input');
+            if (searchInput) {
+                searchInput.value = tagName; // সার্চ ইনপুটে ট্যাগের নাম বসবে
+                if (typeof debouncedGlobalSearch === 'function') {
+                    debouncedGlobalSearch(tagName); // সার্চ ট্রিগার হবে
+                }
+            }
+        }
+    };
+
+    function toggleAuth(v) {
             ['login-form', 'register-form', 'forgot-form'].forEach(id => document.getElementById(id).classList.add('hidden-custom'));
             document.getElementById(v + '-form')?.classList.remove('hidden-custom');
         }
@@ -4403,8 +4429,15 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     window.currentChatUser = null;
                 }
 
-                if (addHistory) history.pushState({ page: id }, "", `#${id}`);
-
+                if (addHistory) {
+                    const mainTabs = ['home', 'services', 'messages', 'people', 'profile'];
+                    if (mainTabs.includes(id)) {
+                        // প্রধান ৫টি ন্যাভিগেশন ট্যাবের জন্য হিস্ট্রি রিপ্লেস করা হবে যাতে অন্তহীন হিস্ট্রি লুপ তৈরি না হয়
+                        history.replaceState({ page: id }, "", `#${id}`);
+                    } else {
+                        history.pushState({ page: id }, "", `#${id}`);
+                    }
+                }
                 // --- Specific Page Logic & DYNAMIC IMPORTS ---
                 if (id === 'home' && window.currentUser) {
                     if (typeof window.loadFeed === 'function') window.loadFeed(window.currentFeedFilter || 'all', true);
@@ -4613,6 +4646,15 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 return; // এখানেই থেমে যাবে, পেজ ব্যাকে যাবে না
             }
 
+            // কমেন্ট মডাল খোলা থাকলে ব্যাক বাটনে শুধু মডাল বন্ধ হবে, হিস্ট্রি লুপ হবে না
+            const commentModal = document.getElementById('comment-full-modal');
+            if (commentModal && !commentModal.classList.contains('hidden-custom')) {
+                if (typeof window.closeFullCommentModal === 'function') {
+                    window.closeFullCommentModal(true); // true মানে ব্যাক বাটন দ্বারা বন্ধ করা হয়েছে
+                }
+                return;
+            }
+
             // Close Modals on Back Button (Topmost Modals First)
             if (document.getElementById('image-viewer-modal').classList.contains('open')) {
                 closeImageViewer();
@@ -4690,8 +4732,9 @@ window.addEventListener('uploadNIDEvent', async (e) => {
             // Handle Page Navigation History
             if (event.state?.page) {
                 if (event.state.page === 'comment-modal') {
-                    closeFullCommentModal();
-                    history.back();
+                    if (typeof window.closeFullCommentModal === 'function') {
+                        window.closeFullCommentModal(true);
+                    }
                 } else if (event.state.page === 'chat-conversation') {
                     if (event.state.uid && window.startChat) {
                         const cachedUser = window.userCache ? window.userCache[event.state.uid] : null;
@@ -4710,7 +4753,12 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                     }
                 }
             } else {
-                switchPage('home', false);
+                // ব্রাউজার হিস্ট্রি শেষ হয়ে গেলে এবং ইউজার অন্য কোনো সাব-ট্যাবে থাকলে সরাসরি হোম ট্যাবে ব্যাক করবে (ফেসবুক স্টাইল)
+                const activeNavBtn = document.querySelector('.nav-btn.nav-active');
+                const currentTab = activeNavBtn ? activeNavBtn.id.replace('btn-', '') : 'home';
+                if (currentTab !== 'home') {
+                    switchPage('home', false);
+                }
             }
         };
 
