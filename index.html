@@ -2037,6 +2037,19 @@ if (refUid) {
             if (!str) return "";
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
+
+        // পূর্ণ স্ক্রিনে ছবি দেখার গ্লোবাল ফাংশন
+        window.viewFullScreenImage = (url) => {
+            if (!url) return;
+            const modal = document.getElementById('image-viewer-modal');
+            const img = document.getElementById('full-image-view');
+            if (modal && img) {
+                img.src = url;
+                modal.classList.remove('hidden-custom');
+                setTimeout(() => modal.classList.add('open'), 10);
+                history.pushState({ modal: 'image-viewer-modal' }, null, "#view-image");
+            }
+        };
         // --- আপডেট করা টোস্ট নোটিফিকেশন সিস্টেম ---
         window.showToast = (msg, type = 'success') => {
             // নোটিফিকেশন বা এরর সাউন্ড বাজবে
@@ -2780,7 +2793,7 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
             const finalName = userDetails.name || (window.currentUser?.displayName) || "অজ্ঞাত";
             const badge = checkUserBadge(userDetails);
             const displayName = finalName + (userDetails.nickname ? ` (${userDetails.nickname})` : "");
-            let avatarHtml = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" loading="lazy" class="w-full h-full object-cover">` : `<i class="fa-solid fa-user"></i>`;
+            let avatarHtml = userDetails.profile_pic ? `<img src="${userDetails.profile_pic}" loading="lazy" class="w-full h-full object-cover cursor-pointer" onclick="window.viewFullScreenImage('${userDetails.profile_pic}')">` : `<i class="fa-solid fa-user"></i>`;
 
             // সেফটি ফাংশন (যাতে এলিমেন্ট না পেলেও কোড ক্র্যাশ না করে)
             const setHTML = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
@@ -2821,11 +2834,13 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
             setText('stats-friends-count', friendCount);
         });
 
-            // কভার ফটো ফিক্স
+            // কভার ফটো ফিক্স এবং ক্লিক ইভেন্ট
             const coverImg = document.getElementById('profile-cover-img');
             if (coverImg && userDetails.cover_pic) {
                 coverImg.src = userDetails.cover_pic;
                 coverImg.classList.remove('hidden');
+                coverImg.onclick = () => window.viewFullScreenImage(userDetails.cover_pic);
+                coverImg.classList.add('cursor-pointer');
             }
 
             // গ্রামের ট্যাব ফিক্স
@@ -4488,6 +4503,9 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 } else if (id === 'profile' && window.currentUser) {
                     import('./profile.js').then(() => {
                         window.loadProfilePosts(window.currentUser.uid, 'my-posts-feed');
+                        if (typeof window.loadFriendsPreview === 'function') {
+                            window.loadFriendsPreview(window.currentUser.uid, 'me');
+                        }
                         hideLoader();
                     }).catch(e => { console.error("Profile JS load failed", e); hideLoader(); });
                 } else if (id === 'monetization' && window.currentUser) {
