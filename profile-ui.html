@@ -1,12 +1,14 @@
-<!-- ১. প্রোফাইল এডিট মডাল (সোশ্যাল লিংক ও প্রাইভেসি সেটিং সহ) -->
+<!-- ১. প্রোফাইল এডিট মডাল -->
 <div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[160] flex items-center justify-center hidden-custom p-4">
     <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
         <button onclick="window.toggleEditProfile(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-        <h3 class="text-lg font-bold text-gray-800 mb-5 border-b pb-2">তথ্য পরিবর্তন করুন</h3>
+        <h3 class="text-lg font-bold text-gray-800 mb-5 border-b pb-2">정보 পরিবর্তন করুন</h3>
         <div class="space-y-4">
             <div><label class="text-xs font-bold text-gray-500 block mb-1">প্রোফাইল ছবি পরিবর্তন করুন</label><input type="file" id="edit-profile-img" accept="image/*" class="w-full bg-gray-50 border p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">নাম</label><input type="text" id="edit-name" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">ডাক নাম (Nickname)</label><input type="text" id="edit-nickname" placeholder="যেমন: রানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">ইউনিয়ন (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-union" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
+            <div><label class="text-xs font-bold text-gray-500 block mb-1">গ্রাম/মহল্লা (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-village" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বর্তমান ঠিকানা</label><input type="text" id="edit-location" placeholder="বিস্তারিত ঠিকানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
@@ -99,7 +101,7 @@
     </div>
 </div>
 
-<!-- ২. নিজের প্রোফাইল পেজ (সক্রিয়তা ইন্ডিকেটর ও অবদান উইজেট সহ) -->
+<!-- ২. নিজের প্রোফাইল পেজ -->
 <div id="page-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-0 animate-fade">
     <div class="relative bg-white shadow-sm mb-3 pb-4">
         
@@ -121,7 +123,6 @@
                         <div id="profile-avatar-container" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-5xl overflow-hidden">
                             <i class="fa-solid fa-user"></i>
                         </div>
-                        <!-- Active Status Dot -->
                         <span id="profile-presence-status" class="absolute bottom-1 right-2 w-5 h-5 bg-gray-400 border-4 border-white rounded-full transition-colors duration-300"></span>
                     </div>
                 </div>
@@ -233,7 +234,7 @@
             <p class="text-center text-gray-400 text-sm py-6">লোড হচ্ছে...</p>
         </div>
         
-        <!-- Bookmarked/Saved Area (Hidden by default) -->
+        <!-- Bookmarked/Saved Area -->
         <div id="my-saved-feed" class="hidden-custom space-y-3 pb-10 p-3 bg-gray-50">
             <p class="text-center text-gray-400 text-sm py-6">কোনো তথ্য সংরক্ষিত নেই</p>
         </div>
@@ -256,7 +257,7 @@
         <!-- Profile Info Section -->
         <div class="px-4 relative">
             <div class="flex items-end justify-between -mt-16 mb-4">
-                <!-- Avatar with Presence Status -->
+                <!-- Profile Avatar -->
                 <div class="relative z-10">
                     <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg relative">
                         <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-5xl overflow-hidden font-bold" id="view-profile-avatar-container">
@@ -309,8 +310,8 @@
         </div>
     </div>
 
-    <!-- Locked Profile Notice Container (Shown dynamically when locked & not friends) -->
-    <div id="view-profile-locked-notice" class="hidden bg-white p-6 shadow-sm mx-3 rounded-xl border border-gray-100 text-center my-10">
+    <!-- Locked Profile Notice Container -->
+    <div id="view-profile-locked-notice" class="hidden bg-white p-6 shadow-sm mx-3 rounded-xl border border-gray-100 text-center my-10 animate-fade">
         <div class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
             <i class="fa-solid fa-user-lock"></i>
         </div>
@@ -318,7 +319,7 @@
         <p class="text-sm text-gray-500 leading-relaxed">এই ব্যবহারকারীর তথ্য এবং পোস্টসমূহ শুধুমাত্র বন্ধুরাই দেখতে পারবেন। সকল তথ্য দেখতে ফ্রেন্ড রিকোয়েস্ট পাঠান।</p>
     </div>
 
-    <!-- Content Area (Details & Posts) -->
+    <!-- Content Area -->
     <div id="view-profile-content-area" class="space-y-3">
         <!-- Details Section -->
         <div class="bg-white p-4 shadow-sm">
@@ -346,7 +347,7 @@
 
         <!-- Posts Section -->
         <div class="px-0">
-            <div class="bg-white p-3 border-b border-gray-100">
+            <div class="bg-white p-3 mb-2 shadow-sm border-t border-b border-gray-100">
                 <h3 id="view-profile-posts-title" class="font-bold text-gray-700 text-lg">পোস্টসমূহ</h3>
             </div>
             <div id="view-profile-posts-feed" class="space-y-3 pb-10 bg-gray-50 p-3">
