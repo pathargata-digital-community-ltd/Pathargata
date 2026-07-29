@@ -33,7 +33,7 @@ window.openDirectoryCategory = (category, title) => {
             </div>`;
     }
     
-    // রিয়েল-টাইম ডাটা ফেচিং
+    // রিয়াল-টাইম ডাটা ফেচিং
     onValue(ref(window.db, `directory/${category}`), (snap) => {
         if (window.isBookmarkOnlyView) return; // বুকমার্ক মুডে থাকলে ওভাররাইট বন্ধ থাকবে
         
@@ -56,6 +56,50 @@ window.goBackToDirectoryRoot = () => {
         switchPage('directory');
     }
 };
+
+// স্বয়ংক্রিয় চেম্বার সময় গণনার জন্য হেল্পার ফাংশন (২৪ ঘণ্টার ফরম্যাট অনুযায়ী)
+function checkDoctorAvailability(timeRangeStr) {
+    if (!timeRangeStr) return false;
+    try {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        
+        // যদি কমা দিয়ে একাধিক সময় থাকে (যেমন: "08:00-10:00, 17:00-21:00")
+        const ranges = timeRangeStr.split(',');
+        for (let range of ranges) {
+            const parts = range.trim().split('-');
+            if (parts.length === 2) {
+                const [startH, startM] = parts[0].trim().split(':').map(Number);
+                const [endH, endM] = parts[1].trim().split(':').map(Number);
+                
+                const startMinutes = startH * 60 + startM;
+                const endMinutes = endH * 60 + endM;
+                
+                if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+                    return true;
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Time range parse error", e);
+    }
+    return false;
+}
+
+// হোয়াটসঅ্যাপের জন্য লিংক এবং শুভেচ্ছা বার্তা জেনারেটর
+function generateWhatsAppLink(phoneNum, name) {
+    if (!phoneNum) return '#';
+    let cleanNum = phoneNum.replace(/\D/g, ''); // সব সিম্বল মুছে শুধু সংখ্যা রাখবে
+    
+    if (cleanNum.startsWith('0')) {
+        cleanNum = '88' + cleanNum; // বাংলাদেশি কোড যুক্ত করবে
+    } else if (cleanNum.startsWith('+')) {
+        cleanNum = cleanNum.replace('+', '');
+    }
+    
+    const message = `আসসালামু আলাইকুম ${name} সাহেব, 'পাথরঘাটা ডিজিটাল' অ্যাপের ডিরেক্টরি থেকে আপনার সাথে যোগাযোগ করছি।`;
+    return `https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(message)}`;
+}
 
 // আইটেম রেন্ডারিং মাস্টার ফাংশন
 window.renderDirectoryItems = (items) => {
@@ -86,6 +130,15 @@ window.renderDirectoryItems = (items) => {
         const availability = window.escapeHTML(item.availability || item.hours || '');
         const is24_7 = item.is_active_24_7 === true;
         
+        // ডাক্তার স্পেসিফিক অতিরিক্ত ডাটা লোডিং
+        const specialty = window.escapeHTML(item.specialty || '');
+        const chamberTime = window.escapeHTML(item.chamber_time || '');
+        const daysAvailable = window.escapeHTML(item.days_available || '');
+        const hospitalChamber = window.escapeHTML(item.hospital_chamber || '');
+        
+        // স্বয়ংক্রিয় লাইভ চেম্বার সময় গণনা
+        const isAvailableNow = checkDoctorAvailability(item.chamber_time);
+
         // রেটিং ও রিভিউ প্রসেসিং
         const averageRating = item.rating ? parseFloat(item.rating).toFixed(1) : '0.0';
         const totalReviews = item.total_reviews || 0;
@@ -94,57 +147,114 @@ window.renderDirectoryItems = (items) => {
         const isBookmarked = bookmarks.includes(id);
         const starClass = isBookmarked ? 'fa-solid text-yellow-500' : 'fa-regular text-gray-400';
 
-        // ১. ছবি বা ডিফল্ট অ্যাভাটার জেনারেশন
+        // ১. ছবি বা ডিফল্ট অ্যাভাটার জেনারেশন (ডাক্তারদের জন্য বিশেষ থিম)
         let avatarHTML = '';
         if (item.profile_pic || item.image) {
             avatarHTML = `<img src="${item.profile_pic || item.image}" alt="${name}" loading="lazy" class="w-14 h-14 rounded-full object-cover border-2 border-green-100 shadow-sm shrink-0">`;
         } else {
+            const iconClass = specialty ? 'fa-user-md' : 'fa-user-tie';
             avatarHTML = `
                 <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 shadow-sm shrink-0">
-                    <i class="fa-solid fa-user-tie text-2xl"></i>
+                    <i class="fa-solid ${iconClass} text-2xl"></i>
                 </div>`;
         }
 
-        // ২. ম্যাপ রিডাইরেক্ট ইউআরএল জেনারেশন
-        const mapsQuery = item.lat && item.lng ? `${item.lat},${item.lng}` : encodeURIComponent(`${name} ${address}`);
+        // ২. ম্যাপ রিডাইরেক্ট ইউআরএল জেনারেশন (চেম্বার বা জেনারেল অ্যাড্রেস)
+        const mapsQuery = item.lat && item.lng ? `${item.lat},${item.lng}` : encodeURIComponent(`${name} ${hospitalChamber || address}`);
         const mapsLink = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
 
-        // ৩. ইমেইল, ওয়েবসাইট ও ঘণ্টা ব্যাজসমূহ
-        const emailHTML = email ? `
-            <p class="text-xs text-gray-500 flex items-center gap-1.5 truncate">
-                <i class="fa-regular fa-envelope text-gray-400 w-3.5 text-center"></i> ${email}
-            </p>` : '';
+        // ৩. ডাইনামিক ডিটেইলস ব্লক রেন্ডারিং (ডাক্তার বনাম সাধারণ কন্ট্যাক্ট)
+        let detailsBlockHTML = '';
+        if (specialty) {
+            // লাইভ চেম্বার স্ট্যাটাস ইন্ডিকেটর
+            const liveStatusBadge = isAvailableNow ? `
+                <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-100 w-max animate-pulse">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> চেম্বারে আছেন / রোগী দেখছেন
+                </span>` : `
+                <span class="text-[10px] text-gray-500 font-bold bg-gray-50 px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-gray-100 w-max">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span> চেম্বার বর্তমানে বন্ধ
+                </span>`;
 
-        const websiteHTML = website ? `
-            <button onclick="window.openInAppWebview('${name}', '${website}')" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 text-left transition">
-                <i class="fa-solid fa-globe text-blue-400 w-3.5 text-center"></i> ওয়েবসাইট দেখুন
-            </button>` : '';
+            detailsBlockHTML = `
+                <div class="mt-2.5 space-y-1.5 border-t border-dashed border-gray-100 pt-2">
+                    <p class="text-xs text-gray-700 flex items-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-stethoscope text-green-500 w-3.5 text-center"></i> ${specialty}
+                    </p>
+                    <p class="text-xs text-gray-500 flex items-start gap-1.5">
+                        <i class="fa-solid fa-hospital text-gray-400 mt-0.5 w-3.5 text-center shrink-0"></i>
+                        <span class="font-medium">চেম্বার: <span class="text-gray-800 font-bold">${hospitalChamber}</span></span>
+                    </p>
+                    <p class="text-xs text-gray-500 flex items-start gap-1.5">
+                        <i class="fa-regular fa-calendar-check text-gray-400 mt-0.5 w-3.5 text-center shrink-0"></i>
+                        <span class="font-medium">দিন: <span class="text-gray-700 font-semibold">${daysAvailable}</span></span>
+                    </p>
+                    <p class="text-xs text-gray-500 flex items-start gap-1.5">
+                        <i class="fa-regular fa-clock text-gray-400 mt-0.5 w-3.5 text-center shrink-0"></i>
+                        <span class="font-medium">সময়: <span class="text-gray-700 font-semibold">${chamberTime}</span></span>
+                    </p>
+                    <div class="pt-1 flex flex-wrap gap-2 items-center">
+                        ${liveStatusBadge}
+                        <a href="${mapsLink}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1 shadow-sm" title="গুগল ম্যাপে চেম্বার দেখুন">
+                            <i class="fa-solid fa-map-location-dot text-blue-500"></i> চেম্বার ম্যাপ
+                        </a>
+                    </div>
+                </div>`;
+        } else {
+            // সাধারণ কন্ট্যাক্টদের জন্য সাধারণ লেআউট
+            const timeHTML = is24_7 ? `
+                <span class="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse border border-red-100">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> ২৪ ঘণ্টা খোলা
+                </span>` : (availability ? `
+                <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
+                    <i class="fa-regular fa-clock"></i> ${availability}
+                </span>` : '');
 
-        const timeHTML = is24_7 ? `
-            <span class="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse border border-red-100">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> ২৪ ঘণ্টা খোলা
-            </span>` : (availability ? `
-            <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
-                <i class="fa-regular fa-clock"></i> ${availability}
-            </span>` : '');
+            detailsBlockHTML = `
+                <div class="mt-2.5 space-y-1.5">
+                    <p class="text-xs text-gray-500 flex items-start gap-1.5">
+                        <i class="fa-solid fa-location-dot text-gray-400 mt-0.5 w-3.5 text-center shrink-0"></i>
+                        <span class="leading-relaxed font-medium flex-1 min-w-0 truncate">${address}</span>
+                        <a href="${mapsLink}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline shrink-0 flex items-center gap-0.5" title="গুগল ম্যাপে দেখুন">
+                            <i class="fa-solid fa-map-location-dot"></i> ম্যাপস
+                        </a>
+                    </p>
+                    ${email ? `<p class="text-xs text-gray-500 flex items-center gap-1.5 truncate"><i class="fa-regular fa-envelope text-gray-400 w-3.5 text-center"></i> ${email}</p>` : ''}
+                    ${website ? `<button onclick="window.openInAppWebview('${name}', '${website}')" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 text-left transition"><i class="fa-solid fa-globe text-blue-400 w-3.5 text-center"></i> ওয়েবসাইট দেখুন</button>` : ''}
+                    
+                    <div class="pt-1 flex flex-wrap gap-2">
+                        ${timeHTML}
+                    </div>
+                </div>`;
+        }
 
-        // ৪. অ্যাপ মেসেজিং বাটন
-        const chatBtnHTML = chatUid ? `
-            <button onclick="triggerDirectAppChat('${chatUid}', '${name}')" class="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 active:scale-90 transition shadow-sm" title="সরাসরি চ্যাট">
-                <i class="fa-brands fa-facebook-messenger text-sm"></i>
-            </button>` : '';
+        // ৪. ৩টি যোগাযোগ বাটন (কল করুন, ইন-অ্যাপ চ্যাট, হোয়াটসঅ্যাপ চ্যাট)
+        let actionButtonsHTML = '';
+        if (phone) {
+            // ইন-অ্যাপ মেসেঞ্জার বাটন
+            const chatBtnHTML = chatUid ? `
+                <button onclick="triggerDirectAppChat('${chatUid}', '${name}')" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition" title="ইন-অ্যাপ চ্যাট">
+                    <i class="fa-brands fa-facebook-messenger"></i> মেসেজ
+                </button>` : `
+                <button class="flex-1 bg-gray-100 text-gray-400 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-not-allowed" title="চ্যাট অনুপলব্ধ">
+                    <i class="fa-solid fa-comment-slash"></i> মেসেজ
+                </button>`;
 
-        // ৫. কল অ্যাকশন ও কপি বাটন
-        const actionButtonsHTML = phone ? `
-            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                <a href="tel:${phone}" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
-                    <i class="fa-solid fa-phone"></i> কল করুন
-                </a>
-                <button onclick="copyToClipboard('${phone}')" class="w-9 h-9 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center border border-gray-200 active:scale-90 transition" title="কপি করুন">
-                    <i class="fa-regular fa-copy"></i>
-                </button>
-                ${chatBtnHTML}
-            </div>` : '';
+            // হোয়াটসঅ্যাপ ডিরেক্ট এপিআই লিংক
+            const waLink = generateWhatsAppLink(phone, name);
+            const whatsappBtnHTML = `
+                <a href="${waLink}" target="_blank" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95 transition" title="হোয়াটসঅ্যাপে মেসেজ পাঠান">
+                    <i class="fa-brands fa-whatsapp text-sm"></i> WhatsApp
+                </a>`;
+
+            actionButtonsHTML = `
+                <div class="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
+                    <a href="tel:${phone}" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+                        <i class="fa-solid fa-phone"></i> কল করুন
+                    </a>
+                    ${chatBtnHTML}
+                    ${whatsappBtnHTML}
+                </div>`;
+        }
 
         return `
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition duration-200 relative">
@@ -169,24 +279,13 @@ window.renderDirectoryItems = (items) => {
                         <span class="text-[10px] text-gray-400">(${totalReviews} রিভিউ)</span>
                     </div>
 
-                    <div class="mt-2.5 space-y-1.5">
-                        <!-- লোকেশন ও ডিরেকশন -->
-                        <p class="text-xs text-gray-500 flex items-start gap-1.5">
-                            <i class="fa-solid fa-location-dot text-gray-400 mt-0.5 w-3.5 text-center shrink-0"></i>
-                            <span class="leading-relaxed font-medium flex-1 min-w-0 truncate">${address}</span>
-                            <a href="${mapsLink}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline shrink-0 flex items-center gap-0.5" title="গুগল ম্যাপে দেখুন">
-                                <i class="fa-solid fa-map-location-dot"></i> ম্যাপস
-                            </a>
-                        </p>
-                        ${emailHTML}
-                        ${websiteHTML}
-                        
-                        <div class="pt-1 flex flex-wrap gap-2">
-                            ${timeHTML}
-                            <button onclick="openSuggestEditModal('${id}', '${window.currentLoadedCategory}', '${name}', '${phone}')" class="text-[10px] font-bold text-orange-500 bg-orange-50/80 px-2 py-0.5 rounded-full border border-orange-100 hover:bg-orange-100 transition">
-                                <i class="fa-solid fa-triangle-exclamation"></i> সংশোধন
-                            </button>
-                        </div>
+                    ${detailsBlockHTML}
+                    
+                    <!-- সাবমিট সংশোধন বাটন -->
+                    <div class="mt-2.5">
+                        <button onclick="openSuggestEditModal('${id}', '${window.currentLoadedCategory}', '${name}', '${phone}')" class="text-[10px] font-bold text-orange-500 bg-orange-50/80 px-2 py-0.5 rounded-full border border-orange-100 hover:bg-orange-100 transition">
+                            <i class="fa-solid fa-triangle-exclamation"></i> তথ্য পরিবর্তন করতে আবেদন করুন
+                        </button>
                     </div>
                 </div>
             </div>
@@ -393,8 +492,6 @@ window.submitDirectoryRating = () => {
     }).then(() => {
         window.showToast("আপনার রেটিং প্রদানের জন্য ধন্যবাদ!");
         closeDirectoryRatingModal();
-        
-        // অ্যাডমিন প্যানেল দিয়ে টোটাল রেটিং রান-টাইমে আপডেট করার স্ক্রিপ্ট বা রিমোট কন্ট্রোল করা যাবে।
     }).catch(() => {
         window.showToast("রেটিং জমা দিতে ব্যর্থ হয়েছে", "error");
     });
