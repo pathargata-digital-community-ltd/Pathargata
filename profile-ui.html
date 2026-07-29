@@ -1,4 +1,4 @@
-<!-- ১. প্রোফাইল এডিট মডাল -->
+<!-- ১. প্রোফাইল এডিট মডাল (সোশ্যাল লিংক ও প্রাইভেসি সেটিং সহ) -->
 <div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[160] flex items-center justify-center hidden-custom p-4">
     <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
         <button onclick="window.toggleEditProfile(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -7,11 +7,32 @@
             <div><label class="text-xs font-bold text-gray-500 block mb-1">প্রোফাইল ছবি পরিবর্তন করুন</label><input type="file" id="edit-profile-img" accept="image/*" class="w-full bg-gray-50 border p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">নাম</label><input type="text" id="edit-name" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">ডাক নাম (Nickname)</label><input type="text" id="edit-nickname" placeholder="যেমন: রানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">ইউনিয়ন (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-union" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
-            <div><label class="text-xs font-bold text-gray-500 block mb-1">গ্রাম/মহল্লা (পরিবর্তনযোগ্য নয়)</label><input type="text" id="edit-village" disabled class="w-full bg-gray-100 border p-2.5 rounded-lg text-sm text-gray-500 cursor-not-allowed"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বর্তমান ঠিকানা</label><input type="text" id="edit-location" placeholder="বিস্তারিত ঠিকানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
+            
+            <div class="border-t pt-3 mt-3">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">সামাজিক যোগাযোগের লিংক</h4>
+                <div class="space-y-2">
+                    <input type="url" id="edit-facebook" placeholder="ফেসবুক প্রোফাইল লিংক" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                    <input type="tel" id="edit-whatsapp" placeholder="হোয়াটসঅ্যাপ নম্বর (যেমন: 017...)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                    <input type="url" id="edit-website" placeholder="ব্যক্তিগত ওয়েবসাইট লিংক" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <div class="border-t pt-3 mt-3">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">নিরাপত্তা ও গোপনীয়তা</h4>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2 rounded-lg border">
+                        <input type="checkbox" id="edit-profile-lock" class="w-4 h-4 text-green-600 rounded">
+                        <span class="text-xs text-gray-700 font-bold">প্রোফাইল লক করুন (Lock Profile)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer bg-gray-50 p-2 rounded-lg border">
+                        <input type="checkbox" id="edit-hide-phone" class="w-4 h-4 text-green-600 rounded">
+                        <span class="text-xs text-gray-700 font-bold">মোবাইল নম্বর সাধারণ ইউজার থেকে লুকান</span>
+                    </label>
+                </div>
+            </div>
         </div>
         <button onclick="window.saveProfileChanges()" id="btn-save-profile" class="w-full bg-green-600 text-white font-bold py-3 mt-6 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">সংরক্ষণ করুন</button>
     </div>
@@ -20,20 +41,15 @@
 <!-- স্মার্ট প্রোফাইল কার্ড মডাল -->
 <div id="profile-card-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
     <div class="w-full max-w-[380px] relative transform transition-all duration-300 scale-100">
-        <!-- Close Button -->
         <button onclick="window.closeProfileCard()" class="absolute -top-12 right-0 bg-white bg-opacity-20 hover:bg-opacity-40 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md z-50">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
 
-        <!-- The ID Card -->
         <div id="capture-card-area" class="w-full h-[240px] bg-gradient-to-br from-green-600 to-teal-700 relative overflow-hidden shadow-2xl rounded-xl text-white border border-white/20">
-            
-            <!-- Watermark -->
             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 -rotate-12 text-[3.5rem] font-extrabold text-white/5 whitespace-nowrap pointer-events-none z-0 leading-none">
                 পাথরঘাটা ডিজিটাল<br>পাথরঘাটা ডিজিটাল
             </div>
 
-            <!-- Top Header -->
             <div class="bg-white/10 backdrop-blur-md px-4 py-2 flex justify-between items-center relative z-10 border-b border-white/20">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
@@ -47,45 +63,26 @@
                 <i class="fa-solid fa-microchip text-2xl text-yellow-300 opacity-80"></i>
             </div>
 
-            <!-- Body Content -->
             <div class="px-4 py-3 h-full relative z-10 flex items-start gap-4">
-                
-                <!-- Left Side: Image & QR -->
                 <div class="flex flex-col items-center gap-3 shrink-0">
                     <div class="relative">
-                        <div id="card-user-img" class="w-20 h-20 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center overflow-hidden">
-                            <!-- Image will be injected here -->
-                        </div>
+                        <div id="card-user-img" class="w-20 h-20 bg-white p-0.5 rounded-lg shadow-md flex items-center justify-center overflow-hidden"></div>
                         <div id="card-verify-badge" class="hidden absolute -bottom-2 -right-2 bg-blue-500 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm" title="Verified">
                             <i class="fa-solid fa-check text-[10px] text-white"></i>
                         </div>
                     </div>
-                    <!-- QR Code Container -->
                     <div class="bg-white p-1 rounded-md shadow-sm">
                         <img id="card-qr-code" src="" alt="QR Code" class="w-12 h-12">
                     </div>
                 </div>
 
-                <!-- Right Side: Details Information -->
                 <div class="flex-1 min-w-0 mt-1">
                     <h3 id="card-user-name" class="font-bold text-xl leading-tight truncate border-b border-white/20 pb-1 mb-2">...</h3>
-                    
                     <div class="space-y-1.5 text-xs text-white">
-                        <div class="flex items-start gap-2">
-                            <i class="fa-solid fa-phone w-3 mt-1 text-green-200"></i>
-                            <span id="card-user-phone" class="font-mono tracking-widest leading-tight">...</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <i class="fa-solid fa-location-dot w-3 mt-1 text-green-200"></i>
-                            <span id="card-user-address" class="leading-tight">...</span>
-                        </div>
-                        <div class="flex items-start gap-2">
-                            <i class="fa-solid fa-briefcase w-3 mt-1 text-green-200"></i>
-                            <span id="card-user-profession" class="leading-tight font-medium">...</span>
-                        </div>
+                        <div class="flex items-start gap-2"><i class="fa-solid fa-phone w-3 mt-1 text-green-200"></i><span id="card-user-phone" class="font-mono tracking-widest leading-tight">...</span></div>
+                        <div class="flex items-start gap-2"><i class="fa-solid fa-location-dot w-3 mt-1 text-green-200"></i><span id="card-user-address" class="leading-tight">...</span></div>
+                        <div class="flex items-start gap-2"><i class="fa-solid fa-briefcase w-3 mt-1 text-green-200"></i><span id="card-user-profession" class="leading-tight font-medium">...</span></div>
                     </div>
-
-                    <!-- Codes Section -->
                     <div class="flex gap-2 mt-3 pt-2 border-t border-white/20">
                         <div class="bg-black/20 rounded px-2 py-1 flex-1 text-center">
                             <p class="text-[8px] text-green-200 uppercase tracking-widest mb-0.5">UID / Ref Code</p>
@@ -96,15 +93,14 @@
             </div>
         </div>
         
-        <!-- Action Button below card -->
         <button onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
             <i class="fa-solid fa-download"></i> কার্ড সেভ করুন
         </button>
     </div>
 </div>
 
-<!-- ২. নিজের প্রোফাইল পেজ (UPDATED DESIGN) -->
-<div id="page-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-0">
+<!-- ২. নিজের প্রোফাইল পেজ (সক্রিয়তা ইন্ডিকেটর ও অবদান উইজেট সহ) -->
+<div id="page-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-0 animate-fade">
     <div class="relative bg-white shadow-sm mb-3 pb-4">
         
         <!-- Cover Photo -->
@@ -116,17 +112,20 @@
             <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
         </div>
 
-        <!-- Profile Info Section (Facebook Style) -->
+        <!-- Profile Info Section -->
         <div class="px-4 relative">
             <div class="flex items-end justify-between -mt-16 mb-4">
-                <!-- Profile Avatar (Left Aligned, Overlapping Cover) -->
+                <!-- Avatar with Presence Status Indicator -->
                 <div class="relative z-10">
-                    <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg">
-                        <div id="profile-avatar-container" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-5xl overflow-hidden"><i class="fa-solid fa-user"></i></div>
+                    <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg relative">
+                        <div id="profile-avatar-container" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-5xl overflow-hidden">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <!-- Active Status Dot -->
+                        <span id="profile-presence-status" class="absolute bottom-1 right-2 w-5 h-5 bg-gray-400 border-4 border-white rounded-full transition-colors duration-300"></span>
                     </div>
                 </div>
                 
-                <!-- Action Buttons: Edit Profile & My Card -->
                 <div class="flex gap-1.5 mb-1.5 relative z-10">
                     <button onclick="window.openProfileCard()" class="bg-gradient-to-r from-green-600 to-teal-600 text-white px-3 py-1.5 rounded-md font-bold text-xs hover:opacity-90 flex items-center justify-center gap-1.5 transition shadow-sm active:scale-95 whitespace-nowrap">
                         <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
@@ -139,17 +138,27 @@
 
             <!-- Name and Bio -->
             <div class="mb-4">
-                <h2 id="profile-name" class="text-2xl font-bold text-gray-900 flex items-center gap-1">...</h2>
+                <div class="flex items-center gap-2">
+                    <h2 id="profile-name" class="text-2xl font-bold text-gray-900 flex items-center gap-1">...</h2>
+                    <span id="profile-lock-badge" class="hidden text-gray-400 text-sm" title="প্রোফাইল লক করা"><i class="fa-solid fa-lock"></i></span>
+                </div>
                 <div class="flex gap-2 items-center mt-1">
                     <span id="profile-union-badge" class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-bold">---</span>
                     <span class="text-gray-400 text-xs">•</span>
                     <p id="profile-village-badge" class="text-sm text-gray-500"><i class="fa-solid fa-location-dot"></i> <span id="profile-village-text">...</span></p>
                 </div>
                 <p id="profile-bio" class="text-sm text-gray-600 mt-2 italic">...</p>
+                
+                <!-- Quick Social Links Icons -->
+                <div class="flex gap-3 mt-3" id="profile-social-container">
+                    <a id="link-fb" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-sm"><i class="fa-brands fa-facebook"></i></a>
+                    <a id="link-wa" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-green-50 text-green-600 items-center justify-center hover:bg-green-100 transition text-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a id="link-web" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-sm"><i class="fa-solid fa-globe"></i></a>
+                </div>
             </div>
 
             <!-- Stats (Friends, Posts, Joined Date) -->
-            <div class="flex items-center justify-start gap-6 border-t border-gray-100 pt-4">
+            <div class="flex items-center justify-between border-t border-gray-100 pt-4 max-w-sm">
                 <div class="text-center">
                     <p class="font-bold text-gray-800 text-lg" id="stats-friends-count">0</p>
                     <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Friends</p>
@@ -161,6 +170,27 @@
                 <div class="text-center">
                     <p class="font-bold text-gray-800 text-sm mt-1" id="stats-join-date">---</p>
                     <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Joined</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- পয়েন্ট ও অবদান ওয়ালেট কার্ড -->
+    <div class="bg-white p-4 shadow-sm mb-3 rounded-xl mx-3 border border-gray-100">
+        <h3 class="font-bold text-sm text-gray-400 uppercase tracking-wider mb-3"><i class="fa-solid fa-wallet text-green-600"></i> অবদান ও রিওয়ার্ড পয়েন্ট</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-3 rounded-lg border border-green-100 flex items-center gap-3">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 text-lg shadow-sm"><i class="fa-solid fa-award"></i></div>
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase">রিওয়ার্ড পয়েন্ট</p>
+                    <p class="font-mono text-lg font-extrabold text-green-700" id="profile-wallet-points">0</p>
+                </div>
+            </div>
+            <div class="bg-gradient-to-br from-red-50 to-pink-50 p-3 rounded-lg border border-red-100 flex items-center gap-3">
+                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-red-600 text-lg shadow-sm"><i class="fa-solid fa-droplet"></i></div>
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase">রক্তদান সংখ্যা</p>
+                    <p class="font-mono text-lg font-extrabold text-red-700" id="profile-blood-donations">0</p>
                 </div>
             </div>
         </div>
@@ -191,19 +221,27 @@
         </div>
     </div>
 
-    <!-- Posts Section -->
-    <div class="px-0">
-        <div class="bg-white p-3 mb-2 shadow-sm flex items-center gap-2">
-            <h3 class="font-bold text-gray-700 text-lg">আমার পোস্টসমূহ</h3>
+    <!-- Profile Posts & Bookmarks Tabs -->
+    <div class="bg-white shadow-sm">
+        <div class="flex border-b border-gray-100">
+            <button onclick="window.switchProfileTab('posts')" id="tab-profile-posts" class="flex-1 text-center py-3.5 text-sm font-bold text-green-600 border-b-2 border-green-600 transition-all">আমার পোস্টসমূহ</button>
+            <button onclick="window.switchProfileTab('saved')" id="tab-profile-saved" class="flex-1 text-center py-3.5 text-sm font-bold text-gray-400 transition-all">সংরক্ষিত তথ্য</button>
         </div>
-        <div id="my-posts-feed" class="space-y-3 pb-10">
+        
+        <!-- Post Feed Area -->
+        <div id="my-posts-feed" class="space-y-3 pb-10 p-3 bg-gray-50">
             <p class="text-center text-gray-400 text-sm py-6">লোড হচ্ছে...</p>
+        </div>
+        
+        <!-- Bookmarked/Saved Area (Hidden by default) -->
+        <div id="my-saved-feed" class="hidden-custom space-y-3 pb-10 p-3 bg-gray-50">
+            <p class="text-center text-gray-400 text-sm py-6">কোনো তথ্য সংরক্ষিত নেই</p>
         </div>
     </div>
 </div>
 
-<!-- ৩. অন্যের প্রোফাইল দেখার পেজ (UPDATED DESIGN) -->
-<div id="page-view-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-50 absolute top-0 left-0 w-full">
+<!-- ৩. অন্যের প্রোফাইল দেখার পেজ -->
+<div id="page-view-profile" class="hidden bg-[#f0f2f5] min-h-screen pb-20 z-50 absolute top-0 left-0 w-full animate-fade">
     <div class="bg-white p-2 sticky top-0 z-30 shadow-sm flex items-center gap-2 pt-safe">
         <button onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
         <h2 class="font-bold text-lg text-gray-800" id="view-profile-header-name">প্রোফাইল</h2>
@@ -215,30 +253,43 @@
             <img id="view-profile-cover-img" class="w-full h-full object-cover hidden">
         </div>
 
-        <!-- Profile Info Section (Facebook Style) -->
+        <!-- Profile Info Section -->
         <div class="px-4 relative">
             <div class="flex items-end justify-between -mt-16 mb-4">
-                <!-- Profile Avatar -->
+                <!-- Avatar with Presence Status -->
                 <div class="relative z-10">
-                    <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg">
-                        <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-5xl overflow-hidden font-bold" id="view-profile-avatar-container"><span id="view-profile-initial">U</span></div>
+                    <div class="w-32 h-32 rounded-full p-1 bg-white shadow-lg relative">
+                        <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-5xl overflow-hidden font-bold" id="view-profile-avatar-container">
+                            <span id="view-profile-initial">U</span>
+                        </div>
+                        <span id="view-profile-presence-status" class="absolute bottom-1 right-2 w-5 h-5 bg-gray-400 border-4 border-white rounded-full"></span>
                     </div>
                 </div>
             </div>
 
             <!-- Name and Bio -->
             <div class="mb-4">
-                <h2 id="view-profile-name" class="text-2xl font-bold text-gray-900 flex items-center gap-1">...</h2>
+                <div class="flex items-center gap-2">
+                    <h2 id="view-profile-name" class="text-2xl font-bold text-gray-900 flex items-center gap-1">...</h2>
+                    <span id="view-profile-lock-badge" class="hidden text-gray-400 text-sm"><i class="fa-solid fa-lock"></i></span>
+                </div>
                 <div class="flex gap-2 items-center mt-1">
                     <span id="view-profile-union-badge" class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-bold">---</span>
                     <span class="text-gray-400 text-xs">•</span>
                     <p class="text-sm text-gray-500"><i class="fa-solid fa-location-dot"></i> <span id="view-profile-village-text">...</span></p>
                 </div>
                 <p id="view-profile-bio" class="text-sm text-gray-600 mt-2 italic">---</p>
+                
+                <!-- Other User Social Links -->
+                <div class="flex gap-3 mt-3" id="view-profile-social-container">
+                    <a id="view-link-fb" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-sm"><i class="fa-brands fa-facebook"></i></a>
+                    <a id="view-link-wa" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-green-50 text-green-600 items-center justify-center hover:bg-green-100 transition text-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a id="view-link-web" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-sm"><i class="fa-solid fa-globe"></i></a>
+                </div>
             </div>
 
             <!-- Stats (Friends, Posts, Joined Date) -->
-            <div class="flex items-center justify-start gap-6 border-t border-gray-100 pt-4 mb-4">
+            <div class="flex items-center justify-between border-t border-gray-100 pt-4 mb-4 max-w-sm">
                 <div class="text-center">
                     <p class="font-bold text-gray-800 text-lg" id="view-stats-friends-count">0</p>
                     <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Friends</p>
@@ -258,37 +309,49 @@
         </div>
     </div>
 
-    <!-- Details Section -->
-    <div class="bg-white p-4 shadow-sm mb-3">
-        <h3 class="font-bold text-lg text-gray-800 mb-3">বিস্তারিত</h3>
-        <div class="space-y-3">
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-briefcase w-6 text-center text-gray-400 text-lg"></i><span class="text-base">পেশা: <strong id="view-profile-profession" class="text-gray-800 ml-1">---</strong></span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-location-dot w-6 text-center text-gray-400 text-lg"></i><span class="text-base">ঠিকানা: <strong id="view-profile-location" class="text-gray-800 ml-1">---</strong></span></div>
-            <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-phone w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="view-profile-phone">---</span></div>
+    <!-- Locked Profile Notice Container (Shown dynamically when locked & not friends) -->
+    <div id="view-profile-locked-notice" class="hidden bg-white p-6 shadow-sm mx-3 rounded-xl border border-gray-100 text-center my-10">
+        <div class="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fa-solid fa-user-lock"></i>
         </div>
+        <h4 class="font-bold text-gray-800 text-lg mb-1">প্রোফাইলটি লক করা আছে</h4>
+        <p class="text-sm text-gray-500 leading-relaxed">এই ব্যবহারকারীর তথ্য এবং পোস্টসমূহ শুধুমাত্র বন্ধুরাই দেখতে পারবেন। সকল তথ্য দেখতে ফ্রেন্ড রিকোয়েস্ট পাঠান।</p>
     </div>
 
-    <!-- Friends Preview Section -->
-    <div class="bg-white p-4 shadow-sm mb-3">
-        <div class="flex justify-between items-center mb-3">
-            <div>
-                <h3 class="font-bold text-lg text-gray-800">বন্ধুবান্ধব</h3>
-                <p class="text-sm text-gray-500" id="friends-count-other">0 জন বন্ধু</p>
+    <!-- Content Area (Details & Posts) -->
+    <div id="view-profile-content-area" class="space-y-3">
+        <!-- Details Section -->
+        <div class="bg-white p-4 shadow-sm">
+            <h3 class="font-bold text-lg text-gray-800 mb-3">বিস্তারিত</h3>
+            <div class="space-y-3" id="view-profile-details-list">
+                <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-briefcase w-6 text-center text-gray-400 text-lg"></i><span class="text-base">পেশা: <strong id="view-profile-profession" class="text-gray-800 ml-1">---</strong></span></div>
+                <div class="flex items-center gap-3 text-gray-600"><i class="fa-solid fa-location-dot w-6 text-center text-gray-400 text-lg"></i><span class="text-base">ঠিকানা: <strong id="view-profile-location" class="text-gray-800 ml-1">---</strong></span></div>
+                <div class="flex items-center gap-3 text-gray-600" id="view-profile-phone-container"><i class="fa-solid fa-phone w-6 text-center text-gray-400 text-lg"></i><span class="text-base" id="view-profile-phone">---</span></div>
             </div>
-            <button id="btn-view-friends-other" class="text-blue-600 text-sm font-bold hover:bg-gray-100 px-3 py-1.5 rounded transition">সব দেখুন</button>
         </div>
-        <div id="profile-friends-preview-other" class="grid grid-cols-3 gap-2">
-            <p class="col-span-3 text-center text-sm text-gray-400 py-4">লোড হচ্ছে...</p>
-        </div>
-    </div>
 
-    <!-- Posts Section -->
-    <div class="px-0">
-        <div class="bg-white p-3 mb-2 shadow-sm border-t border-b border-gray-100">
-            <h3 id="view-profile-posts-title" class="font-bold text-gray-700 text-lg">পোস্টসমূহ</h3>
+        <!-- Friends Preview Section -->
+        <div class="bg-white p-4 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-800">বন্ধুবান্ধব</h3>
+                    <p class="text-sm text-gray-500" id="friends-count-other">0 জন বন্ধু</p>
+                </div>
+                <button id="btn-view-friends-other" class="text-blue-600 text-sm font-bold hover:bg-gray-100 px-3 py-1.5 rounded transition">সব দেখুন</button>
+            </div>
+            <div id="profile-friends-preview-other" class="grid grid-cols-3 gap-2">
+                <p class="col-span-3 text-center text-sm text-gray-400 py-4">লোড হচ্ছে...</p>
+            </div>
         </div>
-        <div id="view-profile-posts-feed" class="space-y-3 pb-10">
-            <p class="text-center text-gray-400 text-sm">লোড হচ্ছে...</p>
+
+        <!-- Posts Section -->
+        <div class="px-0">
+            <div class="bg-white p-3 border-b border-gray-100">
+                <h3 id="view-profile-posts-title" class="font-bold text-gray-700 text-lg">পোস্টসমূহ</h3>
+            </div>
+            <div id="view-profile-posts-feed" class="space-y-3 pb-10 bg-gray-50 p-3">
+                <p class="text-center text-gray-400 text-sm">লোড হচ্ছে...</p>
+            </div>
         </div>
     </div>
 </div>
