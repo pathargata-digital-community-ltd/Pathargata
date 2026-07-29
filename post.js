@@ -771,7 +771,7 @@ window.createPostHTML = function(post, id) {
         if (post.bgColor && post.type === 'text') {
         contentHTML = `<div class="colored-post-bg relative cursor-pointer" style="background: ${post.bgColor};" ondblclick="window.handleDoubleTapLike('${id}')">
                           <i id="big-heart-${id}" class="fa-solid fa-heart big-heart-pop"></i>
-                          ${window.escapeHTML(post.content)}
+                          ${window.parseHashtags ? window.parseHashtags(window.escapeHTML(post.content)) : window.escapeHTML(post.content)}
                        </div>`;
         } else {
             const ytMatch = post.content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -779,7 +779,15 @@ window.createPostHTML = function(post, id) {
             let cleanText = window.escapeHTML(post.content);
             if (ytMatch) cleanText = cleanText.replace(ytMatch[0], '');
             if (driveMatch) cleanText = cleanText.replace(driveMatch[0], '[Drive Link]');
-            if (cleanText.length > 150) cleanText = `<span>${cleanText.substring(0, 150)}...</span><span id="more-${id}" class="hidden">${cleanText.substring(150)}</span> <button onclick="window.toggleReadMore('${id}')" class="text-blue-600 text-xs font-bold">আরো পড়ুন</button>`;
+            
+            if (cleanText.length > 150) {
+                // লেখা কেটে ফেলার পর হ্যাশট্যাগ রূপান্তর করা হচ্ছে, যাতে HTML ট্যাগ মাঝখান থেকে কেটে না যায়
+                let firstPart = window.parseHashtags ? window.parseHashtags(cleanText.substring(0, 150)) : cleanText.substring(0, 150);
+                let secondPart = window.parseHashtags ? window.parseHashtags(cleanText.substring(150)) : cleanText.substring(150);
+                cleanText = `<span>${firstPart}...</span><span id="more-${id}" class="hidden">${secondPart}</span> <button onclick="window.toggleReadMore('${id}')" class="text-blue-600 text-xs font-bold">আরো পড়ুন</button>`;
+            } else {
+                cleanText = window.parseHashtags ? window.parseHashtags(cleanText) : cleanText;
+            }
             
             // Fix: Added += instead of = so audio player is not overwritten
             contentHTML += `<p class="post-text-content text-[15px] text-gray-800 mb-2 whitespace-pre-line leading-relaxed font-normal">${cleanText}</p>`;
@@ -902,6 +910,7 @@ window.openSinglePostModal = (postId) => {
 window.openTagModal = () => {
     const tm = document.getElementById('tag-friends-modal');
     if(tm) {
+        tm.style.zIndex = "350"; // পোস্ট মডালের ওপরে দেখানোর জন্য z-index বাড়িয়ে দেওয়া হলো
         tm.classList.remove('hidden-custom');
         setTimeout(() => tm.classList.add('open'), 10);
     }
@@ -1003,6 +1012,7 @@ window.clearTags = () => {
 window.openFeelingModal = () => {
     const fm = document.getElementById('feeling-modal');
     if(fm) {
+        fm.style.zIndex = "350"; // পোস্ট মডালের ওপরে দেখানোর জন্য z-index বাড়িয়ে দেওয়া হলো
         fm.classList.remove('hidden-custom');
         setTimeout(() => fm.classList.add('open'), 10);
     }
@@ -1023,6 +1033,7 @@ window.selectFeeling = (text, emoji) => {
 window.openLocationModal = () => {
     const lm = document.getElementById('location-modal');
     if(lm) {
+        lm.style.zIndex = "350"; // পোস্ট মডালের ওপরে দেখানোর জন্য z-index বাড়িয়ে দেওয়া হলো
         lm.classList.remove('hidden-custom');
         setTimeout(() => {
             lm.classList.add('open');
