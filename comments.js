@@ -111,7 +111,8 @@ window.loadFullComments = (postId) => {
 
 // --- Smart Text Styler (Color & Vibe) ---
 function applySmartStyling(text) {
-    let cleanText = safeHTML(text);
+    // কমেন্টের টেক্সটকে প্রথমে হ্যাশট্যাগে রূপান্তর করা হচ্ছে
+    let cleanText = window.parseHashtags ? window.parseHashtags(safeHTML(text)) : safeHTML(text);
 
     // ১. ইসলামিক শব্দ (সবুজ বা স্নিগ্ধ রঙ)
     const islamicWords = [
