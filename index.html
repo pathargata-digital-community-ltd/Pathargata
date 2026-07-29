@@ -1120,7 +1120,7 @@
     </div>
 
     <!-- Tag Friends Modal -->
-    <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
+    <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[350] flex flex-col hidden-custom">
         <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
             <button onclick="closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-lg">বন্ধুদের ট্যাগ করুন</h3>
@@ -1132,7 +1132,7 @@
     </div>
 
     <!-- Feeling Modal -->
-    <div id="feeling-modal" class="fixed inset-0 bg-white z-[210] flex flex-col hidden-custom">
+    <div id="feeling-modal" class="fixed inset-0 bg-white z-[350] flex flex-col hidden-custom">
         <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
             <button onclick="closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
@@ -3366,6 +3366,11 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
         
         window.handleLogout = async () => {
             if (confirm("লগআউট করবেন?")) {
+                // ট্র্যাকিং ইভেন্ট
+                if (typeof window.logUserActivity === 'function') {
+                    window.logUserActivity("User Logout");
+                }
+                
                 // আগের একাউন্টের ক্যাশ মুছে ফেলা হচ্ছে
                 localStorage.removeItem('feed_cache_all');
                 localStorage.removeItem('feed_cache_union');
@@ -3863,6 +3868,11 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
 
         // --- IN-APP WEBVIEW LOGIC ---
         window.openInAppWebview = function(title, url) {
+            // ট্র্যাকিং ইভেন্ট
+            if (typeof window.logUserActivity === 'function') {
+                window.logUserActivity("External Site Visit", { title: title, url: url });
+            }
+
             const modal = document.getElementById('webview-modal');
             modal.classList.remove('hidden-custom');
             
@@ -4349,6 +4359,11 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         };
 
         window.switchPage = function(id, addHistory = true) {
+            // ট্র্যাকিং ইভেন্ট
+            if (typeof window.logUserActivity === 'function') {
+                window.logUserActivity("Page Visit", { visited_page: id });
+            }
+
             if(typeof toggleSidebar === 'function') toggleSidebar(false);
             document.querySelectorAll('.post-menu-dropdown').forEach(el => el.classList.add('hidden'));
 
@@ -5116,13 +5131,31 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="notifications.js"></script>
     <script type="module" src="notes.js"></script>
     <script type="module" src="messages.js"></script>
+    <!-- আমাদের নতুন ট্র্যাকিং মডিউল লিংক করা হলো -->
+    <script type="module" src="tracker.js"></script>
 <!-- সাউন্ড ইফেক্টস -->
     <audio id="like-sound" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3" preload="auto"></audio>
     <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
     <audio id="message-sound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3" preload="auto"></audio>
     <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2954/2954-preview.mp3" preload="auto"></audio>
     <audio id="send-sound" src="https://assets.mixkit.co/active_storage/sfx/237/237-preview.mp3" preload="auto"></audio>
-<!-- অফলাইন চেকার স্ক্রিপ্ট -->
+<!-- কুকি সম্মতি ব্যানার (Cookie Consent Banner) -->
+    <div id="cookie-consent-banner" class="fixed bottom-24 left-4 right-4 bg-white border border-gray-200 p-4 rounded-2xl shadow-2xl z-[300] flex flex-col items-stretch gap-3 hidden-custom max-w-[420px] mx-auto transition-all duration-300">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shrink-0 text-lg border border-green-100">
+                <i class="fa-solid fa-cookie-bite"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800 text-sm">আমরা কুকি ব্যবহার করি</h4>
+                <p class="text-[11px] text-gray-500 leading-relaxed mt-0.5">আপনার অভিজ্ঞতা উন্নত করতে, সেটিংস মনে রাখতে এবং অ্যাপের নিরাপত্তা বজায় রাখতে আমরা কুকি ব্যবহার করি। বিস্তারিত জানতে আমাদের <a href="#" onclick="openPrivacyPolicy(event)" class="text-green-600 font-bold hover:underline">প্রাইভেসি পলিসি</a> দেখুন।</p>
+            </div>
+        </div>
+        <div class="flex gap-2 justify-end border-t pt-2.5">
+            <button onclick="acceptCookieConsent()" class="bg-green-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow-md hover:bg-green-700 transition active:scale-95">সম্মত আছি</button>
+        </div>
+    </div>
+
+    <!-- অফলাইন চেকার স্ক্রিপ্ট -->
     <script>
         function handleOfflineUI() {
             // চেক করুন ইন্টারনেট আছে কিনা বা Tailwind লোড হয়েছে কিনা
