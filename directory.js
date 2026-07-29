@@ -1,15 +1,29 @@
 import {
     ref,
-    onValue
+    onValue,
+    push,
+    set,
+    get
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// গ্লোবাল ডিরেক্টরি ওপেনার ফাংশন
+// গ্লোবাল ভ্যারিয়েবলসমূহ
+window.currentLoadedCategory = '';
+window.currentCategoryItems = [];
+window.isBookmarkOnlyView = false;
+
+// ক্যাটাগরি পেজ ওপেন করার মেইন লজিক
 window.openDirectoryCategory = (category, title) => {
+    window.isBookmarkOnlyView = false;
+    window.currentLoadedCategory = category;
     switchPage('directory-list');
     
     const listTitle = document.getElementById('directory-list-title');
     if (listTitle) listTitle.innerText = title;
     
+    // সার্চ ইনপুট ক্লিয়ার
+    const searchInput = document.getElementById('directory-search-input');
+    if (searchInput) searchInput.value = '';
+
     const container = document.getElementById('directory-items-container');
     if (container) {
         container.innerHTML = `
@@ -19,78 +33,369 @@ window.openDirectoryCategory = (category, title) => {
             </div>`;
     }
     
+    // রিয়েল-টাইম ডাটা ফেচিং
     onValue(ref(window.db, `directory/${category}`), (snap) => {
+        if (window.isBookmarkOnlyView) return; // বুকমার্ক মুডে থাকলে ওভাররাইট বন্ধ থাকবে
+        
         const data = snap.val() || {};
-        if (!container) return;
+        // ডাটা প্রসেস ও ক্যাশে রাখা (সার্চ ফিল্টারের জন্য)
+        window.currentCategoryItems = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+        }));
+        
+        renderDirectoryItems(window.currentCategoryItems);
+    });
+};
 
-        const itemsArray = Object.values(data);
+// ব্যাক বাটন ক্লিক হ্যান্ডেলার
+window.goBackToDirectoryRoot = () => {
+    if (window.isBookmarkOnlyView) {
+        toggleBookmarkView(false);
+    } else {
+        switchPage('directory');
+    }
+};
 
-        if (itemsArray.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-16 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                    <i class="fa-regular fa-folder-open text-5xl text-gray-300 mb-3"></i>
-                    <p class="text-gray-500 font-medium">এই বিভাগে বর্তমানে কোনো তথ্য পাওয়া যায়নি</p>
+// আইটেম রেন্ডারিং মাস্টার ফাংশন
+window.renderDirectoryItems = (items) => {
+    const container = document.getElementById('directory-items-container');
+    if (!container) return;
+
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-16 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <i class="fa-regular fa-folder-open text-5xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500 font-semibold">কোনো তথ্য পাওয়া যায়নি</p>
+            </div>`;
+        return;
+    }
+
+    // লোকাল বুকমার্ক লিডিং লিস্ট লোড করা
+    const bookmarks = JSON.parse(localStorage.getItem('directory_bookmarks') || '[]');
+
+    container.innerHTML = items.map(item => {
+        const id = item.id;
+        const name = window.escapeHTML(item.name || 'নাম উল্লেখ নেই');
+        const designation = window.escapeHTML(item.designation || item.details || 'পদবী উল্লেখ নেই');
+        const address = window.escapeHTML(item.address || 'ঠিকানা উল্লেখ নেই');
+        const phone = window.escapeHTML(item.phone || '');
+        const email = window.escapeHTML(item.email || '');
+        const website = window.escapeHTML(item.website || '');
+        const chatUid = window.escapeHTML(item.chat_uid || ''); // অ্যাপ চ্যাট আইডি (ঐচ্ছিক)
+        const availability = window.escapeHTML(item.availability || item.hours || '');
+        const is24_7 = item.is_active_24_7 === true;
+        
+        // রেটিং ও রিভিউ প্রসেসিং
+        const averageRating = item.rating ? parseFloat(item.rating).toFixed(1) : '0.0';
+        const totalReviews = item.total_reviews || 0;
+
+        // বুকমার্ক করা আছে কিনা চেক
+        const isBookmarked = bookmarks.includes(id);
+        const starClass = isBookmarked ? 'fa-solid text-yellow-500' : 'fa-regular text-gray-400';
+
+        // ১. ছবি বা ডিফল্ট অ্যাভাটার জেনারেশন
+        let avatarHTML = '';
+        if (item.profile_pic || item.image) {
+            avatarHTML = `<img src="${item.profile_pic || item.image}" alt="${name}" loading="lazy" class="w-14 h-14 rounded-full object-cover border-2 border-green-100 shadow-sm shrink-0">`;
+        } else {
+            avatarHTML = `
+                <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 shadow-sm shrink-0">
+                    <i class="fa-solid fa-user-tie text-2xl"></i>
                 </div>`;
-            return;
         }
 
-        container.innerHTML = itemsArray.map(item => {
-            // ডাটা সুরক্ষিতভাবে হ্যান্ডেল করা হচ্ছে
-            const name = window.escapeHTML(item.name || 'নাম উল্লেখ নেই');
-            const designation = window.escapeHTML(item.designation || item.details || 'পদবী উল্লেখ নেই');
-            const address = window.escapeHTML(item.address || 'ঠিকানা উল্লেখ নেই');
-            const phone = window.escapeHTML(item.phone || '');
-            const email = window.escapeHTML(item.email || '');
-            const availability = window.escapeHTML(item.availability || item.hours || '');
+        // ২. ম্যাপ রিডাইরেক্ট ইউআরএল জেনারেশন
+        const mapsQuery = item.lat && item.lng ? `${item.lat},${item.lng}` : encodeURIComponent(`${name} ${address}`);
+        const mapsLink = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+
+        // ৩. ইমেইল, ওয়েবসাইট ও ঘণ্টা ব্যাজসমূহ
+        const emailHTML = email ? `
+            <p class="text-xs text-gray-500 flex items-center gap-1.5 truncate">
+                <i class="fa-regular fa-envelope text-gray-400 w-3.5 text-center"></i> ${email}
+            </p>` : '';
+
+        const websiteHTML = website ? `
+            <button onclick="window.openInAppWebview('${name}', '${website}')" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 text-left transition">
+                <i class="fa-solid fa-globe text-blue-400 w-3.5 text-center"></i> ওয়েবসাইট দেখুন
+            </button>` : '';
+
+        const timeHTML = is24_7 ? `
+            <span class="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse border border-red-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> ২৪ ঘণ্টা খোলা
+            </span>` : (availability ? `
+            <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
+                <i class="fa-regular fa-clock"></i> ${availability}
+            </span>` : '');
+
+        // ৪. অ্যাপ মেসেজিং বাটন
+        const chatBtnHTML = chatUid ? `
+            <button onclick="triggerDirectAppChat('${chatUid}', '${name}')" class="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 active:scale-90 transition shadow-sm" title="সরাসরি চ্যাট">
+                <i class="fa-brands fa-facebook-messenger text-sm"></i>
+            </button>` : '';
+
+        // ৫. কল অ্যাকশন ও কপি বাটন
+        const actionButtonsHTML = phone ? `
+            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                <a href="tel:${phone}" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+                    <i class="fa-solid fa-phone"></i> কল করুন
+                </a>
+                <button onclick="copyToClipboard('${phone}')" class="w-9 h-9 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center border border-gray-200 active:scale-90 transition" title="কপি করুন">
+                    <i class="fa-regular fa-copy"></i>
+                </button>
+                ${chatBtnHTML}
+            </div>` : '';
+
+        return `
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition duration-200 relative">
             
-            // ১. প্রোফাইল ছবি নির্ধারণ (ছবি না থাকলে ডিফল্ট ইউজার-টাই আইকন)
-            let avatarHTML = '';
-            if (item.profile_pic || item.image) {
-                avatarHTML = `<img src="${item.profile_pic || item.image}" alt="${name}" loading="lazy" class="w-14 h-14 rounded-full object-cover border-2 border-green-100 shadow-sm shrink-0">`;
-            } else {
-                avatarHTML = `
-                    <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100 shadow-sm shrink-0">
-                        <i class="fa-solid fa-user-tie text-2xl"></i>
-                    </div>`;
-            }
+            <!-- স্টার বাটন (বুকমার্ক) -->
+            <button onclick="toggleBookmark('${id}')" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center border hover:bg-yellow-50/50 transition duration-150">
+                <i class="${starClass}"></i>
+            </button>
 
-            // ২. ফোন কল বাটন জেনারেটর
-            const callBtn = phone ? `
-                <a href="tel:${phone}" class="w-11 h-11 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-md active:scale-95 transition duration-150 shrink-0">
-                    <i class="fa-solid fa-phone text-lg animate-pulse"></i>
-                </a>` : '';
-
-            // ৩. ইমেইল ফিল্ড হ্যান্ডেল (ঐচ্ছিক)
-            const emailHTML = email ? `
-                <p class="text-xs text-gray-500 flex items-center gap-1.5 mt-1 truncate">
-                    <i class="fa-regular fa-envelope text-gray-400 w-3.5 text-center"></i> ${email}
-                </p>` : '';
-
-            // ৪. উপলব্ধতার সময় (যেমন: সকাল ১০টা - বিকেল ৪টা)
-            const availabilityHTML = availability ? `
-                <p class="text-[11px] text-blue-600 font-bold flex items-center gap-1 mt-1.5 bg-blue-50 px-2 py-0.5 rounded-md w-max">
-                    <i class="fa-regular fa-clock text-blue-500"></i> ${availability}
-                </p>` : '';
-
-            return `
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4 hover:shadow-md transition duration-200">
+            <!-- প্রধান কন্ট্যাক্ট বডি -->
+            <div class="flex items-start gap-3">
                 ${avatarHTML}
-                <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-gray-800 text-base leading-tight truncate">${name}</h4>
+                <div class="flex-1 min-w-0 pr-6">
+                    <h4 class="font-bold text-gray-800 text-base leading-snug truncate">${name}</h4>
                     <p class="text-xs font-bold text-green-600 mt-0.5 leading-snug">${designation}</p>
                     
-                    <div class="mt-2 space-y-1">
-                        <!-- ঠিকানা -->
+                    <!-- রেটিং ও রিভিউ -->
+                    <div onclick="openRatingModal('${id}', '${window.currentLoadedCategory}', '${name}')" class="flex items-center gap-1 mt-1 cursor-pointer hover:opacity-80">
+                        <span class="text-xs font-bold text-amber-500 flex items-center gap-0.5">
+                            <i class="fa-solid fa-star"></i> ${averageRating}
+                        </span>
+                        <span class="text-[10px] text-gray-400">(${totalReviews} রিভিউ)</span>
+                    </div>
+
+                    <div class="mt-2.5 space-y-1.5">
+                        <!-- লোকেশন ও ডিরেকশন -->
                         <p class="text-xs text-gray-500 flex items-start gap-1.5">
                             <i class="fa-solid fa-location-dot text-gray-400 mt-0.5 w-3.5 text-center shrink-0"></i>
-                            <span class="leading-relaxed font-medium">${address}</span>
+                            <span class="leading-relaxed font-medium flex-1 min-w-0 truncate">${address}</span>
+                            <a href="${mapsLink}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline shrink-0 flex items-center gap-0.5" title="গুগল ম্যাপে দেখুন">
+                                <i class="fa-solid fa-map-location-dot"></i> ম্যাপস
+                            </a>
                         </p>
                         ${emailHTML}
-                        ${availabilityHTML}
+                        ${websiteHTML}
+                        
+                        <div class="pt-1 flex flex-wrap gap-2">
+                            ${timeHTML}
+                            <button onclick="openSuggestEditModal('${id}', '${window.currentLoadedCategory}', '${name}', '${phone}')" class="text-[10px] font-bold text-orange-500 bg-orange-50/80 px-2 py-0.5 rounded-full border border-orange-100 hover:bg-orange-100 transition">
+                                <i class="fa-solid fa-triangle-exclamation"></i> সংশোধন
+                            </button>
+                        </div>
                     </div>
                 </div>
-                ${callBtn}
-            </div>`;
-        }).join('');
+            </div>
+            
+            ${actionButtonsHTML}
+        </div>`;
+    }).join('');
+};
+
+// লাইভ সার্চ ফিল্টার হ্যান্ডেলার
+window.handleDirectoryLiveSearch = (queryText) => {
+    const term = queryText.toLowerCase().trim();
+    if (!term) {
+        renderDirectoryItems(window.currentCategoryItems);
+        return;
+    }
+    const filtered = window.currentCategoryItems.filter(item => {
+        const name = (item.name || '').toLowerCase();
+        const details = (item.designation || item.details || '').toLowerCase();
+        const address = (item.address || '').toLowerCase();
+        return name.includes(term) || details.includes(term) || address.includes(term);
+    });
+    renderDirectoryItems(filtered);
+};
+
+// কপি টু ক্লিপবোর্ড
+window.copyToClipboard = (text) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        window.showToast("নম্বরটি ক্লিপবোর্ডে কপি করা হয়েছে!");
+    }).catch(() => {
+        window.showToast("কপি করা সম্ভব হয়নি", "error");
+    });
+};
+
+// চ্যাট ট্র্রিগার সিস্টেম
+window.triggerDirectAppChat = (chatUid, name) => {
+    if (chatUid === window.currentUser.uid) {
+        window.showToast("নিজেকে মেসেজ পাঠানো সম্ভব নয়!", "error");
+        return;
+    }
+    window.switchPage('messages');
+    setTimeout(() => {
+        if (typeof window.startChat === 'function') {
+            window.startChat(chatUid, name);
+        }
+    }, 150);
+};
+
+// বুকমার্ক এড/রিমুভ (Local Storage)
+window.toggleBookmark = (itemId) => {
+    let bookmarks = JSON.parse(localStorage.getItem('directory_bookmarks') || '[]');
+    if (bookmarks.includes(itemId)) {
+        bookmarks = bookmarks.filter(id => id !== itemId);
+        window.showToast("বুকমার্ক থেকে সরানো হয়েছে");
+    } else {
+        bookmarks.push(itemId);
+        window.showToast("বুকমার্কে যুক্ত করা হয়েছে");
+    }
+    localStorage.setItem('directory_bookmarks', JSON.stringify(bookmarks));
+    
+    // ভিউ রিফ্রেশ
+    if (window.isBookmarkOnlyView) {
+        renderBookmarksList();
+    } else {
+        renderDirectoryItems(window.currentCategoryItems);
+    }
+};
+
+// বুকমার্ক মুড বাটন টগল
+window.toggleBookmarkView = (show) => {
+    window.isBookmarkOnlyView = show;
+    if (show) {
+        switchPage('directory-list');
+        const listTitle = document.getElementById('directory-list-title');
+        if (listTitle) listTitle.innerText = "আমার বুকমার্কসমূহ";
+        renderBookmarksList();
+    } else {
+        switchPage('directory');
+    }
+};
+
+// বুকমার্ক আইটেম রেন্ডার
+window.renderBookmarksList = () => {
+    const bookmarks = JSON.parse(localStorage.getItem('directory_bookmarks') || '[]');
+    if (bookmarks.length === 0) {
+        renderDirectoryItems([]);
+        return;
+    }
+
+    // অল ক্যাটাগরির ডাটাবেস থেকে বুকমার্ক করা আইডিগুলো ফেচিং (Low Latency)
+    const container = document.getElementById('directory-items-container');
+    container.innerHTML = `<div class="text-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-green-600 text-2xl"></i></div>`;
+    
+    get(ref(window.db, 'directory')).then((snap) => {
+        const categories = snap.val() || {};
+        let bookmarkedItems = [];
+
+        Object.keys(categories).forEach(cat => {
+            Object.keys(categories[cat]).forEach(id => {
+                if (bookmarks.includes(id)) {
+                    bookmarkedItems.push({
+                        id: id,
+                        category: cat,
+                        ...categories[cat][id]
+                    });
+                }
+            });
+        });
+
+        renderDirectoryItems(bookmarkedItems);
+    });
+};
+
+// --- তথ্য সংশোধন মডাল হ্যান্ডেলারস ---
+window.openSuggestEditModal = (id, category, name, phone) => {
+    document.getElementById('suggest-item-id').value = id;
+    document.getElementById('suggest-item-category').value = category;
+    document.getElementById('suggest-name').value = name;
+    document.getElementById('suggest-phone').value = phone;
+    document.getElementById('directory-suggest-modal').classList.remove('hidden');
+};
+
+window.closeSuggestEditModal = () => {
+    document.getElementById('directory-suggest-modal').classList.add('hidden');
+};
+
+window.submitSuggestedEdit = () => {
+    const id = document.getElementById('suggest-item-id').value;
+    const cat = document.getElementById('suggest-item-category').value;
+    const name = document.getElementById('suggest-name').value.trim();
+    const phone = document.getElementById('suggest-phone').value.trim();
+    const details = document.getElementById('suggest-details').value.trim();
+
+    if (!name || !phone) {
+        window.showToast("নাম এবং ফোন নম্বর পূরণ করুন!", "error");
+        return;
+    }
+
+    const editRef = ref(window.db, `directory_edits/${cat}/${id}`);
+    push(editRef, {
+        suggestedName: name,
+        suggestedPhone: phone,
+        details: details,
+        submitterUid: window.currentUser.uid,
+        submitterName: window.userDetails.name || 'অজ্ঞাত ব্যবহারকারী',
+        timestamp: Date.now()
+    }).then(() => {
+        window.showToast("আপনার সংশোধনের আবেদন সফলভাবে পাঠানো হয়েছে!");
+        closeSuggestEditModal();
+        document.getElementById('suggest-details').value = '';
+    }).catch(() => {
+        window.showToast("আবেদন পাঠাতে সমস্যা হয়েছে", "error");
+    });
+};
+
+// --- রেটিং/রিভিউ মডাল হ্যান্ডেলারস ---
+window.openRatingModal = (id, category, name) => {
+    document.getElementById('rating-item-id').value = id;
+    document.getElementById('rating-item-category').value = category;
+    document.getElementById('rating-item-name').innerText = name;
+    
+    // স্টার রিসেট
+    setRatingValue(0);
+    document.getElementById('rating-comment').value = '';
+    document.getElementById('directory-rating-modal').classList.remove('hidden');
+};
+
+window.closeDirectoryRatingModal = () => {
+    document.getElementById('directory-rating-modal').classList.add('hidden');
+};
+
+window.setRatingValue = (val) => {
+    document.getElementById('selected-star-val').value = val;
+    for (let i = 1; i <= 5; i++) {
+        const star = document.getElementById(`star-${i}`);
+        if (i <= val) {
+            star.classList.replace('text-gray-300', 'text-yellow-500');
+        } else {
+            star.classList.replace('text-yellow-500', 'text-gray-300');
+        }
+    }
+};
+
+window.submitDirectoryRating = () => {
+    const id = document.getElementById('rating-item-id').value;
+    const cat = document.getElementById('rating-item-category').value;
+    const starVal = parseInt(document.getElementById('selected-star-val').value);
+    const comment = document.getElementById('rating-comment').value.trim();
+
+    if (starVal === 0) {
+        window.showToast("দয়া করে অন্তত ১টি স্টার নির্বাচন করুন!", "error");
+        return;
+    }
+
+    const userUid = window.currentUser.uid;
+    const ratingRef = ref(window.db, `directory_reviews/${cat}/${id}/${userUid}`);
+
+    set(ratingRef, {
+        rating: starVal,
+        comment: comment,
+        userName: window.userDetails.name || 'অজ্ঞাত ব্যবহারকারী',
+        timestamp: Date.now()
+    }).then(() => {
+        window.showToast("আপনার রেটিং প্রদানের জন্য ধন্যবাদ!");
+        closeDirectoryRatingModal();
+        
+        // অ্যাডমিন প্যানেল দিয়ে টোটাল রেটিং রান-টাইমে আপডেট করার স্ক্রিপ্ট বা রিমোট কন্ট্রোল করা যাবে।
+    }).catch(() => {
+        window.showToast("রেটিং জমা দিতে ব্যর্থ হয়েছে", "error");
     });
 };
