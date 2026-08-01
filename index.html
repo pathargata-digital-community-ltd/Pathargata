@@ -1693,6 +1693,10 @@
             limitToFirst
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import {
+            initializeAppCheck,
+            ReCaptchaV3Provider
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+        import {
             getAuth,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
@@ -1708,6 +1712,13 @@
             FacebookAuthProvider,
             signInWithPopup
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Firebase Cloud Messaging (FCM) Import
+        import {
+            getMessaging,
+            getToken,
+            onMessage
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
         // --- CONFIGURATION ---
         const APP_CONFIG = {
@@ -1806,11 +1817,57 @@
         };
 
         const app = initializeApp(APP_CONFIG.firebase);
+
+        // --- FIREBASE APP CHECK INITIALIZATION ---
+        try {
+            const appCheck = initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6LerRHAtAAAAAJMLiU459fETQFFD9ETyHXaU7OAH'),
+                isTokenAutoRefreshEnabled: true
+            });
+            console.log("App Check successfully initialized!");
+        } catch (err) {
+            console.warn("App Check initialization error:", err);
+        }
+
         const db = getDatabase(app);
         const auth = getAuth(app);
+        const messaging = getMessaging(app);
         
         window.db = db;
         window.auth = auth;
+        window.messaging = messaging;
+
+        // FCM Push Notification Setup Function
+        window.setupFCM = async function(uid) {
+            try {
+                if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {                        
+                        const vapidKey = "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg"; 
+                        
+                        const token = await getToken(messaging, { vapidKey: vapidKey });
+                        if (token) {
+                            console.log("FCM Token Generated:", token);
+                            // ইউজার প্রোফাইলে টোকেন সেভ করা (যার মাধ্যমে এডমিন প্যানেল থেকে নোটিফিকেশন পাঠানো যাবে)
+                            await update(ref(db, 'users/' + uid), {
+                                fcmToken: token,
+                                lastTokenUpdate: Date.now()
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("FCM Token error:", error);
+            }
+        };
+
+        // অ্যাপ ওপেন থাকা অবস্থায় (Foreground) নোটিফিকেশন হ্যান্ডেল করা
+        onMessage(messaging, (payload) => {
+            console.log('Foreground Message received: ', payload);
+            if (payload.notification) {
+                showToast(`${payload.notification.title}: ${payload.notification.body}`, 'success');
+            }
+        });
 
         window.currentUser = null;
         
@@ -2404,6 +2461,7 @@ window.updateSavedAccountProfile(user.email, data.name, data.profile_pic);
                 // সেফটি চেক: ফাংশনগুলো এক্সটার্নাল ফাইল থেকে লোড হলেই কেবল কল হবে
                 if (typeof window.listenForNotificationBadge === 'function') window.listenForNotificationBadge(user.uid);
                 if (typeof window.listenForInAppPopups === 'function') window.listenForInAppPopups(user.uid); 
+                if (typeof window.setupFCM === 'function') window.setupFCM(user.uid); // FCM রিকুয়েস্ট চালু করা 
                 if (typeof window.loadNotifications === 'function') window.loadNotifications(true);
 if(window.loadChatList) window.loadChatList(user.uid);
 if(window.listenForGlobalMessages) window.listenForGlobalMessages(user.uid); // বাবল চালু করার লাইন
@@ -5119,24 +5177,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 // export এরর সমাধানের জন্য UMD ভার্সন লিংক দেওয়া হলো
                 fpScript.src = "https://openfpcdn.io/fingerprintjs/v4/umd";
                 document.body.appendChild(fpScript);
-
-                // ২. OneSignal লোড ও ইনিশিয়ালাইজ করা
-                const osScript = document.createElement('script');
-                osScript.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-                osScript.defer = true;
-                document.body.appendChild(osScript);
-
-                osScript.onload = () => {
-                    window.OneSignalDeferred = window.OneSignalDeferred || [];
-                    OneSignalDeferred.push(async function(OneSignal) {
-                        await OneSignal.init({
-                            appId: "ff16859a-7400-4f70-b307-95d068580ea6", // আপনার App ID
-                            safari_web_id: "web.onesignal.auto.17649533-3d0d-4581-9f93-9c8699101408", // ঐচ্ছিক
-                            notifyButton: { enable: true },
-                        });
-                        OneSignal.Slidedown.promptPush();
-                    });
-                };
+                
                 console.log("Third-party scripts loaded in background.");
             }, 5000); // 5000ms = 5 seconds
 
