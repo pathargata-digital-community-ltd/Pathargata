@@ -906,19 +906,26 @@ window.openSinglePostModal = (postId) => {
     }
 };
 
-// --- TAGS & FEELING ---
+// --- TAGS, FEELING & LOCATION (FIXED SUPER TOP Z-INDEX) ---
+
+// ১. ট্যাগ ফ্রেন্ডস মডাল
 window.openTagModal = () => {
     const tm = document.getElementById('tag-friends-modal');
     if(tm) {
-        tm.style.zIndex = "350"; // পোস্ট মডালের ওপরে দেখানোর জন্য z-index বাড়িয়ে দেওয়া হলো
-        tm.classList.remove('hidden-custom');
-        setTimeout(() => tm.classList.add('open'), 10);
+        tm.style.zIndex = "99999"; // পোস্ট মডালের চেয়েও সবার উপরে থাকবে
+        tm.classList.remove('hidden-custom', 'hidden');
+        tm.style.display = 'flex';
+        setTimeout(() => {
+            tm.classList.add('open');
+            tm.style.transform = 'translateY(0)';
+        }, 10);
+        history.pushState({ modal: 'tag-friends-modal' }, null, "#tag-friends");
     }
     const list = document.getElementById('tag-friends-list');
     if(list) list.innerHTML = '<div class="flex justify-center py-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
     
     if (!window.myFriends || window.myFriends.length === 0) {
-        if(list) list.innerHTML = '<p class="text-center text-gray-400 mt-10">আপনার কোনো বন্ধু নেই</p>'; 
+        if(list) list.innerHTML = '<p class="text-center text-gray-400 mt-10 font-bold">আপনার কোনো বন্ধু নেই</p>'; 
         return;
     }
     const promises = window.myFriends.map(uid => window.getUserData(uid));
@@ -934,13 +941,20 @@ window.openTagModal = () => {
         if(list) list.innerHTML = html;
     });
 };
-window.closeTagModal = () => {
+
+window.closeTagModal = (isBack = false) => {
     const tm = document.getElementById('tag-friends-modal');
-    if(tm) tm.classList.remove('open');
-    setTimeout(() => {
-        if(tm) tm.classList.add('hidden-custom');
-    }, 300);
+    if(tm) {
+        tm.classList.remove('open');
+        tm.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+            tm.classList.add('hidden-custom');
+            tm.style.display = 'none';
+        }, 300);
+    }
+    if (!isBack && history.state?.modal === 'tag-friends-modal') history.back();
 };
+
 window.toggleTagUser = (uid, name) => {
     if(!window.taggedUsers) window.taggedUsers = [];
     const index = window.taggedUsers.findIndex(u => u.uid === uid);
@@ -968,11 +982,90 @@ window.toggleTagUser = (uid, name) => {
         }
     }
 };
+
 window.saveTags = () => {
     window.closeTagModal();
     if(window.updatePostHeaderUI) window.updatePostHeaderUI();
     if (window.taggedUsers && window.taggedUsers.length > 0) window.showToast(`${window.taggedUsers.length} জনকে ট্যাগ করা হয়েছে`);
 };
+
+// ২. অনুভূতি (Feeling) মডাল
+window.openFeelingModal = () => {
+    const fm = document.getElementById('feeling-modal');
+    if(fm) {
+        fm.style.zIndex = "99999";
+        fm.classList.remove('hidden-custom', 'hidden');
+        fm.style.display = 'flex';
+        setTimeout(() => {
+            fm.classList.add('open');
+            fm.style.transform = 'translateY(0)';
+        }, 10);
+        history.pushState({ modal: 'feeling-modal' }, null, "#feeling");
+    }
+};
+
+window.closeFeelingModal = (isBack = false) => {
+    const fm = document.getElementById('feeling-modal');
+    if(fm) {
+        fm.classList.remove('open');
+        fm.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+            fm.classList.add('hidden-custom');
+            fm.style.display = 'none';
+        }, 300);
+    }
+    if (!isBack && history.state?.modal === 'feeling-modal') history.back();
+};
+
+window.selectFeeling = (text, emoji) => {
+    window.selectedFeeling = { text, emoji };
+    window.closeFeelingModal();
+    if(window.updatePostHeaderUI) window.updatePostHeaderUI();
+};
+
+// ৩. লোকেশন চেক-ইন মডাল
+window.openLocationModal = () => {
+    const lm = document.getElementById('location-modal');
+    if(lm) {
+        lm.style.zIndex = "99999";
+        lm.classList.remove('hidden-custom', 'hidden');
+        lm.style.display = 'flex';
+        setTimeout(() => {
+            lm.classList.add('open');
+            lm.style.transform = 'translateY(0)';
+        }, 10);
+        history.pushState({ modal: 'location-modal' }, null, "#location");
+    }
+};
+
+window.closeLocationModal = (isBack = false) => {
+    const lm = document.getElementById('location-modal');
+    if(lm) {
+        lm.classList.remove('open');
+        lm.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+            lm.classList.add('hidden-custom');
+            lm.style.display = 'none';
+        }, 300);
+    }
+    if (!isBack && history.state?.modal === 'location-modal') history.back();
+};
+
+window.selectLocation = (locName) => {
+    window.selectedLocation = locName;
+    window.closeLocationModal();
+    if(window.updatePostHeaderUI) window.updatePostHeaderUI();
+    window.showToast(`লোকেশন সেট করা হয়েছে: ${locName}`);
+};
+
+window.selectCustomLocation = () => {
+    const customLoc = document.getElementById('custom-location-input').value.trim();
+    if (!customLoc) return window.showToast("অনুগ্রহ করে লোকেশনের নাম লিখুন", "error");
+    window.selectLocation(customLoc);
+    document.getElementById('custom-location-input').value = "";
+};
+
+// পোস্ট হেডার আপডেট ফাংশন
 window.updatePostHeaderUI = () => {
     const tagInfo = document.getElementById('post-modal-tagged-info');
     if (!tagInfo) return;
@@ -1008,63 +1101,6 @@ window.clearTags = () => {
     window.updatePostHeaderUI(); 
     document.querySelectorAll('[class*="tag-item-"]').forEach(item => { item.classList.remove('border-green-500', 'bg-green-50', 'shadow-md'); item.classList.add('border-transparent', 'shadow-sm'); });
     document.querySelectorAll('[class*="tag-icon-"]').forEach(icon => { icon.classList.remove('text-green-600'); icon.classList.add('text-gray-200'); });
-};
-window.openFeelingModal = () => {
-    const fm = document.getElementById('feeling-modal');
-    if(fm) {
-        fm.style.zIndex = "350"; // পোস্ট মডালের ওপরে দেখানোর জন্য z-index বাড়িয়ে দেওয়া হলো
-        fm.classList.remove('hidden-custom');
-        setTimeout(() => fm.classList.add('open'), 10);
-    }
-};
-window.closeFeelingModal = () => {
-    const fm = document.getElementById('feeling-modal');
-    if(fm) fm.classList.remove('open');
-    setTimeout(() => {
-        if(fm) fm.classList.add('hidden-custom');
-    }, 300);
-};
-window.selectFeeling = (text, emoji) => {
-    window.selectedFeeling = { text, emoji };
-    window.closeFeelingModal();
-    if(window.updatePostHeaderUI) window.updatePostHeaderUI();
-};
-// Location Check-in Logic
-window.openLocationModal = () => {
-    const lm = document.getElementById('location-modal');
-    if(lm) {
-        lm.style.zIndex = "350"; // পোস্ট মডালের ওপরে দেখানোর জন্য z-index বাড়িয়ে দেওয়া হলো
-        lm.classList.remove('hidden-custom');
-        setTimeout(() => {
-            lm.classList.add('open');
-            lm.style.transform = 'translateY(0)';
-        }, 20);
-    }
-};
-
-window.closeLocationModal = () => {
-    const lm = document.getElementById('location-modal');
-    if(lm) {
-        lm.style.transform = 'translateY(100%)';
-        setTimeout(() => {
-            lm.classList.add('hidden-custom');
-            lm.classList.remove('open');
-        }, 300);
-    }
-};
-
-window.selectLocation = (locName) => {
-    window.selectedLocation = locName;
-    window.closeLocationModal();
-    if(window.updatePostHeaderUI) window.updatePostHeaderUI();
-    window.showToast(`লোকেশন সেট করা হয়েছে: ${locName}`);
-};
-
-window.selectCustomLocation = () => {
-    const customLoc = document.getElementById('custom-location-input').value.trim();
-    if (!customLoc) return window.showToast("অনুগ্রহ করে লোকেশনের নাম লিখুন", "error");
-    window.selectLocation(customLoc);
-    document.getElementById('custom-location-input').value = "";
 };
 
 // --- ALERTS & DOUBLE TAP ---
