@@ -1837,25 +1837,19 @@
         window.db = db;
         window.auth = auth;
 
-        // রিডাইরেক্ট হয়ে ফিরে আসার পর স্বয়ংক্রিয়ভাবে গুগল লগইন সম্পন্ন করার হ্যান্ডলার
+        // গুগল রিডাইরেক্ট হয়ে ফিরে আসার পর স্ক্রিন সরাসরি আনলক করার লজিক
         getRedirectResult(auth).then(async (result) => {
             if (result && result.user) {
-                console.log("Google Redirect Login Success:", result.user);
-                await handleSocialUserRegistration(result.user);
-            }
-        }).catch((error) => {
-            console.warn("Redirect result error:", error);
-        });
+                const user = result.user;
+                console.log("Google Auth Success:", user.email);
 
-        // গুগল ও ফেসবুক ইউজারের ডাটাবেস হ্যান্ডলার
-        async function handleSocialUserRegistration(user) {
-            try {
                 const userRef = ref(db, 'users/' + user.uid);
                 const snapshot = await get(userRef);
 
                 if (!snapshot.exists()) {
+                    // নতুন ইউজার হলে ডাটাবেসে সেভ করা
                     const newUserData = {
-                        name: user.displayName || "অজ্ঞাত ইউজার",
+                        name: user.displayName || "Google User",
                         email: user.email || "",
                         uid: user.uid,
                         profile_pic: user.photoURL || "",
@@ -1868,17 +1862,24 @@
                         phone: user.phoneNumber || ""
                     };
                     await set(userRef, newUserData);
-                    
-                    try {
-                        localStorage.setItem('has_registered_before', 'true');
-                    } catch(err) {}
-
-                    showToast("Google একাউন্ট সফলভাবে যুক্ত হয়েছে!", "success");
                 }
-            } catch (err) {
-                console.error("Social user registration error:", err);
+
+                // লগইন সফল - জোরপূর্বক লগইন স্ক্রিন সরিয়ে হোমস্ক্রিনে নিয়ে যাওয়া
+                document.getElementById('auth-screen')?.classList.add('hidden-custom');
+                document.getElementById('main-app')?.classList.remove('hidden-custom');
+                document.getElementById('splash-screen')?.classList.add('hidden-custom');
+                
+                if (typeof window.switchPage === 'function') {
+                    window.switchPage('home');
+                }
+                showToast("লগইন সফল হয়েছে!", "success");
             }
-        }
+        }).catch((error) => {
+            console.error("Google Redirect Error:", error);
+            if (error.code !== 'auth/credential-already-in-use') {
+                showToast("গুগল লগইনে সমস্যা হয়েছে: " + error.message, "error");
+            }
+        });
         window.messaging = null;
 
         // ব্রাউজারে পুশ নোটিফিকেশন সাপোর্ট করে কি না তা সেফলি চেক করা
@@ -3296,7 +3297,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             });
         };
 
-        // --- GOOGLE LOGIN FUNCTION (AUTO REDIRECT / NO WHITE SCREEN) ---
+        // --- GOOGLE LOGIN FUNCTION (HYBRID SMART REDIRECT) ---
         window.handleGoogleLogin = async () => {
             if (!navigator.onLine) {
                 showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
@@ -3305,17 +3306,45 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
 
             const btn = document.getElementById('btn-google-login');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Google-এ যাওয়া হচ্ছে...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Google যাচাই হচ্ছে...';
             btn.disabled = true;
 
             try {
                 const provider = new GoogleAuthProvider();
                 provider.setCustomParameters({ prompt: 'select_account' });
-                
-                // মোবাইল অ্যাপ ও ব্রাউজারের জন্য সরাসরি রিডাইরেক্ট কল করা হবে
-                await signInWithRedirect(auth, provider);
+
+                // যদি পপ-আপ সম্ভব হয় (যেমন ক্রোম ব্রাউজার), তবে দ্রুত লগইন করবে
+                // অন্যথায় WebView হলে স্বয়ংক্রিয়ভাবে রিডাইরেক্ট করবে
+                try {
+                    const result = await signInWithPopup(auth, provider);
+                    if (result && result.user) {
+                        const userRef = ref(db, 'users/' + result.user.uid);
+                        const snap = await get(userRef);
+                        if (!snap.exists()) {
+                            await set(userRef, {
+                                name: result.user.displayName || "Google User",
+                                email: result.user.email || "",
+                                uid: result.user.uid,
+                                profile_pic: result.user.photoURL || "",
+                                role: 'user',
+                                union: 'Unknown',
+                                village: 'Unknown',
+                                joinDate: new Date().toLocaleDateString(),
+                                isVerified: false,
+                                status: 'user',
+                                phone: result.user.phoneNumber || ""
+                            });
+                        }
+                        document.getElementById('auth-screen')?.classList.add('hidden-custom');
+                        document.getElementById('main-app')?.classList.remove('hidden-custom');
+                        showToast("লগইন সফল হয়েছে!", "success");
+                    }
+                } catch (popupErr) {
+                    console.log("Popup blocked or failed, falling back to redirect...", popupErr);
+                    await signInWithRedirect(auth, provider);
+                }
             } catch (error) {
-                console.error("Google Login Redirect Error:", error);
+                console.error("Google Login Error:", error);
                 showToast("ত্রুটি: " + error.message, "error");
                 btn.innerHTML = originalText;
                 btn.disabled = false;
