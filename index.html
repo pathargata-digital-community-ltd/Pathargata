@@ -1717,7 +1717,8 @@
         import {
             getMessaging,
             getToken,
-            onMessage
+            onMessage,
+            isSupported
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
         // --- CONFIGURATION ---
@@ -1831,24 +1832,52 @@
 
         const db = getDatabase(app);
         const auth = getAuth(app);
-        const messaging = getMessaging(app);
         
         window.db = db;
         window.auth = auth;
-        window.messaging = messaging;
+        window.messaging = null;
+
+        // ব্রাউজারে পুশ নোটিফিকেশন সাপোর্ট করে কি না তা সেফলি চেক করা
+        try {
+            isSupported().then((supported) => {
+                if (supported) {
+                    try {
+                        const messaging = getMessaging(app);
+                        window.messaging = messaging;
+
+                        // অ্যাপ ওপেন থাকা অবস্থায় (Foreground) নোটিফিকেশন হ্যান্ডেল করা
+                        onMessage(messaging, (payload) => {
+                            console.log('Foreground Message received: ', payload);
+                            if (payload.notification) {
+                                showToast(`${payload.notification.title}: ${payload.notification.body}`, 'success');
+                            }
+                        });
+                    } catch (e) {
+                        console.warn("Messaging init error:", e);
+                    }
+                } else {
+                    console.warn("FCM Push Messaging is not supported in this environment/browser.");
+                }
+            }).catch((err) => {
+                console.warn("FCM support check failed:", err);
+            });
+        } catch (err) {
+            console.warn("FCM isSupported exception caught:", err);
+        }
 
         // FCM Push Notification Setup Function
         window.setupFCM = async function(uid) {
             try {
+                if (!window.messaging) return; // সাপোর্ট না থাকলে কোন এরর দেবে না, সুন্দরভাবে এড়িয়ে যাবে
                 if ('Notification' in window) {
                     const permission = await Notification.requestPermission();
                     if (permission === 'granted') {                        
                         const vapidKey = "BNp5-rltMmyQ8shu2QCGobcLngNDAp7F241rCRW7NPOor665yWeDYqtVqXMb-8XasnOU83sXqZrlEd2jeNE_fzg"; 
                         
-                        const token = await getToken(messaging, { vapidKey: vapidKey });
+                        const token = await getToken(window.messaging, { vapidKey: vapidKey });
                         if (token) {
                             console.log("FCM Token Generated:", token);
-                            // ইউজার প্রোফাইলে টোকেন সেভ করা (যার মাধ্যমে এডমিন প্যানেল থেকে নোটিফিকেশন পাঠানো যাবে)
+                            // ইউজার প্রোফাইলে টোকেন সেভ করা
                             await update(ref(db, 'users/' + uid), {
                                 fcmToken: token,
                                 lastTokenUpdate: Date.now()
@@ -1857,17 +1886,9 @@
                     }
                 }
             } catch (error) {
-                console.error("FCM Token error:", error);
+                console.warn("FCM Token error (safely handled):", error);
             }
         };
-
-        // অ্যাপ ওপেন থাকা অবস্থায় (Foreground) নোটিফিকেশন হ্যান্ডেল করা
-        onMessage(messaging, (payload) => {
-            console.log('Foreground Message received: ', payload);
-            if (payload.notification) {
-                showToast(`${payload.notification.title}: ${payload.notification.body}`, 'success');
-            }
-        });
 
         window.currentUser = null;
         
