@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>পাথরঘাটা ডিজিটাল - স্মার্ট সেবা</title>
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- থার্ড-পার্টি স্ক্রিপ্টগুলো (OneSignal, Fingerprint) পেজের শেষে জাভাস্ক্রিপ্টের মাধ্যমে ৫ সেকেন্ড পর লোড করা হয়েছে অ্যাপ ফাস্ট করার জন্য -->
+    <script src="https://cdn.tailwindcss.com"></script>    
     <!-- Font Awesome -->
     <link rel="manifest" href="manifest.json">
 <script>
@@ -1710,7 +1709,9 @@
             updatePassword,
             GoogleAuthProvider,
             FacebookAuthProvider,
-            signInWithPopup
+            signInWithPopup,
+            signInWithRedirect,
+            getRedirectResult
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // Firebase Cloud Messaging (FCM) Import
@@ -1835,6 +1836,49 @@
         
         window.db = db;
         window.auth = auth;
+
+        // রিডাইরেক্ট হয়ে ফিরে আসার পর স্বয়ংক্রিয়ভাবে গুগল লগইন সম্পন্ন করার হ্যান্ডলার
+        getRedirectResult(auth).then(async (result) => {
+            if (result && result.user) {
+                console.log("Google Redirect Login Success:", result.user);
+                await handleSocialUserRegistration(result.user);
+            }
+        }).catch((error) => {
+            console.warn("Redirect result error:", error);
+        });
+
+        // গুগল ও ফেসবুক ইউজারের ডাটাবেস হ্যান্ডলার
+        async function handleSocialUserRegistration(user) {
+            try {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snapshot = await get(userRef);
+
+                if (!snapshot.exists()) {
+                    const newUserData = {
+                        name: user.displayName || "অজ্ঞাত ইউজার",
+                        email: user.email || "",
+                        uid: user.uid,
+                        profile_pic: user.photoURL || "",
+                        role: 'user',
+                        union: 'Unknown',
+                        village: 'Unknown',
+                        joinDate: new Date().toLocaleDateString(),
+                        isVerified: false,
+                        status: 'user',
+                        phone: user.phoneNumber || ""
+                    };
+                    await set(userRef, newUserData);
+                    
+                    try {
+                        localStorage.setItem('has_registered_before', 'true');
+                    } catch(err) {}
+
+                    showToast("Google একাউন্ট সফলভাবে যুক্ত হয়েছে!", "success");
+                }
+            } catch (err) {
+                console.error("Social user registration error:", err);
+            }
+        }
         window.messaging = null;
 
         // ব্রাউজারে পুশ নোটিফিকেশন সাপোর্ট করে কি না তা সেফলি চেক করা
@@ -3252,7 +3296,7 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
             });
         };
 
-        // --- GOOGLE LOGIN FUNCTION ---
+        // --- GOOGLE LOGIN FUNCTION (AUTO REDIRECT / NO WHITE SCREEN) ---
         window.handleGoogleLogin = async () => {
             if (!navigator.onLine) {
                 showToast("ইন্টারনেট সংযোগ নেই! চেক করুন।", 'error');
@@ -3261,66 +3305,18 @@ await runTransaction(ref(db, `users/${inviterUid}/referral_count`), (currentCoun
 
             const btn = document.getElementById('btn-google-login');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অপেক্ষা করুন...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Google-এ যাওয়া হচ্ছে...';
             btn.disabled = true;
 
             try {
                 const provider = new GoogleAuthProvider();
-                const result = await signInWithPopup(auth, provider);
-                const user = result.user;
-
-                // ডাটাবেসে ইউজার চেক করা
-                const { get, ref, set } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
-                const userRef = ref(db, 'users/' + user.uid);
-                const snapshot = await get(userRef);
-
-                if (!snapshot.exists()) {
-                    // নতুন একাউন্ট হলে ডাটাবেসে তথ্য সেভ করা
-                    const newUserData = {
-                        name: user.displayName || "অজ্ঞাত ইউজার",
-                        email: user.email,
-                        uid: user.uid,
-                        profile_pic: user.photoURL || "",
-                        role: 'user',
-                        union: 'Unknown',
-                        village: 'Unknown',
-                        joinDate: new Date().toLocaleDateString(),
-                        isVerified: false,
-                        status: 'user',
-                        phone: user.phoneNumber || ""
-                    };
-                    await set(userRef, newUserData);
-                    
-                    // Anti-fraud device check (from existing logic)
-                    try {
-                        const fp = await window.FingerprintJS.load();
-                        const fpResult = await fp.get();
-                        let userIP = "unknown_ip";
-                        try {
-                            const ipRes = await fetch('https://api.ipify.org?format=json');
-                            const ipData = await ipRes.json();
-                            userIP = ipData.ip;
-                        } catch(err) {}
-                        
-                        await set(ref(db, `registered_devices/${fpResult.visitorId}`), {
-                            ip: userIP, timestamp: Date.now(), uid: user.uid
-                        });
-                        localStorage.setItem('has_registered_before', 'true');
-                    } catch(err) {}
-
-                    showToast("Google একাউন্ট খোলা সফল হয়েছে!", "success");
-                } else {
-                    showToast("লগইন সফল হয়েছে!", "success");
-                }
-
+                provider.setCustomParameters({ prompt: 'select_account' });
+                
+                // মোবাইল অ্যাপ ও ব্রাউজারের জন্য সরাসরি রিডাইরেক্ট কল করা হবে
+                await signInWithRedirect(auth, provider);
             } catch (error) {
-                console.error("Google Login Error:", error);
-                if(error.code === 'auth/popup-closed-by-user') {
-                    showToast("লগইন বাতিল করা হয়েছে", "error");
-                } else {
-                    showToast("ত্রুটি: " + error.message, "error");
-                }
-            } finally {
+                console.error("Google Login Redirect Error:", error);
+                showToast("ত্রুটি: " + error.message, "error");
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
