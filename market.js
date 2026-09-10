@@ -1,16 +1,251 @@
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const db = window.db || getDatabase();
 window.selectedSellImages = [];
+window.selectedShopLogo = null;
+window.globalShops = [];
+window.globalMarketItems = [];
+window.userFavorites = { shops: {}, products: {} };
+window.currentViewingShopId = null;
 
-// ছবি প্রিভিউ করার ফাংশন
+// ======================== ফেভারিট লিসেনার ========================
+function initFavoritesListener() {
+    if (!window.currentUser?.uid) return;
+    onValue(ref(db, `market_favorites/${window.currentUser.uid}`), (snap) => {
+        window.userFavorites = snap.val() || { shops: {}, products: {} };
+        if (window.renderShopsList) renderShopsList();
+        if (window.currentViewingShopId) renderShopProducts(window.currentViewingShopId);
+    });
+}
+
+// ফেভারিট টগল (Shop/Product)
+window.toggleFavorite = async (type, id, event) => {
+    if (event) event.stopPropagation();
+    if (!window.currentUser?.uid) return window.showToast("অনুগ্রহ করে লগইন করুন", "error");
+
+    const isFav = window.userFavorites[type]?.[id];
+    const favRef = ref(db, `market_favorites/${window.currentUser.uid}/${type}/${id}`);
+
+    try {
+        if (isFav) {
+            await remove(favRef);
+            window.showToast("পছন্দের তালিকা থেকে সরানো হয়েছে");
+        } else {
+            await set(favRef, true);
+            window.showToast("পছন্দের তালিকায় যুক্ত হয়েছে", "success");
+        }
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+// ======================== দোকান ম্যানেজমেন্ট ========================
+
+// দোকান তৈরির ছবি প্রিভিউ
+window.previewShopLogo = (input) => {
+    if (input.files && input.files[0]) {
+        window.selectedShopLogo = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('shop-logo-preview').src = e.target.result;
+            document.getElementById('shop-logo-preview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+};
+
+// নতুন দোকান তৈরি
+window.submitCreateShop = async () => {
+    const name = document.getElementById('shop-name').value.trim();
+    const category = document.getElementById('shop-category').value.trim();
+    const phone = document.getElementById('shop-phone').value.trim();
+    const address = document.getElementById('shop-address').value.trim();
+    const desc = document.getElementById('shop-desc').value.trim();
+
+    if (!name || !phone || !address) return window.showToast("দোকানের নাম, ফোন এবং ঠিকানা আবশ্যক", "error");
+
+    const btn = document.getElementById('btn-shop-submit');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> দোকান তৈরি হচ্ছে...';
+    btn.disabled = true;
+
+    try {
+        let logoUrl = '';
+        if (window.selectedShopLogo) {
+            const res = await window.uploadMediaToCloudinary(window.selectedShopLogo);
+            logoUrl = res.url;
+        }
+
+        await push(ref(db, 'market_shops'), {
+            uid: window.currentUser.uid,
+            ownerName: window.userDetails.name,
+            name,
+            category: category || 'সাধারণ',
+            phone,
+            address,
+            desc,
+            logo: logoUrl,
+            time: Date.now()
+        });
+
+        window.toggleCreateShopModal(false);
+        // রিসেট
+        document.getElementById('shop-name').value = '';
+        document.getElementById('shop-phone').value = '';
+        document.getElementById('shop-address').value = '';
+        document.getElementById('shop-desc').value = '';
+        document.getElementById('shop-logo-preview').classList.add('hidden');
+        window.selectedShopLogo = null;
+
+        window.showToast("দোকান সফলভাবে তৈরি হয়েছে!", "success");
+    } catch (e) {
+        console.error(e);
+        window.showToast("সমস্যা: " + e.message, "error");
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+};
+
+// দোকান ডাটাবেস লিসেনার
+onValue(ref(db, 'market_shops'), (snap) => {
+    window.globalShops = snap.exists() ? Object.entries(snap.val()).map(([id, item]) => ({ id, ...item })).reverse() : [];
+    initFavoritesListener();
+    renderShopsList();
+});
+
+// দোকান লিস্ট রেন্ডার
+window.renderShopsList = () => {
+    const query = (document.getElementById('shop-search-input')?.value || '').toLowerCase();
+    const container = document.getElementById('market-shops-list');
+    if (!container) return;
+
+    const filtered = window.globalShops.filter(s => 
+        s.name.toLowerCase().includes(query) || 
+        s.category.toLowerCase().includes(query) || 
+        s.address.toLowerCase().includes(query)
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-10">কোনো দোকান পাওয়া যায়নি</p>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(shop => {
+        const isFav = window.userFavorites?.shops?.[shop.id];
+        const logo = shop.logo ? `<img src="${shop.logo}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center bg-orange-100 text-orange-600 font-bold text-xl"><i class="fa-solid fa-store"></i></div>`;
+
+        return `
+            <div onclick="openShopDetails('${shop.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md transition relative flex flex-col">
+                <button onclick="toggleFavorite('shops', '${shop.id}', event)" class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm shadow flex items-center justify-center ${isFav ? 'text-red-500' : 'text-gray-400'}">
+                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                </button>
+                <div class="h-28 w-full bg-gray-50 flex items-center justify-center relative">
+                    ${logo}
+                </div>
+                <div class="p-3 flex-1 flex flex-col justify-between">
+                    <div>
+                        <span class="text-[10px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full font-bold">${window.escapeHTML(shop.category)}</span>
+                        <h3 class="font-bold text-gray-800 text-sm mt-1 truncate">${window.escapeHTML(shop.name)}</h3>
+                        <p class="text-xs text-gray-500 truncate"><i class="fa-solid fa-location-dot text-red-500 text-[10px]"></i> ${window.escapeHTML(shop.address)}</p>
+                    </div>
+                    <div class="mt-2 pt-2 border-t flex justify-between items-center text-xs text-gray-500">
+                        <span class="text-[11px]"><i class="fa-solid fa-user"></i> ${window.escapeHTML(shop.ownerName).split(' ')[0]}</span>
+                        <span class="text-orange-600 font-bold flex items-center gap-1">ভিজিট <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+// ======================== দোকান ডিটেইলস এবং প্রোডাক্ট ========================
+
+window.openShopDetails = (shopId) => {
+    window.currentViewingShopId = shopId;
+    const shop = window.globalShops.find(s => s.id === shopId);
+    if (!shop) return;
+
+    const isFav = window.userFavorites?.shops?.[shop.id];
+    const isOwner = shop.uid === window.currentUser?.uid;
+
+    document.getElementById('shop-detail-name').innerText = shop.name;
+    document.getElementById('shop-detail-cat').innerText = shop.category;
+    document.getElementById('shop-detail-address').innerText = shop.address;
+    document.getElementById('shop-detail-phone').innerText = shop.phone;
+    document.getElementById('shop-detail-phone-btn').href = `tel:${shop.phone}`;
+    document.getElementById('shop-detail-desc').innerText = shop.desc || 'কোনো বিবরণ নেই';
+
+    const logoContainer = document.getElementById('shop-detail-logo');
+    logoContainer.innerHTML = shop.logo ? `<img src="${shop.logo}" class="w-full h-full object-cover rounded-xl">` : `<div class="w-full h-full rounded-xl bg-orange-100 flex items-center justify-center text-2xl text-orange-600 font-bold"><i class="fa-solid fa-store"></i></div>`;
+
+    const favBtn = document.getElementById('shop-detail-fav-btn');
+    favBtn.innerHTML = `<i class="${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-500'} fa-heart text-xl"></i>`;
+    favBtn.onclick = (e) => toggleFavorite('shops', shop.id, e);
+
+    // ওনার বাটন
+    const addProductBtn = document.getElementById('shop-add-product-btn');
+    if (isOwner) {
+        addProductBtn.classList.remove('hidden');
+    } else {
+        addProductBtn.classList.add('hidden');
+    }
+
+    renderShopProducts(shopId);
+
+    document.getElementById('shop-details-modal').classList.remove('hidden-custom');
+};
+
+window.closeShopDetails = () => {
+    window.currentViewingShopId = null;
+    document.getElementById('shop-details-modal').classList.add('hidden-custom');
+};
+
+// নির্দিষ্ট দোকানের পণ্য লোড করা
+function renderShopProducts(shopId) {
+    const container = document.getElementById('shop-products-list');
+    if (!container) return;
+
+    const products = window.globalMarketItems.filter(p => p.shopId === shopId);
+
+    if (products.length === 0) {
+        container.innerHTML = `<div class="col-span-2 text-center py-10 text-gray-400">
+            <i class="fa-solid fa-box-open text-4xl mb-2 text-gray-300"></i>
+            <p>এই দোকানে এখনো কোনো পণ্য নেই</p>
+        </div>`;
+        return;
+    }
+
+    container.innerHTML = products.map(item => {
+        const isFav = window.userFavorites?.products?.[item.id];
+        const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
+        const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="h-full w-full object-cover">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-2xl text-gray-400"></i></div>`;
+
+        return `
+            <div onclick="openProductDetails('${item.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md transition relative">
+                <button onclick="toggleFavorite('products', '${item.id}', event)" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 shadow flex items-center justify-center ${isFav ? 'text-red-500' : 'text-gray-400'}">
+                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-xs"></i>
+                </button>
+                <div class="relative h-28 w-full overflow-hidden bg-gray-100">
+                    ${imgTag}
+                </div>
+                <div class="p-2.5">
+                    <h3 class="font-bold text-xs text-gray-800 line-clamp-1 leading-tight">${window.escapeHTML(item.title)}</h3>
+                    <p class="text-orange-600 font-extrabold text-sm mt-1">৳ ${window.escapeHTML(item.price)}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ======================== পণ্য আপলোড ও লিস্ট ========================
+
 window.previewSellImages = (input) => {
     const previewContainer = document.getElementById('sell-image-preview');
     previewContainer.innerHTML = '';
     
     if (input.files && input.files.length > 0) {
-        window.selectedSellImages = Array.from(input.files).slice(0, 4); // সর্বোচ্চ ৪টি ছবি
-        
+        window.selectedSellImages = Array.from(input.files).slice(0, 4);
         window.selectedSellImages.forEach(file => {
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
@@ -25,8 +260,9 @@ window.previewSellImages = (input) => {
     }
 };
 
-// পণ্য আপলোড করার ফাংশন (একাধিক ছবি সহ)
 window.submitProduct = async () => {
+    if (!window.currentViewingShopId) return window.showToast("দোকান পাওয়া যায়নি", "error");
+
     const title = document.getElementById('sell-title').value.trim();
     const price = document.getElementById('sell-price').value.trim();
     const desc = document.getElementById('sell-desc').value.trim();
@@ -40,25 +276,23 @@ window.submitProduct = async () => {
     btn.disabled = true;
     
     try {
-        let imgUrls = [];
-        // সব ছবি একসাথে ক্লাউডিনারিতে আপলোড করা
         const uploadPromises = window.selectedSellImages.map(file => window.uploadMediaToCloudinary(file));
         const results = await Promise.all(uploadPromises);
-        imgUrls = results.map(res => res.url);
+        const imgUrls = results.map(res => res.url);
         
         await push(ref(db, 'market_items'), {
+            shopId: window.currentViewingShopId,
             uid: window.currentUser.uid,
             seller: window.userDetails.name,
             sellerPic: window.userDetails.profile_pic || '',
             title,
             price,
             desc,
-            images: imgUrls, // Array of images
+            images: imgUrls,
             time: Date.now()
         });
         
-        if (typeof window.toggleSellModal === 'function') window.toggleSellModal(false);
-        // ফর্ম রিসেট
+        window.toggleSellModal(false);
         document.getElementById('sell-title').value = "";
         document.getElementById('sell-price').value = "";
         document.getElementById('sell-desc').value = "";
@@ -66,101 +300,58 @@ window.submitProduct = async () => {
         document.getElementById('sell-image-preview').innerHTML = "";
         window.selectedSellImages = [];
         
-        if (typeof window.showToast === 'function') window.showToast("পণ্য সফলভাবে যুক্ত হয়েছে!", "success");
+        window.showToast("পণ্য সফলভাবে যুক্ত হয়েছে!", "success");
     } catch (e) {
         console.error(e);
-        if (typeof window.showToast === 'function') window.showToast("আপলোডে সমস্যা: " + e.message, 'error');
+        window.showToast("আপলোডে সমস্যা: " + e.message, 'error');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 };
 
-// রিয়েল-টাইমে পণ্য লোড করার ফাংশন
 onValue(ref(db, 'market_items'), (snap) => {
-    // ডাটাবেস থেকে ID সহ ডাটা নেওয়া হচ্ছে
     window.globalMarketItems = snap.exists() ? Object.entries(snap.val()).map(([id, item]) => ({ id, ...item })).reverse() : [];
-    
-    const marketListContainer = document.getElementById('market-list');
-    
-    if(marketListContainer) {
-        marketListContainer.innerHTML = window.globalMarketItems.length > 0 ? window.globalMarketItems.map(item => {
-            // আগের সিঙ্গেল ইমেজ বা নতুন মাল্টিপল ইমেজ সাপোর্ট
-            const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
-            const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="h-full w-full object-cover group-hover:scale-105 transition-transform">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
-            const imageCountBadge = (item.images && item.images.length > 1) ? `<span class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1"><i class="fa-regular fa-images"></i> ${item.images.length}</span>` : '';
-
-            return `<div onclick="openProductDetails('${item.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md transition group">
-                <div class="relative h-32 w-full overflow-hidden bg-gray-100">
-                    ${imgTag}
-                    ${imageCountBadge}
-                </div>
-                <div class="p-3">
-                    <h3 class="font-bold text-sm text-gray-800 line-clamp-2 leading-tight">${window.escapeHTML(item.title)}</h3>
-                    <p class="text-orange-600 font-extrabold text-base mt-1">৳ ${window.escapeHTML(item.price)}</p>
-                    <p class="text-[10px] text-gray-500 mt-2 flex items-center gap-1 truncate"><i class="fa-solid fa-user-tag"></i> ${window.escapeHTML(item.seller).split(' ')[0]}</p>
-                </div>
-            </div>`;
-        }).join('') : '<p class="col-span-2 text-center text-gray-400 py-10">কোনো পণ্য পাওয়া যায়নি</p>';
-    }
-    
-    // যদি My Products মডাল ওপেন থাকে, তবে সেটাও আপডেট হবে
-    if(!document.getElementById('my-products-modal').classList.contains('hidden-custom')) {
-        renderMyProducts();
+    if (window.currentViewingShopId) {
+        renderShopProducts(window.currentViewingShopId);
     }
 });
 
-// প্রোডাক্ট ডিটেইলস ভিউ ওপেন করা
+// ======================== প্রোডাক্ট ডিটেইলস ========================
+
 window.openProductDetails = (id) => {
     const product = window.globalMarketItems.find(p => p.id === id);
     if (!product) return;
     
+    const isFav = window.userFavorites?.products?.[product.id];
     const contentDiv = document.getElementById('product-details-content');
-    
-    // ছবিগুলো রেন্ডার করা (Horizontal scroll if multiple)
-    let imagesHtml = '';
     const imagesArray = (product.images && product.images.length > 0) ? product.images : (product.image ? [product.image] : []);
     
-    if (imagesArray.length > 0) {
-        imagesHtml = `<div class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide bg-black h-64 sm:h-72 w-full">
-            ${imagesArray.map(img => `<img src="${img}" loading="lazy" onclick="window.openImageViewer('${img}')" class="w-full h-full object-contain shrink-0 snap-center">`).join('')}
-        </div>`;
-    } else {
-        imagesHtml = `<div class="h-48 w-full bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-image text-5xl text-gray-400"></i></div>`;
-    }
+    let imagesHtml = imagesArray.length > 0 
+        ? `<div class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide bg-black h-64 sm:h-72 w-full">${imagesArray.map(img => `<img src="${img}" loading="lazy" onclick="window.openImageViewer('${img}')" class="w-full h-full object-contain shrink-0 snap-center">`).join('')}</div>` 
+        : `<div class="h-48 w-full bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-image text-5xl text-gray-400"></i></div>`;
     
-    // সেলার অপশন (নিজের প্রোডাক্ট হলে ডিলিট, অন্যের হলে মেসেজ/কল)
-    let actionButtons = '';
-    if (product.uid === window.currentUser.uid) {
-        actionButtons = `<button onclick="deleteProduct('${id}', true)" class="w-full bg-red-100 text-red-600 font-bold py-3 rounded-xl hover:bg-red-200 transition flex justify-center items-center gap-2"><i class="fa-solid fa-trash"></i> বিজ্ঞাপনটি মুছুন</button>`;
-    } else {
-        actionButtons = `<div class="flex gap-2 w-full">
-            <button onclick="startChat('${product.uid}', '${window.escapeHTML(product.seller)}'); closeProductDetails();" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-md flex justify-center items-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>
-            <a href="tel:${product.desc.match(/\d{11}/) ? product.desc.match(/\d{11}/)[0] : ''}" onclick="if(!this.href.includes('tel:0')) { alert('যোগাযোগের নম্বর দেওয়া নেই'); return false; }" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition shadow-md flex justify-center items-center gap-2"><i class="fa-solid fa-phone"></i> কল করুন</a>
+    let actionButtons = product.uid === window.currentUser?.uid
+        ? `<button onclick="deleteProduct('${id}', true)" class="w-full bg-red-100 text-red-600 font-bold py-3 rounded-xl hover:bg-red-200 transition flex justify-center items-center gap-2"><i class="fa-solid fa-trash"></i> পণ্যটি মুছুন</button>`
+        : `<div class="flex gap-2 w-full">
+            <button onclick="startChat('${product.uid}', '${window.escapeHTML(product.seller)}'); closeProductDetails();" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>
+            <a href="tel:${product.desc.match(/\d{11}/) ? product.desc.match(/\d{11}/)[0] : ''}" onclick="if(!this.href.includes('tel:0')) { alert('যোগাযোগের নম্বর দেওয়া নেই'); return false; }" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-phone"></i> কল করুন</a>
         </div>`;
-    }
-
-    const sellerAvatar = product.sellerPic ? `<img src="${product.sellerPic}" loading="lazy" class="w-12 h-12 rounded-full object-cover">` : `<div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-xl">${product.seller.charAt(0)}</div>`;
 
     contentDiv.innerHTML = `
-        ${imagesHtml}
+        <div class="relative">
+            ${imagesHtml}
+            <button onclick="toggleFavorite('products', '${product.id}', event); openProductDetails('${product.id}');" class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/80 backdrop-blur shadow-md flex items-center justify-center ${isFav ? 'text-red-500' : 'text-gray-600'}">
+                <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
+            </button>
+        </div>
         ${imagesArray.length > 1 ? `<p class="text-center text-[10px] text-gray-400 bg-gray-100 py-1"><i class="fa-solid fa-arrows-left-right"></i> স্লাইড করে বাকি ছবি দেখুন</p>` : ''}
         <div class="p-5">
             <h2 class="text-xl font-bold text-gray-900 leading-tight mb-2">${window.escapeHTML(product.title)}</h2>
             <p class="text-2xl font-extrabold text-orange-600 mb-4">৳ ${window.escapeHTML(product.price)}</p>
             
-            <h4 class="font-bold text-sm text-gray-700 border-b pb-1 mb-2">বিস্তারিত বিবরণ</h4>
+            <h4 class="font-bold text-sm text-gray-700 border-b pb-1 mb-2">বিবরণ</h4>
             <p class="text-sm text-gray-600 whitespace-pre-line mb-6">${window.escapeHTML(product.desc)}</p>
-            
-            <div class="bg-gray-50 p-3 rounded-xl flex items-center justify-between mb-6 border border-gray-100">
-                <div class="flex items-center gap-3" onclick="openUserProfile('${product.uid}'); closeProductDetails();" style="cursor:pointer;">
-                    ${sellerAvatar}
-                    <div>
-                        <p class="text-xs text-gray-500">বিক্রেতা</p>
-                        <h4 class="font-bold text-gray-800">${window.escapeHTML(product.seller)}</h4>
-                    </div>
-                </div>
-            </div>
             
             <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t sm:relative sm:border-t-0 sm:p-0">
                 ${actionButtons}
@@ -170,73 +361,82 @@ window.openProductDetails = (id) => {
     
     const modal = document.getElementById('product-details-modal');
     modal.classList.remove('hidden-custom');
-    // Animation trigger
-    setTimeout(() => {
-        modal.classList.remove('translate-y-full');
-    }, 10);
+    setTimeout(() => modal.classList.remove('translate-y-full'), 10);
 };
 
 window.closeProductDetails = () => {
     const modal = document.getElementById('product-details-modal');
     modal.classList.add('translate-y-full');
-    setTimeout(() => {
-        modal.classList.add('hidden-custom');
-    }, 300);
+    setTimeout(() => modal.classList.add('hidden-custom'), 300);
 };
 
-// আমার পণ্যসমূহ ওপেন করা
-window.openMyProducts = () => {
-    document.getElementById('my-products-modal').classList.remove('hidden-custom');
-    renderMyProducts();
-};
-
-window.closeMyProducts = () => {
-    document.getElementById('my-products-modal').classList.add('hidden-custom');
-};
-
-// নিজের প্রোডাক্ট রেন্ডার করা
-function renderMyProducts() {
-    const myProducts = window.globalMarketItems.filter(p => p.uid === window.currentUser.uid);
-    const container = document.getElementById('my-products-list');
-    
-    if (myProducts.length > 0) {
-        container.innerHTML = myProducts.map(item => {
-            const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
-            const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="w-16 h-16 rounded-lg object-cover">` : `<div class="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-image text-gray-400"></i></div>`;
-            
-            return `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="openProductDetails('${item.id}')">
-                    ${imgTag}
-                    <div class="truncate">
-                        <h4 class="font-bold text-sm text-gray-800 truncate">${window.escapeHTML(item.title)}</h4>
-                        <p class="text-orange-600 font-bold text-xs mt-0.5">৳ ${window.escapeHTML(item.price)}</p>
-                        <p class="text-[10px] text-gray-400 mt-1">${window.timeAgo(item.time)}</p>
-                    </div>
-                </div>
-                <button onclick="deleteProduct('${item.id}')" class="w-10 h-10 shrink-0 bg-red-50 text-red-500 rounded-full flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can"></i></button>
-            </div>`;
-        }).join('');
-    } else {
-        container.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full pt-20 text-gray-400">
-                <i class="fa-solid fa-box-open text-5xl mb-3 text-gray-300"></i>
-                <p>আপনি এখনো কোনো পণ্য আপলোড করেননি</p>
-                <button onclick="closeMyProducts(); toggleSellModal(true);" class="mt-4 bg-orange-100 text-orange-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-200"><i class="fa-solid fa-plus"></i> নতুন পণ্য যোগ করুন</button>
-            </div>
-        `;
-    }
-}
-
-// প্রোডাক্ট ডিলিট করার ফাংশন
 window.deleteProduct = async (id, closeDetails = false) => {
-    if (confirm("আপনি কি নিশ্চিত যে এই বিজ্ঞাপনটি মুছে ফেলতে চান?")) {
+    if (confirm("আপনি কি নিশ্চিত যে পণ্যটি মুছে ফেলতে চান?")) {
         try {
             await remove(ref(db, 'market_items/' + id));
-            if (typeof window.showToast === 'function') window.showToast("পণ্য মুছে ফেলা হয়েছে!");
+            window.showToast("পণ্য মুছে ফেলা হয়েছে!");
             if (closeDetails) closeProductDetails();
         } catch (e) {
-            console.error(e);
-            if (typeof window.showToast === 'function') window.showToast("সমস্যা হয়েছে: " + e.message, 'error');
+            window.showToast("সমস্যা: " + e.message, 'error');
         }
     }
+};
+
+// ======================== ফেভারিট পেজ ভিউ ========================
+window.openFavoritesModal = () => {
+    renderFavoritesList();
+    document.getElementById('favorites-modal').classList.remove('hidden-custom');
+};
+
+window.closeFavoritesModal = () => {
+    document.getElementById('favorites-modal').classList.add('hidden-custom');
+};
+
+window.renderFavoritesList = () => {
+    const favShopIds = Object.keys(window.userFavorites?.shops || {});
+    const favProdIds = Object.keys(window.userFavorites?.products || {});
+
+    const favShops = window.globalShops.filter(s => favShopIds.includes(s.id));
+    const favProducts = window.globalMarketItems.filter(p => favProdIds.includes(p.id));
+
+    const shopsContainer = document.getElementById('fav-shops-list');
+    const prodsContainer = document.getElementById('fav-products-list');
+
+    shopsContainer.innerHTML = favShops.length > 0 ? favShops.map(s => `
+        <div onclick="closeFavoritesModal(); openShopDetails('${s.id}')" class="bg-white p-3 rounded-xl border flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg bg-orange-100 overflow-hidden flex items-center justify-center font-bold text-orange-600">
+                    ${s.logo ? `<img src="${s.logo}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-store"></i>'}
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">${window.escapeHTML(s.name)}</h4>
+                    <p class="text-xs text-gray-500">${window.escapeHTML(s.address)}</p>
+                </div>
+            </div>
+            <button onclick="toggleFavorite('shops', '${s.id}', event); renderFavoritesList();" class="text-red-500 p-2"><i class="fa-solid fa-heart"></i></button>
+        </div>
+    `).join('') : '<p class="text-xs text-gray-400 text-center py-4">কোনো পছন্দের দোকান নেই</p>';
+
+    prodsContainer.innerHTML = favProducts.length > 0 ? favProducts.map(p => `
+        <div onclick="closeFavoritesModal(); openProductDetails('${p.id}')" class="bg-white p-3 rounded-xl border flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                    ${(p.images && p.images[0]) ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-image text-gray-400"></i>'}
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-gray-800">${window.escapeHTML(p.title)}</h4>
+                    <p class="text-xs font-bold text-orange-600">৳ ${window.escapeHTML(p.price)}</p>
+                </div>
+            </div>
+            <button onclick="toggleFavorite('products', '${p.id}', event); renderFavoritesList();" class="text-red-500 p-2"><i class="fa-solid fa-heart"></i></button>
+        </div>
+    `).join('') : '<p class="text-xs text-gray-400 text-center py-4">কোনো পছন্দের পণ্য নেই</p>';
+};
+
+// মডাল কন্ট্রোল
+window.toggleCreateShopModal = (show) => {
+    document.getElementById('create-shop-modal').classList.toggle('hidden-custom', !show);
+};
+window.toggleSellModal = (show) => {
+    document.getElementById('sell-modal').classList.toggle('hidden-custom', !show);
 };
