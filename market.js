@@ -7,6 +7,39 @@ window.globalShops = [];
 window.globalMarketItems = [];
 window.userFavorites = { shops: {}, products: {} };
 window.currentViewingShopId = null;
+window.activeMarketTab = 'products';
+window.currentOrderingProduct = null;
+
+// ======================== ট্যাব সুইচিং ========================
+window.switchMarketTab = (tab) => {
+    window.activeMarketTab = tab;
+    const prodBtn = document.getElementById('tab-btn-products');
+    const shopBtn = document.getElementById('tab-btn-shops');
+    const prodList = document.getElementById('market-products-list');
+    const shopList = document.getElementById('market-shops-list');
+
+    if (tab === 'products') {
+        prodBtn.className = "flex-1 py-2 rounded-lg bg-orange-500 text-white shadow transition flex items-center justify-center gap-1.5";
+        shopBtn.className = "flex-1 py-2 rounded-lg text-gray-600 hover:text-gray-900 transition flex items-center justify-center gap-1.5";
+        prodList.classList.remove('hidden');
+        shopList.classList.add('hidden');
+        renderMarketProducts();
+    } else {
+        shopBtn.className = "flex-1 py-2 rounded-lg bg-orange-500 text-white shadow transition flex items-center justify-center gap-1.5";
+        prodBtn.className = "flex-1 py-2 rounded-lg text-gray-600 hover:text-gray-900 transition flex items-center justify-center gap-1.5";
+        shopList.classList.remove('hidden');
+        prodList.classList.add('hidden');
+        renderShopsList();
+    }
+};
+
+window.handleMarketSearch = () => {
+    if (window.activeMarketTab === 'products') {
+        renderMarketProducts();
+    } else {
+        renderShopsList();
+    }
+};
 
 // ======================== ফেভারিট লিসেনার ========================
 function initFavoritesListener() {
@@ -113,6 +146,49 @@ onValue(ref(db, 'market_shops'), (snap) => {
     initFavoritesListener();
     renderShopsList();
 });
+
+// সকল পণ্য মার্কেটপ্লেসে রেন্ডার করা
+window.renderMarketProducts = () => {
+    const query = (document.getElementById('market-search-input')?.value || '').toLowerCase();
+    const container = document.getElementById('market-products-list');
+    if (!container) return;
+
+    const filtered = window.globalMarketItems.filter(p => 
+        p.title.toLowerCase().includes(query) || 
+        (p.desc && p.desc.toLowerCase().includes(query)) ||
+        (p.seller && p.seller.toLowerCase().includes(query))
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-10">কোনো পণ্য পাওয়া যায়নি</p>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(item => {
+        const isFav = window.userFavorites?.products?.[item.id];
+        const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
+        const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="h-full w-full object-cover">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
+
+        return `
+            <div onclick="openProductDetails('${item.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md transition relative">
+                <button onclick="toggleFavorite('products', '${item.id}', event)" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 backdrop-blur shadow flex items-center justify-center ${isFav ? 'text-red-500' : 'text-gray-400'}">
+                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-xs"></i>
+                </button>
+                <div class="relative h-32 w-full overflow-hidden bg-gray-100">
+                    ${imgTag}
+                </div>
+                <div class="p-3">
+                    <h3 class="font-bold text-xs text-gray-800 line-clamp-1 leading-tight">${window.escapeHTML(item.title)}</h3>
+                    <p class="text-orange-600 font-extrabold text-sm mt-1">৳ ${window.escapeHTML(item.price)}</p>
+                    <div class="mt-2 pt-1.5 border-t flex items-center justify-between">
+                        <span class="text-[10px] text-gray-500 truncate"><i class="fa-solid fa-store text-orange-500"></i> ${window.escapeHTML(item.seller).split(' ')[0]}</span>
+                        <span class="text-[10px] text-blue-600 font-bold">অর্ডার করুন</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
 
 // দোকান লিস্ট রেন্ডার
 window.renderShopsList = () => {
@@ -312,10 +388,83 @@ window.submitProduct = async () => {
 
 onValue(ref(db, 'market_items'), (snap) => {
     window.globalMarketItems = snap.exists() ? Object.entries(snap.val()).map(([id, item]) => ({ id, ...item })).reverse() : [];
+    if (window.activeMarketTab === 'products') {
+        renderMarketProducts();
+    }
     if (window.currentViewingShopId) {
         renderShopProducts(window.currentViewingShopId);
     }
 });
+
+// ======================== অর্ডার ফাংশনালিটি ========================
+
+window.openOrderModal = (productId) => {
+    const product = window.globalMarketItems.find(p => p.id === productId);
+    if (!product) return;
+    
+    window.currentOrderingProduct = product;
+    document.getElementById('order-prod-title').innerText = product.title;
+    document.getElementById('order-prod-price').innerText = `৳ ${product.price}`;
+    
+    const img = (product.images && product.images[0]) ? product.images[0] : (product.image || '');
+    document.getElementById('order-prod-img').src = img || 'https://via.placeholder.com/150';
+    
+    if (window.userDetails) {
+        document.getElementById('order-buyer-name').value = window.userDetails.name || '';
+        document.getElementById('order-buyer-phone').value = window.userDetails.phone || '';
+    }
+
+    toggleOrderModal(true);
+};
+
+window.toggleOrderModal = (show) => {
+    document.getElementById('order-modal').classList.toggle('hidden-custom', !show);
+};
+
+window.submitOrder = async () => {
+    if (!window.currentOrderingProduct) return;
+
+    const buyerName = document.getElementById('order-buyer-name').value.trim();
+    const buyerPhone = document.getElementById('order-buyer-phone').value.trim();
+    const buyerAddress = document.getElementById('order-buyer-address').value.trim();
+    const quantity = document.getElementById('order-quantity').value || 1;
+
+    if (!buyerName || !buyerPhone || !buyerAddress) {
+        return window.showToast("নাম, ফোন এবং ডেলিভারি ঠিকানা দিন", "error");
+    }
+
+    const btn = document.getElementById('btn-submit-order');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অর্ডার প্রসেস হচ্ছে...';
+
+    try {
+        await push(ref(db, 'market_orders'), {
+            productId: window.currentOrderingProduct.id,
+            productTitle: window.currentOrderingProduct.title,
+            productPrice: window.currentOrderingProduct.price,
+            productImage: (window.currentOrderingProduct.images && window.currentOrderingProduct.images[0]) || '',
+            sellerUid: window.currentOrderingProduct.uid,
+            sellerName: window.currentOrderingProduct.seller,
+            buyerUid: window.currentUser.uid,
+            buyerName,
+            buyerPhone,
+            buyerAddress,
+            quantity,
+            status: 'pending',
+            time: Date.now()
+        });
+
+        toggleOrderModal(false);
+        closeProductDetails();
+        window.showToast("আপনার অর্ডার সফলভাবে প্লেস হয়েছে!", "success");
+    } catch (e) {
+        console.error(e);
+        window.showToast("অর্ডার দিতে সমস্যা হয়েছে: " + e.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> অর্ডার প্লেস করুন';
+    }
+};
 
 // ======================== প্রোডাক্ট ডিটেইলস ========================
 
@@ -333,9 +482,12 @@ window.openProductDetails = (id) => {
     
     let actionButtons = product.uid === window.currentUser?.uid
         ? `<button onclick="deleteProduct('${id}', true)" class="w-full bg-red-100 text-red-600 font-bold py-3 rounded-xl hover:bg-red-200 transition flex justify-center items-center gap-2"><i class="fa-solid fa-trash"></i> পণ্যটি মুছুন</button>`
-        : `<div class="flex gap-2 w-full">
-            <button onclick="startChat('${product.uid}', '${window.escapeHTML(product.seller)}'); closeProductDetails();" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-brands fa-facebook-messenger"></i> মেসেজ</button>
-            <a href="tel:${product.desc.match(/\d{11}/) ? product.desc.match(/\d{11}/)[0] : ''}" onclick="if(!this.href.includes('tel:0')) { alert('যোগাযোগের নম্বর দেওয়া নেই'); return false; }" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-phone"></i> কল করুন</a>
+        : `<div class="space-y-2 w-full">
+            <button onclick="openOrderModal('${product.id}')" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl hover:bg-orange-600 transition shadow-md flex justify-center items-center gap-2"><i class="fa-solid fa-truck-fast"></i> সরাসরি অর্ডার করুন</button>
+            <div class="flex gap-2 w-full">
+                <button onclick="startChat('${product.uid}', '${window.escapeHTML(product.seller)}'); closeProductDetails();" class="flex-1 bg-blue-50 text-blue-600 font-bold py-2.5 rounded-xl border border-blue-200 hover:bg-blue-100 transition flex justify-center items-center gap-1.5 text-xs"><i class="fa-brands fa-facebook-messenger"></i> চ্যাট করুন</button>
+                <a href="tel:${product.desc.match(/\d{11}/) ? product.desc.match(/\d{11}/)[0] : ''}" onclick="if(!this.href.includes('tel:0')) { alert('যোগাযোগের নম্বর দেওয়া নেই'); return false; }" class="flex-1 bg-green-50 text-green-600 font-bold py-2.5 rounded-xl border border-green-200 hover:bg-green-100 transition flex justify-center items-center gap-1.5 text-xs"><i class="fa-solid fa-phone"></i> কল দিন</a>
+            </div>
         </div>`;
 
     contentDiv.innerHTML = `
