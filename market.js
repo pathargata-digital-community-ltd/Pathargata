@@ -5,12 +5,14 @@ window.selectedSellImages = [];
 window.selectedShopLogo = null;
 window.globalShops = [];
 window.globalMarketItems = [];
+window.globalOrders = [];
 window.userFavorites = { shops: {}, products: {} };
 window.currentViewingShopId = null;
 window.activeMarketTab = 'products';
 window.currentOrderingProduct = null;
+window.activeOrdersTab = 'buyer';
 
-// ======================== ট্যাব সুইচিং ========================
+// ======================== ট্যাব সুইচিং ও সার্চ ========================
 window.switchMarketTab = (tab) => {
     window.activeMarketTab = tab;
     const prodBtn = document.getElementById('tab-btn-products');
@@ -18,17 +20,19 @@ window.switchMarketTab = (tab) => {
     const prodList = document.getElementById('market-products-list');
     const shopList = document.getElementById('market-shops-list');
 
+    if (!prodBtn || !shopBtn) return;
+
     if (tab === 'products') {
         prodBtn.className = "flex-1 py-2 rounded-lg bg-orange-500 text-white shadow transition flex items-center justify-center gap-1.5";
         shopBtn.className = "flex-1 py-2 rounded-lg text-gray-600 hover:text-gray-900 transition flex items-center justify-center gap-1.5";
-        prodList.classList.remove('hidden');
-        shopList.classList.add('hidden');
+        prodList?.classList.remove('hidden');
+        shopList?.classList.add('hidden');
         renderMarketProducts();
     } else {
         shopBtn.className = "flex-1 py-2 rounded-lg bg-orange-500 text-white shadow transition flex items-center justify-center gap-1.5";
         prodBtn.className = "flex-1 py-2 rounded-lg text-gray-600 hover:text-gray-900 transition flex items-center justify-center gap-1.5";
-        shopList.classList.remove('hidden');
-        prodList.classList.add('hidden');
+        shopList?.classList.remove('hidden');
+        prodList?.classList.add('hidden');
         renderShopsList();
     }
 };
@@ -41,32 +45,48 @@ window.handleMarketSearch = () => {
     }
 };
 
-// ======================== ফেভারিট লিসেনার ========================
+// ======================== ফেভারিট লিসেনার ও ফিক্স ========================
 function initFavoritesListener() {
-    if (!window.currentUser?.uid) return;
-    onValue(ref(db, `market_favorites/${window.currentUser.uid}`), (snap) => {
-        window.userFavorites = snap.val() || { shops: {}, products: {} };
-        if (window.renderShopsList) renderShopsList();
+    const uid = window.currentUser?.uid;
+    if (!uid) return;
+    onValue(ref(db, `market_favorites/${uid}`), (snap) => {
+        const val = snap.val() || {};
+        window.userFavorites = {
+            shops: val.shops || {},
+            products: val.products || {}
+        };
+        if (window.activeMarketTab === 'products') {
+            renderMarketProducts();
+        } else {
+            renderShopsList();
+        }
         if (window.currentViewingShopId) renderShopProducts(window.currentViewingShopId);
     });
 }
 
-// ফেভারিট টগল (Shop/Product)
+// ফেভারিট টগল ফাংশন
 window.toggleFavorite = async (type, id, event) => {
     if (event) event.stopPropagation();
-    if (!window.currentUser?.uid) return window.showToast("অনুগ্রহ করে লগইন করুন", "error");
+    const uid = window.currentUser?.uid;
+    if (!uid) return window.showToast ? window.showToast("অনুগ্রহ করে লগইন করুন", "error") : alert("লগইন করুন");
 
-    const isFav = window.userFavorites[type]?.[id];
-    const favRef = ref(db, `market_favorites/${window.currentUser.uid}/${type}/${id}`);
+    if (!window.userFavorites[type]) window.userFavorites[type] = {};
+    const isFav = !!window.userFavorites[type][id];
+    const favRef = ref(db, `market_favorites/${uid}/${type}/${id}`);
 
     try {
         if (isFav) {
+            delete window.userFavorites[type][id];
             await remove(favRef);
-            window.showToast("পছন্দের তালিকা থেকে সরানো হয়েছে");
+            if (window.showToast) window.showToast("পছন্দের তালিকা থেকে সরানো হয়েছে");
         } else {
+            window.userFavorites[type][id] = true;
             await set(favRef, true);
-            window.showToast("পছন্দের তালিকায় যুক্ত হয়েছে", "success");
+            if (window.showToast) window.showToast("পছন্দের তালিকায় যুক্ত হয়েছে", "success");
         }
+        if (window.activeMarketTab === 'products') renderMarketProducts();
+        else renderShopsList();
+        if (window.currentViewingShopId) renderShopProducts(window.currentViewingShopId);
     } catch (e) {
         console.error(e);
     }
@@ -74,20 +94,21 @@ window.toggleFavorite = async (type, id, event) => {
 
 // ======================== দোকান ম্যানেজমেন্ট ========================
 
-// দোকান তৈরির ছবি প্রিভিউ
 window.previewShopLogo = (input) => {
     if (input.files && input.files[0]) {
         window.selectedShopLogo = input.files[0];
         const reader = new FileReader();
         reader.onload = (e) => {
-            document.getElementById('shop-logo-preview').src = e.target.result;
-            document.getElementById('shop-logo-preview').classList.remove('hidden');
+            const preview = document.getElementById('shop-logo-preview');
+            if (preview) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+            }
         };
         reader.readAsDataURL(input.files[0]);
     }
 };
 
-// নতুন দোকান তৈরি
 window.submitCreateShop = async () => {
     const name = document.getElementById('shop-name').value.trim();
     const category = document.getElementById('shop-category').value.trim();
@@ -104,7 +125,7 @@ window.submitCreateShop = async () => {
 
     try {
         let logoUrl = '';
-        if (window.selectedShopLogo) {
+        if (window.selectedShopLogo && typeof window.uploadMediaToCloudinary === 'function') {
             const res = await window.uploadMediaToCloudinary(window.selectedShopLogo);
             logoUrl = res.url;
         }
@@ -122,12 +143,11 @@ window.submitCreateShop = async () => {
         });
 
         window.toggleCreateShopModal(false);
-        // রিসেট
         document.getElementById('shop-name').value = '';
         document.getElementById('shop-phone').value = '';
         document.getElementById('shop-address').value = '';
         document.getElementById('shop-desc').value = '';
-        document.getElementById('shop-logo-preview').classList.add('hidden');
+        document.getElementById('shop-logo-preview')?.classList.add('hidden');
         window.selectedShopLogo = null;
 
         window.showToast("দোকান সফলভাবে তৈরি হয়েছে!", "success");
@@ -140,59 +160,14 @@ window.submitCreateShop = async () => {
     }
 };
 
-// দোকান ডাটাবেস লিসেনার
 onValue(ref(db, 'market_shops'), (snap) => {
     window.globalShops = snap.exists() ? Object.entries(snap.val()).map(([id, item]) => ({ id, ...item })).reverse() : [];
     initFavoritesListener();
     renderShopsList();
 });
 
-// সকল পণ্য মার্কেটপ্লেসে রেন্ডার করা
-window.renderMarketProducts = () => {
-    const query = (document.getElementById('market-search-input')?.value || '').toLowerCase();
-    const container = document.getElementById('market-products-list');
-    if (!container) return;
-
-    const filtered = window.globalMarketItems.filter(p => 
-        p.title.toLowerCase().includes(query) || 
-        (p.desc && p.desc.toLowerCase().includes(query)) ||
-        (p.seller && p.seller.toLowerCase().includes(query))
-    );
-
-    if (filtered.length === 0) {
-        container.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-10">কোনো পণ্য পাওয়া যায়নি</p>';
-        return;
-    }
-
-    container.innerHTML = filtered.map(item => {
-        const isFav = window.userFavorites?.products?.[item.id];
-        const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
-        const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="h-full w-full object-cover">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
-
-        return `
-            <div onclick="openProductDetails('${item.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md transition relative">
-                <button onclick="toggleFavorite('products', '${item.id}', event)" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 backdrop-blur shadow flex items-center justify-center ${isFav ? 'text-red-500' : 'text-gray-400'}">
-                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-xs"></i>
-                </button>
-                <div class="relative h-32 w-full overflow-hidden bg-gray-100">
-                    ${imgTag}
-                </div>
-                <div class="p-3">
-                    <h3 class="font-bold text-xs text-gray-800 line-clamp-1 leading-tight">${window.escapeHTML(item.title)}</h3>
-                    <p class="text-orange-600 font-extrabold text-sm mt-1">৳ ${window.escapeHTML(item.price)}</p>
-                    <div class="mt-2 pt-1.5 border-t flex items-center justify-between">
-                        <span class="text-[10px] text-gray-500 truncate"><i class="fa-solid fa-store text-orange-500"></i> ${window.escapeHTML(item.seller).split(' ')[0]}</span>
-                        <span class="text-[10px] text-blue-600 font-bold">অর্ডার করুন</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
-};
-
-// দোকান লিস্ট রেন্ডার
 window.renderShopsList = () => {
-    const query = (document.getElementById('shop-search-input')?.value || '').toLowerCase();
+    const query = (document.getElementById('market-search-input')?.value || '').toLowerCase();
     const container = document.getElementById('market-shops-list');
     if (!container) return;
 
@@ -235,7 +210,50 @@ window.renderShopsList = () => {
     }).join('');
 };
 
-// ======================== দোকান ডিটেইলস এবং প্রোডাক্ট ========================
+// ======================== মার্কেটপ্লেস সকল পণ্য রেন্ডার ========================
+window.renderMarketProducts = () => {
+    const query = (document.getElementById('market-search-input')?.value || '').toLowerCase();
+    const container = document.getElementById('market-products-list');
+    if (!container) return;
+
+    const filtered = window.globalMarketItems.filter(p => 
+        p.title.toLowerCase().includes(query) || 
+        (p.desc && p.desc.toLowerCase().includes(query)) ||
+        (p.seller && p.seller.toLowerCase().includes(query))
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<p class="col-span-2 text-center text-gray-400 py-10">কোনো পণ্য পাওয়া যায়নি</p>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(item => {
+        const isFav = window.userFavorites?.products?.[item.id];
+        const firstImage = (item.images && item.images.length > 0) ? item.images[0] : (item.image || '');
+        const imgTag = firstImage ? `<img src="${firstImage}" loading="lazy" class="h-full w-full object-cover">` : `<div class="h-full w-full flex items-center justify-center bg-gray-200"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
+
+        return `
+            <div onclick="openProductDetails('${item.id}')" class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between overflow-hidden cursor-pointer hover:shadow-md transition relative">
+                <button onclick="toggleFavorite('products', '${item.id}', event)" class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 backdrop-blur shadow flex items-center justify-center ${isFav ? 'text-red-500' : 'text-gray-400'}">
+                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-xs"></i>
+                </button>
+                <div class="relative h-32 w-full overflow-hidden bg-gray-100">
+                    ${imgTag}
+                </div>
+                <div class="p-3">
+                    <h3 class="font-bold text-xs text-gray-800 line-clamp-1 leading-tight">${window.escapeHTML(item.title)}</h3>
+                    <p class="text-orange-600 font-extrabold text-sm mt-1">৳ ${window.escapeHTML(item.price)}</p>
+                    <div class="mt-2 pt-1.5 border-t flex items-center justify-between">
+                        <span class="text-[10px] text-gray-500 truncate"><i class="fa-solid fa-store text-orange-500"></i> ${window.escapeHTML(item.seller).split(' ')[0]}</span>
+                        <span class="text-[10px] text-blue-600 font-bold">অর্ডার করুন</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+// ======================== দোকান ডিটেইলস ========================
 
 window.openShopDetails = (shopId) => {
     window.currentViewingShopId = shopId;
@@ -259,25 +277,19 @@ window.openShopDetails = (shopId) => {
     favBtn.innerHTML = `<i class="${isFav ? 'fa-solid text-red-500' : 'fa-regular text-gray-500'} fa-heart text-xl"></i>`;
     favBtn.onclick = (e) => toggleFavorite('shops', shop.id, e);
 
-    // ওনার বাটন
     const addProductBtn = document.getElementById('shop-add-product-btn');
-    if (isOwner) {
-        addProductBtn.classList.remove('hidden');
-    } else {
-        addProductBtn.classList.add('hidden');
-    }
+    if (isOwner) addProductBtn?.classList.remove('hidden');
+    else addProductBtn?.classList.add('hidden');
 
     renderShopProducts(shopId);
-
-    document.getElementById('shop-details-modal').classList.remove('hidden-custom');
+    document.getElementById('shop-details-modal')?.classList.remove('hidden-custom');
 };
 
 window.closeShopDetails = () => {
     window.currentViewingShopId = null;
-    document.getElementById('shop-details-modal').classList.add('hidden-custom');
+    document.getElementById('shop-details-modal')?.classList.add('hidden-custom');
 };
 
-// নির্দিষ্ট দোকানের পণ্য লোড করা
 function renderShopProducts(shopId) {
     const container = document.getElementById('shop-products-list');
     if (!container) return;
@@ -314,10 +326,11 @@ function renderShopProducts(shopId) {
     }).join('');
 }
 
-// ======================== পণ্য আপলোড ও লিস্ট ========================
+// ======================== পণ্য আপলোড ========================
 
 window.previewSellImages = (input) => {
     const previewContainer = document.getElementById('sell-image-preview');
+    if (!previewContainer) return;
     previewContainer.innerHTML = '';
     
     if (input.files && input.files.length > 0) {
@@ -396,76 +409,6 @@ onValue(ref(db, 'market_items'), (snap) => {
     }
 });
 
-// ======================== অর্ডার ফাংশনালিটি ========================
-
-window.openOrderModal = (productId) => {
-    const product = window.globalMarketItems.find(p => p.id === productId);
-    if (!product) return;
-    
-    window.currentOrderingProduct = product;
-    document.getElementById('order-prod-title').innerText = product.title;
-    document.getElementById('order-prod-price').innerText = `৳ ${product.price}`;
-    
-    const img = (product.images && product.images[0]) ? product.images[0] : (product.image || '');
-    document.getElementById('order-prod-img').src = img || 'https://via.placeholder.com/150';
-    
-    if (window.userDetails) {
-        document.getElementById('order-buyer-name').value = window.userDetails.name || '';
-        document.getElementById('order-buyer-phone').value = window.userDetails.phone || '';
-    }
-
-    toggleOrderModal(true);
-};
-
-window.toggleOrderModal = (show) => {
-    document.getElementById('order-modal').classList.toggle('hidden-custom', !show);
-};
-
-window.submitOrder = async () => {
-    if (!window.currentOrderingProduct) return;
-
-    const buyerName = document.getElementById('order-buyer-name').value.trim();
-    const buyerPhone = document.getElementById('order-buyer-phone').value.trim();
-    const buyerAddress = document.getElementById('order-buyer-address').value.trim();
-    const quantity = document.getElementById('order-quantity').value || 1;
-
-    if (!buyerName || !buyerPhone || !buyerAddress) {
-        return window.showToast("নাম, ফোন এবং ডেলিভারি ঠিকানা দিন", "error");
-    }
-
-    const btn = document.getElementById('btn-submit-order');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অর্ডার প্রসেস হচ্ছে...';
-
-    try {
-        await push(ref(db, 'market_orders'), {
-            productId: window.currentOrderingProduct.id,
-            productTitle: window.currentOrderingProduct.title,
-            productPrice: window.currentOrderingProduct.price,
-            productImage: (window.currentOrderingProduct.images && window.currentOrderingProduct.images[0]) || '',
-            sellerUid: window.currentOrderingProduct.uid,
-            sellerName: window.currentOrderingProduct.seller,
-            buyerUid: window.currentUser.uid,
-            buyerName,
-            buyerPhone,
-            buyerAddress,
-            quantity,
-            status: 'pending',
-            time: Date.now()
-        });
-
-        toggleOrderModal(false);
-        closeProductDetails();
-        window.showToast("আপনার অর্ডার সফলভাবে প্লেস হয়েছে!", "success");
-    } catch (e) {
-        console.error(e);
-        window.showToast("অর্ডার দিতে সমস্যা হয়েছে: " + e.message, "error");
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> অর্ডার প্লেস করুন';
-    }
-};
-
 // ======================== প্রোডাক্ট ডিটেইলস ========================
 
 window.openProductDetails = (id) => {
@@ -534,14 +477,199 @@ window.deleteProduct = async (id, closeDetails = false) => {
     }
 };
 
+// ======================== সরাসরি অর্ডার প্রসেস ========================
+
+window.openOrderModal = (productId) => {
+    const product = window.globalMarketItems.find(p => p.id === productId);
+    if (!product) return;
+    
+    window.currentOrderingProduct = product;
+    document.getElementById('order-prod-title').innerText = product.title;
+    document.getElementById('order-prod-price').innerText = `৳ ${product.price}`;
+    
+    const img = (product.images && product.images[0]) ? product.images[0] : (product.image || '');
+    document.getElementById('order-prod-img').src = img || 'https://via.placeholder.com/150';
+    
+    if (window.userDetails) {
+        document.getElementById('order-buyer-name').value = window.userDetails.name || '';
+        document.getElementById('order-buyer-phone').value = window.userDetails.phone || '';
+    }
+
+    toggleOrderModal(true);
+};
+
+window.toggleOrderModal = (show) => {
+    document.getElementById('order-modal')?.classList.toggle('hidden-custom', !show);
+};
+
+window.submitOrder = async () => {
+    if (!window.currentOrderingProduct) return;
+
+    const buyerName = document.getElementById('order-buyer-name').value.trim();
+    const buyerPhone = document.getElementById('order-buyer-phone').value.trim();
+    const buyerAddress = document.getElementById('order-buyer-address').value.trim();
+    const quantity = document.getElementById('order-quantity').value || 1;
+
+    if (!buyerName || !buyerPhone || !buyerAddress) {
+        return window.showToast("নাম, ফোন এবং ডেলিভারি ঠিকানা দিন", "error");
+    }
+
+    const btn = document.getElementById('btn-submit-order');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> অর্ডার প্রসেস হচ্ছে...';
+
+    try {
+        await push(ref(db, 'market_orders'), {
+            productId: window.currentOrderingProduct.id,
+            productTitle: window.currentOrderingProduct.title,
+            productPrice: window.currentOrderingProduct.price,
+            productImage: (window.currentOrderingProduct.images && window.currentOrderingProduct.images[0]) || '',
+            sellerUid: window.currentOrderingProduct.uid,
+            sellerName: window.currentOrderingProduct.seller,
+            buyerUid: window.currentUser.uid,
+            buyerName,
+            buyerPhone,
+            buyerAddress,
+            quantity,
+            status: 'pending',
+            time: Date.now()
+        });
+
+        toggleOrderModal(false);
+        closeProductDetails();
+        window.showToast("আপনার অর্ডার সফলভাবে প্লেস হয়েছে!", "success");
+    } catch (e) {
+        console.error(e);
+        window.showToast("অর্ডার দিতে সমস্যা হয়েছে: " + e.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> অর্ডার প্লেস করুন';
+    }
+};
+
+// ======================== অর্ডার ম্যানেজমেন্ট ========================
+
+onValue(ref(db, 'market_orders'), (snap) => {
+    window.globalOrders = snap.exists() ? Object.entries(snap.val()).map(([id, o]) => ({ id, ...o })).reverse() : [];
+    if (!document.getElementById('market-orders-modal')?.classList.contains('hidden-custom')) {
+        renderOrdersList();
+    }
+});
+
+window.openOrdersModal = () => {
+    document.getElementById('market-orders-modal')?.classList.remove('hidden-custom');
+    renderOrdersList();
+};
+
+window.closeOrdersModal = () => {
+    document.getElementById('market-orders-modal')?.classList.add('hidden-custom');
+};
+
+window.switchOrdersTab = (tab) => {
+    window.activeOrdersTab = tab;
+    const btnBuyer = document.getElementById('order-tab-buyer');
+    const btnSeller = document.getElementById('order-tab-seller');
+
+    if (tab === 'buyer') {
+        btnBuyer.className = "flex-1 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold shadow transition";
+        btnSeller.className = "flex-1 py-2 rounded-lg text-gray-600 bg-white border text-xs font-bold transition";
+    } else {
+        btnSeller.className = "flex-1 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold shadow transition";
+        btnBuyer.className = "flex-1 py-2 rounded-lg text-gray-600 bg-white border text-xs font-bold transition";
+    }
+    renderOrdersList();
+};
+
+window.renderOrdersList = () => {
+    const container = document.getElementById('orders-list-container');
+    if (!container) return;
+    const uid = window.currentUser?.uid;
+
+    if (window.activeOrdersTab === 'buyer') {
+        const myOrders = window.globalOrders.filter(o => o.buyerUid === uid);
+        if (myOrders.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-10 text-xs">আপনি এখনো কোনো অর্ডার করেননি</p>';
+            return;
+        }
+
+        container.innerHTML = myOrders.map(order => {
+            const statusBadge = order.status === 'delivered' ? '<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold">ডেলিভার্ড</span>' : 
+                                order.status === 'cancelled' ? '<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold">বাতিল</span>' :
+                                '<span class="bg-yellow-100 text-yellow-800 text-[10px] px-2 py-0.5 rounded font-bold">প্রক্রিয়াধীন (Pending)</span>';
+
+            return `
+                <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <span class="text-[11px] text-gray-400 font-bold">অর্ডার ID: #${order.id.slice(-6)}</span>
+                        ${statusBadge}
+                    </div>
+                    <div class="flex gap-3 items-center">
+                        <img src="${order.productImage || 'https://via.placeholder.com/100'}" class="w-14 h-14 rounded-lg object-cover bg-gray-50 border">
+                        <div class="flex-1 truncate">
+                            <h4 class="font-bold text-xs text-gray-800 truncate">${window.escapeHTML(order.productTitle)}</h4>
+                            <p class="text-orange-600 font-bold text-xs">৳ ${window.escapeHTML(order.productPrice)} × ${order.quantity} টি</p>
+                            <p class="text-[10px] text-gray-500">দোকানদার: ${window.escapeHTML(order.sellerName)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } else {
+        const shopOrders = window.globalOrders.filter(o => o.sellerUid === uid);
+        if (shopOrders.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-10 text-xs">আপনার দোকানে এখনো কোনো অর্ডার আসেনি</p>';
+            return;
+        }
+
+        container.innerHTML = shopOrders.map(order => {
+            return `
+                <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <span class="text-xs font-bold text-gray-700"><i class="fa-solid fa-user text-blue-500"></i> ${window.escapeHTML(order.buyerName)}</span>
+                        <a href="tel:${order.buyerPhone}" class="bg-green-100 text-green-700 px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-phone"></i> কল দিন</a>
+                    </div>
+                    
+                    <div class="flex gap-3 items-center bg-gray-50 p-2 rounded-lg">
+                        <img src="${order.productImage || 'https://via.placeholder.com/100'}" class="w-12 h-12 rounded-md object-cover">
+                        <div class="flex-1 truncate">
+                            <h4 class="font-bold text-xs text-gray-800 truncate">${window.escapeHTML(order.productTitle)}</h4>
+                            <p class="text-orange-600 font-extrabold text-xs">৳ ${window.escapeHTML(order.productPrice)} (পরিমাণ: ${order.quantity} টি)</p>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-gray-600 bg-orange-50/50 p-2 rounded border border-orange-100">
+                        <p><strong><i class="fa-solid fa-location-dot text-red-500"></i> ঠিকানা:</strong> ${window.escapeHTML(order.buyerAddress)}</p>
+                        <p><strong><i class="fa-solid fa-phone text-green-600"></i> ফোন:</strong> ${window.escapeHTML(order.buyerPhone)}</p>
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="updateOrderStatus('${order.id}', 'delivered')" class="flex-1 bg-green-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-green-700 transition"><i class="fa-solid fa-check"></i> ডেলিভারি সম্পন্ন</button>
+                        <button onclick="updateOrderStatus('${order.id}', 'cancelled')" class="bg-red-50 text-red-600 text-xs font-bold px-3 py-2 rounded-lg hover:bg-red-100 transition"><i class="fa-solid fa-xmark"></i> বাতিল</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+};
+
+window.updateOrderStatus = async (orderId, newStatus) => {
+    try {
+        await set(ref(db, `market_orders/${orderId}/status`), newStatus);
+        window.showToast("অর্ডার স্ট্যাটাস আপডেট হয়েছে!", "success");
+    } catch (e) {
+        window.showToast("সমস্যা: " + e.message, "error");
+    }
+};
+
 // ======================== ফেভারিট পেজ ভিউ ========================
 window.openFavoritesModal = () => {
     renderFavoritesList();
-    document.getElementById('favorites-modal').classList.remove('hidden-custom');
+    document.getElementById('favorites-modal')?.classList.remove('hidden-custom');
 };
 
 window.closeFavoritesModal = () => {
-    document.getElementById('favorites-modal').classList.add('hidden-custom');
+    document.getElementById('favorites-modal')?.classList.add('hidden-custom');
 };
 
 window.renderFavoritesList = () => {
@@ -554,41 +682,44 @@ window.renderFavoritesList = () => {
     const shopsContainer = document.getElementById('fav-shops-list');
     const prodsContainer = document.getElementById('fav-products-list');
 
-    shopsContainer.innerHTML = favShops.length > 0 ? favShops.map(s => `
-        <div onclick="closeFavoritesModal(); openShopDetails('${s.id}')" class="bg-white p-3 rounded-xl border flex items-center justify-between cursor-pointer">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-lg bg-orange-100 overflow-hidden flex items-center justify-center font-bold text-orange-600">
-                    ${s.logo ? `<img src="${s.logo}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-store"></i>'}
+    if (shopsContainer) {
+        shopsContainer.innerHTML = favShops.length > 0 ? favShops.map(s => `
+            <div onclick="closeFavoritesModal(); openShopDetails('${s.id}')" class="bg-white p-3 rounded-xl border flex items-center justify-between cursor-pointer">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-lg bg-orange-100 overflow-hidden flex items-center justify-center font-bold text-orange-600">
+                        ${s.logo ? `<img src="${s.logo}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-store"></i>'}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800">${window.escapeHTML(s.name)}</h4>
+                        <p class="text-xs text-gray-500">${window.escapeHTML(s.address)}</p>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-sm text-gray-800">${window.escapeHTML(s.name)}</h4>
-                    <p class="text-xs text-gray-500">${window.escapeHTML(s.address)}</p>
-                </div>
+                <button onclick="toggleFavorite('shops', '${s.id}', event); renderFavoritesList();" class="text-red-500 p-2"><i class="fa-solid fa-heart"></i></button>
             </div>
-            <button onclick="toggleFavorite('shops', '${s.id}', event); renderFavoritesList();" class="text-red-500 p-2"><i class="fa-solid fa-heart"></i></button>
-        </div>
-    `).join('') : '<p class="text-xs text-gray-400 text-center py-4">কোনো পছন্দের দোকান নেই</p>';
+        `).join('') : '<p class="text-xs text-gray-400 text-center py-4">কোনো পছন্দের দোকান নেই</p>';
+    }
 
-    prodsContainer.innerHTML = favProducts.length > 0 ? favProducts.map(p => `
-        <div onclick="closeFavoritesModal(); openProductDetails('${p.id}')" class="bg-white p-3 rounded-xl border flex items-center justify-between cursor-pointer">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
-                    ${(p.images && p.images[0]) ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-image text-gray-400"></i>'}
+    if (prodsContainer) {
+        prodsContainer.innerHTML = favProducts.length > 0 ? favProducts.map(p => `
+            <div onclick="closeFavoritesModal(); openProductDetails('${p.id}')" class="bg-white p-3 rounded-xl border flex items-center justify-between cursor-pointer">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                        ${(p.images && p.images[0]) ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-image text-gray-400"></i>'}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800">${window.escapeHTML(p.title)}</h4>
+                        <p class="text-xs font-bold text-orange-600">৳ ${window.escapeHTML(p.price)}</p>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="font-bold text-sm text-gray-800">${window.escapeHTML(p.title)}</h4>
-                    <p class="text-xs font-bold text-orange-600">৳ ${window.escapeHTML(p.price)}</p>
-                </div>
+                <button onclick="toggleFavorite('products', '${p.id}', event); renderFavoritesList();" class="text-red-500 p-2"><i class="fa-solid fa-heart"></i></button>
             </div>
-            <button onclick="toggleFavorite('products', '${p.id}', event); renderFavoritesList();" class="text-red-500 p-2"><i class="fa-solid fa-heart"></i></button>
-        </div>
-    `).join('') : '<p class="text-xs text-gray-400 text-center py-4">কোনো পছন্দের পণ্য নেই</p>';
+        `).join('') : '<p class="text-xs text-gray-400 text-center py-4">কোনো পছন্দের পণ্য নেই</p>';
+    }
 };
 
-// মডাল কন্ট্রোল
 window.toggleCreateShopModal = (show) => {
-    document.getElementById('create-shop-modal').classList.toggle('hidden-custom', !show);
+    document.getElementById('create-shop-modal')?.classList.toggle('hidden-custom', !show);
 };
 window.toggleSellModal = (show) => {
-    document.getElementById('sell-modal').classList.toggle('hidden-custom', !show);
+    document.getElementById('sell-modal')?.classList.toggle('hidden-custom', !show);
 };
