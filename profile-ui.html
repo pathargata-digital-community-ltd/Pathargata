@@ -101,27 +101,24 @@
     </div>
 </div>
 
-<!-- ২. নিজের প্রোফাইল পেজ (TikTok Style - Absolute Seamless Fade) -->
+<!-- ২. নিজের প্রোফাইল পেজ (TikTok Clean Banner & Safe Layout) -->
 <div id="page-profile" class="hidden bg-white min-h-screen pb-20 z-0 animate-fade relative">
 
-    <!-- ব্যানার কনটেইনার: ব্যাকগ্রাউন্ড বা ইমেজের নিচের অংশ একদম পেজ ব্যাকগ্রাউন্ডের সাথে বিলীন (Blend/Fade) হয়ে যাবে -->
-    <div class="relative w-full h-[270px]">
+    <!-- ব্যানার কনটেইনার: কভার ছবি একদম পরিষ্কার দেখাবে, শুধু নিচের দিকে হালকা ব্যাকগ্রাউন্ডের সাথে বিলীন হবে -->
+    <div class="relative w-full h-[220px] bg-gray-100">
         <div id="profile-cover" class="w-full h-full relative overflow-hidden">
-            <img id="profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%);">
-            
-            <!-- যদি ইউজার কভার ইমেজ না দেয়, তবে সুন্দর ফেইডেড ব্যাকগ্রাউন্ড গ্রেডিয়েন্ট -->
-            <div class="absolute inset-0 bg-gradient-to-b from-teal-700 via-teal-600/40 to-transparent pointer-events-none"></div>
+            <img id="profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%);">
         </div>
 
-        <!-- ক্যামেরা বাটন (ব্যানারের ওপর একদম টপ-রাইটে) -->
-        <button onclick="document.getElementById('cover-upload').click()" class="absolute top-4 right-4 w-9 h-9 bg-black/30 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/50 transition active:scale-95 z-30 shadow-md">
+        <!-- ক্যামেরা বাটন (ব্যানারের উপর একদম টপ-রাইটে) -->
+        <button onclick="document.getElementById('cover-upload').click()" class="absolute top-4 right-4 w-9 h-9 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/60 transition active:scale-95 z-30 shadow-md">
             <i class="fa-solid fa-camera text-sm"></i>
         </button>
         <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
     </div>
 
-    <!-- টিকটক স্টাইল ফ্লোটিং প্রফাইল পিকচার ও নোট বাবল (ব্যানারের নিচে অনেকখানি নেমে থাকবে) -->
-    <div class="absolute right-4 top-[170px] flex flex-col items-end z-30">
+    <!-- টিকটক স্টাইল ফ্লোটিং প্রফাইল পিকচার ও নোট বাবল (ডানপাশে নিচমুখী পজিশন) -->
+    <div class="absolute right-4 top-[140px] flex flex-col items-end z-30">
         <!-- মেসেজ বাবল -->
         <div class="bg-white px-3 py-1 rounded-2xl text-xs font-semibold text-gray-700 shadow-md border border-gray-100 mb-1.5 relative">
             <span>What's up?</span>
@@ -136,18 +133,18 @@
                 </div>
                 <span id="profile-presence-status" class="absolute bottom-1 right-1 w-4 h-4 bg-gray-400 border-2 border-white rounded-full transition-colors duration-300"></span>
             </div>
-            <!-- প্লাস / এডিট আইকন বাটন -->
+            <!-- প্রোফাইল পিক পরিবর্তন / প্লাস বাটন -->
             <button onclick="document.getElementById('edit-profile-img').click()" class="absolute bottom-1 right-1 bg-cyan-500 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md text-xs hover:bg-cyan-600 transition">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
     </div>
 
-    <!-- টেক্সট ও কন্টেন্ট সেকশন (নেগেটিভ মার্জিন দিয়ে স্মুথ পজিশন) -->
-    <div class="px-4 relative z-20 -mt-[110px]">
+    <!-- টেক্সট ও কন্টেন্ট সেকশন -->
+    <div class="px-4 relative z-20 -mt-[60px]">
         
         <!-- ইউজার নেইম ও ইনফো -->
-        <div class="mb-4 pr-28">
+        <div class="mb-3 pr-28">
             <div class="flex items-center gap-1.5 flex-wrap">
                 <h2 id="profile-name" class="text-2xl font-bold text-gray-900 tracking-tight">...</h2>
                 <span id="profile-lock-badge" class="hidden text-gray-400 text-sm" title="প্রোফাইল লক করা"><i class="fa-solid fa-lock"></i></span>
@@ -162,24 +159,26 @@
             <p id="profile-bio" class="text-xs text-gray-600 mt-2 italic leading-relaxed">...</p>
         </div>
 
-        <!-- অ্যাকশন বাটনসমূহ (আমার কার্ড ও এডিট) -->
-        <div class="flex items-center gap-2 mb-4">
-            <button onclick="window.openProfileCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
-                <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
-            </button>
-            <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
-                <i class="fa-solid fa-pen text-sm"></i> এডিট
-            </button>
+        <!-- অ্যাকশন বাটনসমূহ এবং সামাজিক যোগাযোগের আইকন (নিরাপদ স্থানে রাখা হয়েছে) -->
+        <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">
+            <div class="flex items-center gap-2">
+                <button onclick="window.openProfileCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
+                    <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
+                </button>
+                <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
+                    <i class="fa-solid fa-pen text-sm"></i> এডিট
+                </button>
+            </div>
 
-            <!-- সামাজিক লিংক আইকন -->
-            <div class="flex gap-2 ml-auto" id="profile-social-container">
-                <a id="link-fb" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
-                <a id="link-wa" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
-                <a id="link-web" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
+            <!-- সোশ্যাল লিংকসমূহ (প্রোফাইল পিকচার থেকে দূরে নিরাপদ এরিয়া) -->
+            <div class="flex gap-2" id="profile-social-container">
+                <a id="link-fb" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-sm shadow-sm"><i class="fa-brands fa-facebook"></i></a>
+                <a id="link-wa" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-sm shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="link-web" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-sm shadow-sm"><i class="fa-solid fa-globe"></i></a>
             </div>
         </div>
 
-        <!-- কাউন্টার সেকশন (TikTok Style Stats Row) -->
+        <!-- কাউন্টার সেকশন (Friends, Posts, Joined) -->
         <div class="flex items-center justify-start gap-6 border-t border-b border-gray-100 py-3 my-3">
             <div class="flex items-baseline gap-1.5">
                 <span class="font-bold text-gray-900 text-base" id="stats-friends-count">0</span>
@@ -262,22 +261,21 @@
     </div>
 </div>
 
-<!-- ৩. অন্যের প্রোফাইল দেখার পেজ (TikTok Style - Absolute Seamless Fade) -->
+<!-- ৩. অন্যের প্রোফাইল দেখার পেজ -->
 <div id="page-view-profile" class="hidden bg-white min-h-screen pb-20 z-50 absolute top-0 left-0 w-full animate-fade">
     <div class="bg-white p-2 sticky top-0 z-30 shadow-sm flex items-center gap-2 pt-safe border-b border-gray-100">
         <button onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
         <h2 class="font-bold text-lg text-gray-800" id="view-profile-header-name">প্রোফাইল</h2>
     </div>
 
-    <div class="relative w-full h-[270px]">
+    <div class="relative w-full h-[220px] bg-gray-100">
         <div class="w-full h-full relative overflow-hidden">
-            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%);">
-            <div class="absolute inset-0 bg-gradient-to-b from-blue-700 via-blue-600/40 to-transparent pointer-events-none"></div>
+            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%);">
         </div>
     </div>
 
     <!-- Floating Avatar (Right) -->
-    <div class="absolute right-4 top-[170px] flex flex-col items-end z-30">
+    <div class="absolute right-4 top-[140px] flex flex-col items-end z-30">
         <div class="relative">
             <div class="w-24 h-24 rounded-full p-0.5 bg-white shadow-xl relative">
                 <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-4xl overflow-hidden font-bold" id="view-profile-avatar-container">
@@ -289,8 +287,8 @@
     </div>
 
     <!-- Content Info Section -->
-    <div class="px-4 relative z-20 -mt-[110px]">
-        <div class="mb-4 pr-28">
+    <div class="px-4 relative z-20 -mt-[60px]">
+        <div class="mb-3 pr-28">
             <div class="flex items-center gap-1.5 flex-wrap">
                 <h2 id="view-profile-name" class="text-2xl font-bold text-gray-900 tracking-tight">...</h2>
                 <span id="view-profile-lock-badge" class="hidden text-gray-400 text-sm"><i class="fa-solid fa-lock"></i></span>
@@ -301,12 +299,16 @@
                 <p class="text-xs font-medium text-gray-500"><i class="fa-solid fa-location-dot text-blue-600 mr-0.5"></i> <span id="view-profile-village-text">...</span></p>
             </div>
             <p id="view-profile-bio" class="text-xs text-gray-600 mt-2 italic leading-relaxed">---</p>
-            
-            <!-- Social Links -->
-            <div class="flex gap-2 mt-3" id="view-profile-social-container">
-                <a id="view-link-fb" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
-                <a id="view-link-wa" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
-                <a id="view-link-web" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
+        </div>
+
+        <!-- Social Links (Safe location) -->
+        <div class="flex justify-between items-center mb-3">
+            <div id="view-profile-actions" class="flex gap-2"></div>
+
+            <div class="flex gap-2" id="view-profile-social-container">
+                <a id="view-link-fb" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-sm shadow-sm"><i class="fa-brands fa-facebook"></i></a>
+                <a id="view-link-wa" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-sm shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="view-link-web" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-sm shadow-sm"><i class="fa-solid fa-globe"></i></a>
             </div>
         </div>
 
@@ -325,9 +327,6 @@
                 <span class="font-medium text-gray-700 text-xs" id="view-stats-join-date">---</span>
             </div>
         </div>
-
-        <!-- Action Buttons (Add Friend, Message) -->
-        <div id="view-profile-actions" class="flex gap-2 mb-3"></div>
     </div>
 
     <!-- Locked Profile Notice Container -->
