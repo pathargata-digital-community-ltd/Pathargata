@@ -101,94 +101,100 @@
     </div>
 </div>
 
-<!-- ২. নিজের প্রোফাইল পেজ (TikTok Style Header - Fixed Layout) -->
-<div id="page-profile" class="hidden bg-white min-h-screen pb-20 z-0 animate-fade">
-    <div class="relative bg-white pb-3">
-        
-        <!-- Cover Photo (পরিষ্কার ও স্মুথ ফেইড ইফেক্ট) -->
-        <div id="profile-cover" class="h-60 w-full relative overflow-hidden bg-emerald-800">
-            <!-- ব্যানার পিকচার পরিষ্কার দেখাতে ডিফল্ট ব্যাকগ্রাউন্ড এবং মাস্কিং অ্যাডজাস্ট করা হয়েছে -->
-            <img id="profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);">
+<!-- ২. নিজের প্রোফাইল পেজ (TikTok Style - Absolute Seamless Fade) -->
+<div id="page-profile" class="hidden bg-white min-h-screen pb-20 z-0 animate-fade relative">
+
+    <!-- ব্যানার কনটেইনার: ব্যাকগ্রাউন্ড বা ইমেজের নিচের অংশ একদম পেজ ব্যাকগ্রাউন্ডের সাথে বিলীন (Blend/Fade) হয়ে যাবে -->
+    <div class="relative w-full h-[270px]">
+        <div id="profile-cover" class="w-full h-full relative overflow-hidden">
+            <img id="profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%);">
             
-            <!-- ক্যামেরার বাটন (টপ রাইটে স্বচ্ছ ভাবে) -->
-            <button onclick="document.getElementById('cover-upload').click()" class="absolute top-4 right-4 w-10 h-10 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/60 transition active:scale-95 z-30 shadow-lg">
-                <i class="fa-solid fa-camera text-base"></i>
+            <!-- যদি ইউজার কভার ইমেজ না দেয়, তবে সুন্দর ফেইডেড ব্যাকগ্রাউন্ড গ্রেডিয়েন্ট -->
+            <div class="absolute inset-0 bg-gradient-to-b from-teal-700 via-teal-600/40 to-transparent pointer-events-none"></div>
+        </div>
+
+        <!-- ক্যামেরা বাটন (ব্যানারের ওপর একদম টপ-রাইটে) -->
+        <button onclick="document.getElementById('cover-upload').click()" class="absolute top-4 right-4 w-9 h-9 bg-black/30 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/50 transition active:scale-95 z-30 shadow-md">
+            <i class="fa-solid fa-camera text-sm"></i>
+        </button>
+        <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
+    </div>
+
+    <!-- টিকটক স্টাইল ফ্লোটিং প্রফাইল পিকচার ও নোট বাবল (ব্যানারের নিচে অনেকখানি নেমে থাকবে) -->
+    <div class="absolute right-4 top-[170px] flex flex-col items-end z-30">
+        <!-- মেসেজ বাবল -->
+        <div class="bg-white px-3 py-1 rounded-2xl text-xs font-semibold text-gray-700 shadow-md border border-gray-100 mb-1.5 relative">
+            <span>What's up?</span>
+            <div class="absolute -bottom-1 right-5 w-2 h-2 bg-white transform rotate-45 border-r border-b border-gray-100"></div>
+        </div>
+
+        <!-- প্রোফাইল পিকচার -->
+        <div class="relative">
+            <div class="w-24 h-24 rounded-full p-0.5 bg-white shadow-xl relative">
+                <div id="profile-avatar-container" class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-4xl overflow-hidden">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <span id="profile-presence-status" class="absolute bottom-1 right-1 w-4 h-4 bg-gray-400 border-2 border-white rounded-full transition-colors duration-300"></span>
+            </div>
+            <!-- প্লাস / এডিট আইকন বাটন -->
+            <button onclick="document.getElementById('edit-profile-img').click()" class="absolute bottom-1 right-1 bg-cyan-500 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md text-xs hover:bg-cyan-600 transition">
+                <i class="fa-solid fa-plus"></i>
             </button>
-            <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
+        </div>
+    </div>
+
+    <!-- টেক্সট ও কন্টেন্ট সেকশন (নেগেটিভ মার্জিন দিয়ে স্মুথ পজিশন) -->
+    <div class="px-4 relative z-20 -mt-[110px]">
+        
+        <!-- ইউজার নেইম ও ইনফো -->
+        <div class="mb-4 pr-28">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <h2 id="profile-name" class="text-2xl font-bold text-gray-900 tracking-tight">...</h2>
+                <span id="profile-lock-badge" class="hidden text-gray-400 text-sm" title="প্রোফাইল লক করা"><i class="fa-solid fa-lock"></i></span>
+            </div>
+
+            <div class="flex gap-2 items-center mt-1 flex-wrap">
+                <span id="profile-union-badge" class="inline-block bg-emerald-50 text-emerald-700 text-xs px-2 py-0.5 rounded font-semibold border border-emerald-100">---</span>
+                <span class="text-gray-300 text-xs">•</span>
+                <p id="profile-village-badge" class="text-xs text-gray-500 font-medium"><i class="fa-solid fa-location-dot text-emerald-600"></i> <span id="profile-village-text">...</span></p>
+            </div>
+
+            <p id="profile-bio" class="text-xs text-gray-600 mt-2 italic leading-relaxed">...</p>
         </div>
 
-        <!-- প্রফাইল পিকচার ও নোট বাবল (টিকটক স্টাইলে ব্যানারের নিচে ডানপাশে) -->
-        <div class="absolute right-5 top-28 flex flex-col items-end z-20">
-            <!-- নোট বাবল -->
-            <div class="bg-white px-3.5 py-1.5 rounded-2xl text-xs font-semibold text-gray-800 shadow-lg border border-gray-100 mb-2 relative animate-bounce">
-                <span>স্বাগতম!</span>
-                <div class="absolute -bottom-1 right-5 w-2.5 h-2.5 bg-white transform rotate-45 border-r border-b border-gray-100"></div>
-            </div>
-            <!-- প্রোফাইল পিকচার -->
-            <div class="relative">
-                <div class="w-28 h-28 rounded-full p-1 bg-white shadow-2xl relative">
-                    <div id="profile-avatar-container" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-gray-400 text-5xl overflow-hidden">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-                    <span id="profile-presence-status" class="absolute bottom-1 right-1 w-5 h-5 bg-gray-400 border-2 border-white rounded-full transition-colors duration-300"></span>
-                </div>
+        <!-- অ্যাকশন বাটনসমূহ (আমার কার্ড ও এডিট) -->
+        <div class="flex items-center gap-2 mb-4">
+            <button onclick="window.openProfileCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
+                <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
+            </button>
+            <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
+                <i class="fa-solid fa-pen text-sm"></i> এডিট
+            </button>
+
+            <!-- সামাজিক লিংক আইকন -->
+            <div class="flex gap-2 ml-auto" id="profile-social-container">
+                <a id="link-fb" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
+                <a id="link-wa" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="link-web" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
             </div>
         </div>
 
-        <!-- প্রোফাইল তথ্য ও বাটনসমূহ (বামে ও সুন্দর বিন্যাসে) -->
-        <div class="px-5 pt-3 relative z-10">
-            
-            <!-- নাম এবং ব্যাজ -->
-            <div class="mb-3 pr-32">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <h2 id="profile-name" class="text-2xl font-black text-gray-900 tracking-tight">...</h2>
-                    <span id="profile-lock-badge" class="hidden text-gray-400 text-sm" title="প্রোফাইল লক করা"><i class="fa-solid fa-lock"></i></span>
-                </div>
-                
-                <div class="flex gap-2 items-center mt-1.5 flex-wrap">
-                    <span id="profile-union-badge" class="inline-block bg-emerald-50 text-emerald-700 text-xs px-2.5 py-0.5 rounded-md font-bold border border-emerald-100">---</span>
-                    <span class="text-gray-300 text-xs">•</span>
-                    <p id="profile-village-badge" class="text-xs font-medium text-gray-500"><i class="fa-solid fa-location-dot text-emerald-600 mr-0.5"></i> <span id="profile-village-text">...</span></p>
-                </div>
-
-                <p id="profile-bio" class="text-xs text-gray-600 mt-2 font-normal leading-relaxed">...</p>
+        <!-- কাউন্টার সেকশন (TikTok Style Stats Row) -->
+        <div class="flex items-center justify-start gap-6 border-t border-b border-gray-100 py-3 my-3">
+            <div class="flex items-baseline gap-1.5">
+                <span class="font-bold text-gray-900 text-base" id="stats-friends-count">0</span>
+                <span class="text-xs text-gray-500">Friends</span>
             </div>
-
-            <!-- এডিট এবং আমার কার্ড বাটন (ঢাকা না পড়ার জন্য নাম ও বায়োর নিচে নতুন সুন্দর স্থানে) -->
-            <div class="flex items-center gap-2 mb-4">
-                <button onclick="window.openProfileCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition shadow-md active:scale-95">
-                    <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
-                </button>
-                <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition shadow-sm active:scale-95">
-                    <i class="fa-solid fa-pen text-sm"></i> এডিট
-                </button>
-                <!-- সোশ্যাল আইকনসমূহ -->
-                <div class="flex gap-2 ml-auto" id="profile-social-container">
-                    <a id="link-fb" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-sm shadow-sm"><i class="fa-brands fa-facebook"></i></a>
-                    <a id="link-wa" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-sm shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
-                    <a id="link-web" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-sm shadow-sm"><i class="fa-solid fa-globe"></i></a>
-                </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="font-bold text-gray-900 text-base" id="stats-posts-count">0</span>
+                <span class="text-xs text-gray-500">Posts</span>
             </div>
-
-            <!-- স্ট্যাটস কাউন্টার (Friends, Posts, Joined) -->
-            <div class="flex items-center justify-around border-t border-b border-gray-100 py-3 my-2">
-                <div class="text-center">
-                    <p class="font-black text-gray-900 text-lg leading-tight" id="stats-friends-count">0</p>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Friends</p>
-                </div>
-                <div class="h-6 w-[1px] bg-gray-100"></div>
-                <div class="text-center">
-                    <p class="font-black text-gray-900 text-lg leading-tight" id="stats-posts-count">0</p>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Posts</p>
-                </div>
-                <div class="h-6 w-[1px] bg-gray-100"></div>
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-xs mt-1" id="stats-join-date">---</p>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Joined</p>
-                </div>
+            <div class="flex items-baseline gap-1.5 ml-auto">
+                <span class="text-xs text-gray-500">Joined:</span>
+                <span class="font-medium text-gray-700 text-xs" id="stats-join-date">---</span>
             </div>
-
         </div>
+
     </div>
 
     <!-- পয়েন্ট ও অবদান ওয়ালেট কার্ড -->
@@ -256,75 +262,72 @@
     </div>
 </div>
 
-<!-- ৩. অন্যের প্রোফাইল দেখার পেজ (TikTok Style Header - Fixed Layout) -->
+<!-- ৩. অন্যের প্রোফাইল দেখার পেজ (TikTok Style - Absolute Seamless Fade) -->
 <div id="page-view-profile" class="hidden bg-white min-h-screen pb-20 z-50 absolute top-0 left-0 w-full animate-fade">
     <div class="bg-white p-2 sticky top-0 z-30 shadow-sm flex items-center gap-2 pt-safe border-b border-gray-100">
         <button onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
         <h2 class="font-bold text-lg text-gray-800" id="view-profile-header-name">প্রোফাইল</h2>
     </div>
 
-    <div class="relative bg-white pb-3">
-        <!-- Cover Photo with Fade Effect -->
-        <div class="h-60 w-full relative overflow-hidden bg-blue-800">
-            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);">
+    <div class="relative w-full h-[270px]">
+        <div class="w-full h-full relative overflow-hidden">
+            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%);">
+            <div class="absolute inset-0 bg-gradient-to-b from-blue-700 via-blue-600/40 to-transparent pointer-events-none"></div>
         </div>
+    </div>
 
-        <!-- Floating Profile Avatar (Right side) -->
-        <div class="absolute right-5 top-28 flex flex-col items-end z-20">
-            <div class="relative">
-                <div class="w-28 h-28 rounded-full p-1 bg-white shadow-2xl relative">
-                    <div class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-blue-600 text-5xl overflow-hidden font-bold" id="view-profile-avatar-container">
-                        <span id="view-profile-initial">U</span>
-                    </div>
-                    <span id="view-profile-presence-status" class="absolute bottom-1 right-1 w-5 h-5 bg-gray-400 border-2 border-white rounded-full"></span>
+    <!-- Floating Avatar (Right) -->
+    <div class="absolute right-4 top-[170px] flex flex-col items-end z-30">
+        <div class="relative">
+            <div class="w-24 h-24 rounded-full p-0.5 bg-white shadow-xl relative">
+                <div class="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-blue-600 text-4xl overflow-hidden font-bold" id="view-profile-avatar-container">
+                    <span id="view-profile-initial">U</span>
                 </div>
+                <span id="view-profile-presence-status" class="absolute bottom-1 right-1 w-4 h-4 bg-gray-400 border-2 border-white rounded-full"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Info Section -->
+    <div class="px-4 relative z-20 -mt-[110px]">
+        <div class="mb-4 pr-28">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <h2 id="view-profile-name" class="text-2xl font-bold text-gray-900 tracking-tight">...</h2>
+                <span id="view-profile-lock-badge" class="hidden text-gray-400 text-sm"><i class="fa-solid fa-lock"></i></span>
+            </div>
+            <div class="flex gap-2 items-center mt-1 flex-wrap">
+                <span id="view-profile-union-badge" class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded font-semibold border border-blue-100">---</span>
+                <span class="text-gray-300 text-xs">•</span>
+                <p class="text-xs font-medium text-gray-500"><i class="fa-solid fa-location-dot text-blue-600 mr-0.5"></i> <span id="view-profile-village-text">...</span></p>
+            </div>
+            <p id="view-profile-bio" class="text-xs text-gray-600 mt-2 italic leading-relaxed">---</p>
+            
+            <!-- Social Links -->
+            <div class="flex gap-2 mt-3" id="view-profile-social-container">
+                <a id="view-link-fb" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
+                <a id="view-link-wa" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="view-link-web" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
             </div>
         </div>
 
-        <!-- Profile Info Section -->
-        <div class="px-5 pt-3 relative z-10">
-            <!-- Name and Bio -->
-            <div class="mb-3 pr-32">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <h2 id="view-profile-name" class="text-2xl font-black text-gray-900 tracking-tight">...</h2>
-                    <span id="view-profile-lock-badge" class="hidden text-gray-400 text-sm"><i class="fa-solid fa-lock"></i></span>
-                </div>
-                <div class="flex gap-2 items-center mt-1.5 flex-wrap">
-                    <span id="view-profile-union-badge" class="inline-block bg-blue-50 text-blue-700 text-xs px-2.5 py-0.5 rounded-md font-bold border border-blue-100">---</span>
-                    <span class="text-gray-300 text-xs">•</span>
-                    <p class="text-xs font-medium text-gray-500"><i class="fa-solid fa-location-dot text-blue-600 mr-0.5"></i> <span id="view-profile-village-text">...</span></p>
-                </div>
-                <p id="view-profile-bio" class="text-xs text-gray-600 mt-2 font-normal leading-relaxed">---</p>
-                
-                <!-- Social Links -->
-                <div class="flex gap-2 mt-3" id="view-profile-social-container">
-                    <a id="view-link-fb" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-sm shadow-sm"><i class="fa-brands fa-facebook"></i></a>
-                    <a id="view-link-wa" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-sm shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
-                    <a id="view-link-web" href="#" target="_blank" class="hidden w-8 h-8 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-sm shadow-sm"><i class="fa-solid fa-globe"></i></a>
-                </div>
+        <!-- Stats -->
+        <div class="flex items-center justify-start gap-6 border-t border-b border-gray-100 py-3 my-3">
+            <div class="flex items-baseline gap-1.5">
+                <span class="font-bold text-gray-900 text-base" id="view-stats-friends-count">0</span>
+                <span class="text-xs text-gray-500">Friends</span>
             </div>
-
-            <!-- Stats (Friends, Posts, Joined Date) -->
-            <div class="flex items-center justify-around border-t border-b border-gray-100 py-3 my-3">
-                <div class="text-center">
-                    <p class="font-black text-gray-900 text-lg leading-tight" id="view-stats-friends-count">0</p>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Friends</p>
-                </div>
-                <div class="h-6 w-[1px] bg-gray-100"></div>
-                <div class="text-center">
-                    <p class="font-black text-gray-900 text-lg leading-tight" id="view-stats-posts-count">0</p>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Posts</p>
-                </div>
-                <div class="h-6 w-[1px] bg-gray-100"></div>
-                <div class="text-center">
-                    <p class="font-bold text-gray-800 text-xs mt-1" id="view-stats-join-date">---</p>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Joined</p>
-                </div>
+            <div class="flex items-baseline gap-1.5">
+                <span class="font-bold text-gray-900 text-base" id="view-stats-posts-count">0</span>
+                <span class="text-xs text-gray-500">Posts</span>
             </div>
-
-            <!-- Action Buttons (Add Friend, Message) -->
-            <div id="view-profile-actions" class="flex gap-2"></div>
+            <div class="flex items-baseline gap-1.5 ml-auto">
+                <span class="text-xs text-gray-500">Joined:</span>
+                <span class="font-medium text-gray-700 text-xs" id="view-stats-join-date">---</span>
+            </div>
         </div>
+
+        <!-- Action Buttons (Add Friend, Message) -->
+        <div id="view-profile-actions" class="flex gap-2 mb-3"></div>
     </div>
 
     <!-- Locked Profile Notice Container -->
