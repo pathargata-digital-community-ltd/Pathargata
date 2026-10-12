@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pathargata-digital-community-ltd.github.io/Pathargata/sitemap.xml
