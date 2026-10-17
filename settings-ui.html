@@ -1,9 +1,9 @@
 <div id="page-settings" class="hidden p-0 bg-gray-100 min-h-screen pb-20">
     <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
-        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <button type="button" onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
         <h2 class="text-xl font-bold text-gray-800">সেটিংস</h2>
     </div>
-    
+
     <div class="p-4 space-y-4">
         <!-- ১. একাউন্ট -->
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -80,9 +80,9 @@
                 <input type="checkbox" onchange="toggleDarkMode(this.checked)" id="setting-dark-mode-toggle" class="w-6 h-6 text-green-600 rounded">
             </div>
             <div class="p-4 flex gap-4">
-                <button onclick="changeFontSize('small')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-sm font-medium">ছোট</button>
-                <button onclick="changeFontSize('normal')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-base font-bold bg-gray-100">স্বাভাবিক</button>
-                <button onclick="changeFontSize('large')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-lg font-medium">বড়</button>
+                <button type="button" onclick="changeFontSize('small')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-sm font-medium">ছোট</button>
+                <button type="button" onclick="changeFontSize('normal')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-base font-bold bg-gray-100">স্বাভাবিক</button>
+                <button type="button" onclick="changeFontSize('large')" class="flex-1 border py-2.5 rounded hover:bg-gray-50 text-lg font-medium">বড়</button>
             </div>
         </div>
 
@@ -130,18 +130,18 @@
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-red-100">
             <div class="p-3 bg-red-50 border-b font-bold text-red-700 text-sm">ডেঞ্জার জোন</div>
             <div class="p-4 space-y-3">
-                <button onclick="handleDeactivateAccount()" class="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-bold text-base hover:bg-orange-200 transition">একাউন্ট ডিএক্টিভ করুন</button>
-                <button onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button>
+                <button type="button" onclick="handleDeactivateAccount()" class="w-full bg-orange-100 text-orange-700 py-3 rounded-lg font-bold text-base hover:bg-orange-200 transition">একাউন্ট ডিএক্টিভ করুন</button>
+                <button type="button" onclick="handleDeleteAccount()" class="w-full border border-red-500 text-red-600 py-3 rounded-lg font-bold text-base hover:bg-red-50 transition">একাউন্ট ডিলিট করুন</button>
             </div>
         </div>
-        
+
         <div class="text-center text-xs text-gray-400 mt-4"><span id="display-app-version-footer">ভার্সন লোড হচ্ছে...</span> | সাপোর্ট: help@patharghata.com</div>
     </div>
-    
+
     <!-- ব্লকড ইউজার লিস্ট মডাল -->
     <div id="blocked-users-modal" class="fixed inset-0 bg-white z-[200] hidden-custom flex flex-col transition-transform duration-300 transform translate-y-full">
         <div class="flex items-center gap-3 p-3 border-b bg-gray-50 pt-safe shadow-sm">
-            <button onclick="closeBlockedUsersModal()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button type="button" onclick="closeBlockedUsersModal()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-600 transition"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-base">ব্লকড ইউজার লিস্ট</h3>
         </div>
         <div id="blocked-users-list" class="flex-1 overflow-y-auto bg-gray-100 p-4 space-y-3 pb-20">

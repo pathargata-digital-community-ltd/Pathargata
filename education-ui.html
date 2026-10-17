@@ -1,8 +1,8 @@
 <div id="page-education" class="hidden p-0 bg-gray-50 min-h-screen pb-20">
-    
+
     <!-- হেডার অংশ -->
     <div class="bg-white p-4 sticky top-0 z-30 shadow-sm flex items-center gap-3 border-b">
-        <button onclick="switchPage('services')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 transition">
+        <button type="button" onclick="switchPage('services')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600 transition">
             <i class="fa-solid fa-arrow-left text-lg"></i>
         </button>
         <div>
@@ -22,15 +22,15 @@
     <!-- ক্যাটাগরি ট্যাব বাটনসমূহ -->
     <div class="p-4">
         <div class="grid grid-cols-3 gap-2">
-            <button onclick="window.switchEduTab('institutions')" id="tab-btn-inst" class="py-2.5 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 bg-green-600 text-white shadow-md">
+            <button type="button" onclick="window.switchEduTab('institutions')" id="tab-btn-inst" class="py-2.5 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 bg-green-600 text-white shadow-md">
                 <i class="fa-solid fa-school text-lg"></i>
                 <span>শিক্ষা প্রতিষ্ঠান</span>
             </button>
-            <button onclick="window.switchEduTab('tutors')" id="tab-btn-tutors" class="py-2.5 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50">
+            <button type="button" onclick="window.switchEduTab('tutors')" id="tab-btn-tutors" class="py-2.5 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50">
                 <i class="fa-solid fa-chalkboard-user text-lg text-blue-500"></i>
                 <span>গৃহশিক্ষক</span>
             </button>
-            <button onclick="window.switchEduTab('notices')" id="tab-btn-notices" class="py-2.5 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50">
+            <button type="button" onclick="window.switchEduTab('notices')" id="tab-btn-notices" class="py-2.5 px-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 bg-white text-gray-600 border border-gray-100 hover:bg-gray-50">
                 <i class="fa-solid fa-bullhorn text-lg text-orange-500"></i>
                 <span>নোটিশ ও ভর্তি</span>
             </button>
@@ -39,7 +39,7 @@
 
     <!-- মূল ডাটা কন্টেন্ট এরিয়া -->
     <div class="px-4 space-y-3" id="edu-content-container">
-        
+
         <!-- ক্যাটাগরি ১: শিক্ষা প্রতিষ্ঠান সমূহ -->
         <div id="edu-sec-institutions" class="space-y-3">
             <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">শিক্ষা প্রতিষ্ঠানসমূহ</h4>

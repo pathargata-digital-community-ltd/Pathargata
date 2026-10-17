@@ -1,24 +1,12 @@
 <!-- পরিবহন প্রধান পেজ -->
 <div id="page-transport" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-    <button onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition"><i class="fa-solid fa-arrow-left"></i> সকল সেবা</button>
+    <button type="button" onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition"><i class="fa-solid fa-arrow-left"></i> সকল সেবা</button>
     <h2 class="text-xl font-bold mb-5 border-l-4 border-teal-500 pl-3 text-gray-700">পরিবহন সেবা</h2>
 
     <!-- ব্যানার স্লাইডার -->
     <div id="transport-banner-container" class="w-full h-40 bg-gray-200 rounded-xl mb-6 shadow-sm overflow-x-auto flex snap-x snap-mandatory hide-scrollbar relative">
         <p class="text-gray-400 text-sm m-auto">ব্যানার লোড হচ্ছে...</p>
-    </div>
-    <style>
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-
-    <h3 class="font-bold text-gray-600 mb-3 text-sm">ক্যাটাগরি নির্বাচন করুন</h3>
+    </div><h3 class="font-bold text-gray-600 mb-3 text-sm">ক্যাটাগরি নির্বাচন করুন</h3>
     <!-- রেন্ট-এ-কার এবং বাস অপশন -->
     <div class="grid grid-cols-2 gap-4">
         <!-- এখানে loadRentACar() মুছে দেওয়া হয়েছে -->
@@ -39,7 +27,7 @@
 
 <!-- রেন্ট-এ-কার পেজ -->
 <div id="page-rent-a-car" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-    <button onclick="switchPage('transport')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
+    <button type="button" onclick="switchPage('transport')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
     <div class="flex justify-between items-center mb-5">
         <h2 class="text-xl font-bold border-l-4 border-teal-500 pl-3 text-gray-700">রেন্ট-এ-কার</h2>
     </div>
@@ -53,7 +41,7 @@
 
 <!-- বাস সার্ভিস পেজ -->
 <div id="page-bus" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
-    <button onclick="switchPage('transport')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
+    <button type="button" onclick="switchPage('transport')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
     <h2 class="text-xl font-bold mb-5 border-l-4 border-green-500 pl-3 text-gray-700">বাস সার্ভিস</h2>
     <div id="bus-service-list" class="space-y-3">
         <p class="text-center text-gray-400 py-10">বাসের তথ্য লোড হচ্ছে...</p>

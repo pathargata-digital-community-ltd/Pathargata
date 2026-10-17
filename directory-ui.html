@@ -2,13 +2,13 @@
 <div id="page-directory" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <button onclick="switchPage('services')" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm active:scale-95">
+            <button type="button" onclick="switchPage('services')" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm active:scale-95">
                 <i class="fa-solid fa-arrow-left text-lg"></i>
             </button>
             <h2 class="text-xl font-bold border-l-4 border-green-600 pl-3 text-gray-800">ডিরেক্টরি ও জরুরি সেবা</h2>
         </div>
         <!-- বুকমার্ক করা কন্ট্যাক্ট দেখার বাটন -->
-        <button onclick="toggleBookmarkView(true)" class="w-10 h-10 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center shadow-sm active:scale-95 transition hover:bg-yellow-100" title="বুকমার্ক সমূহ">
+        <button type="button" onclick="toggleBookmarkView(true)" class="w-10 h-10 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center shadow-sm active:scale-95 transition hover:bg-yellow-100" title="বুকমার্ক সমূহ">
             <i class="fa-solid fa-star text-lg"></i>
         </button>
     </div>
@@ -86,7 +86,7 @@
 <!-- page-directory-list শুরু -->
 <div id="page-directory-list" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
     <div class="flex items-center gap-3 mb-4">
-        <button onclick="goBackToDirectoryRoot()" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm active:scale-95">
+        <button type="button" onclick="goBackToDirectoryRoot()" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 hover:bg-gray-100 transition shadow-sm active:scale-95">
             <i class="fa-solid fa-arrow-left text-lg"></i>
         </button>
         <h2 id="directory-list-title" class="text-xl font-bold text-gray-800">তালিকা</h2>
@@ -107,10 +107,10 @@
 <!-- ৪. তথ্য সংশোধনের আবেদন মডাল (Suggest Edit Modal) -->
 <div id="directory-suggest-modal" class="fixed inset-0 bg-black/50 z-[260] hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
-        <button onclick="closeSuggestEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <button type="button" onclick="closeSuggestEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
         <h3 class="text-lg font-bold text-gray-800 mb-2">তথ্য সংশোধনের অনুরোধ</h3>
         <p class="text-xs text-gray-500 mb-4">কোনো তথ্য ভুল থাকলে তা পরিবর্তন করার জন্য আবেদন করুন।</p>
-        
+
         <input type="hidden" id="suggest-item-id">
         <input type="hidden" id="suggest-item-category">
 
@@ -128,14 +128,14 @@
                 <textarea id="suggest-details" rows="3" class="w-full border p-2.5 rounded-xl text-sm bg-gray-50" placeholder="ভুল সংশোধন সংক্রান্ত অতিরিক্ত বিবরণ..."></textarea>
             </div>
         </div>
-        <button onclick="submitSuggestedEdit()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 mt-5 rounded-xl shadow-lg transition active:scale-95">আবেদন পাঠান</button>
+        <button type="button" onclick="submitSuggestedEdit()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 mt-5 rounded-xl shadow-lg transition active:scale-95">আবেদন পাঠান</button>
     </div>
 </div>
 
 <!-- ৫. রেটিং ও মতামত প্রদানের মডাল (Rating/Review Modal) -->
 <div id="directory-rating-modal" class="fixed inset-0 bg-black/50 z-[260] hidden flex items-center justify-center p-4 backdrop-blur-sm">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative animate-fade">
-        <button onclick="closeDirectoryRatingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <button type="button" onclick="closeDirectoryRatingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
         <h3 class="text-lg font-bold text-gray-800 mb-1">আপনার রেটিং দিন</h3>
         <p id="rating-item-name" class="text-xs text-green-600 font-bold mb-4">সেবাগ্রহীতার নাম...</p>
 
@@ -157,6 +157,6 @@
             <textarea id="rating-comment" rows="3" class="w-full border p-2.5 rounded-xl text-sm bg-gray-50" placeholder="আপনার অভিজ্ঞতা লিখুন..."></textarea>
         </div>
 
-        <button onclick="submitDirectoryRating()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-5 rounded-xl shadow-lg transition active:scale-95">রেটিং সাবমিট করুন</button>
+        <button type="button" onclick="submitDirectoryRating()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 mt-5 rounded-xl shadow-lg transition active:scale-95">রেটিং সাবমিট করুন</button>
     </div>
 </div>

@@ -1,9 +1,9 @@
 <!-- Tag Friends Modal -->
     <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[10000] flex flex-col hidden-custom">
         <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="window.closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button type="button" onclick="window.closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-lg">বন্ধুদের ট্যাগ করুন</h3>
-            <button onclick="window.saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
+            <button type="button" onclick="window.saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
         </div>
         <div id="tag-friends-list" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50 pb-20">
             <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
@@ -13,7 +13,7 @@
     <!-- Feeling Modal -->
     <div id="feeling-modal" class="fixed inset-0 bg-white z-[10000] flex flex-col hidden-custom">
         <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="window.closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button type="button" onclick="window.closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
         </div>
         <div class="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-gray-50 pb-20">
@@ -35,11 +35,11 @@
     <!-- Check-in / Location Modal -->
     <div id="location-modal" class="fixed inset-0 bg-white z-[10000] flex flex-col hidden-custom" style="transition: transform 0.3s ease-in-out; transform: translateY(100%);">
         <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="window.closeLocationModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button type="button" onclick="window.closeLocationModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <div class="flex-1">
                 <input type="text" id="custom-location-input" placeholder="কোথায় আছেন? (লিখুন)" class="w-full bg-gray-100 rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-red-500 outline-none border-none">
             </div>
-            <button onclick="window.selectCustomLocation()" class="text-red-600 font-bold text-sm px-2">সেট</button>
+            <button type="button" onclick="window.selectCustomLocation()" class="text-red-600 font-bold text-sm px-2">সেট</button>
         </div>
         <div class="flex-1 overflow-y-auto p-3 bg-gray-50 pb-20">
             <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase ml-1">জনপ্রিয় স্থানসমূহ</h4>
@@ -55,13 +55,13 @@
 
     <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
         <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
-            <button onclick="window.toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <button type="button" onclick="window.toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
             <div class="flex-1 relative">
                 <input type="text" id="global-search-input" onkeyup="window.debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
                 <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg"></i>
             </div>
         </div>
-        
+
         <div class="flex-1 overflow-y-auto bg-gray-50 pb-20 relative">
             <!-- 1. Trending Explore View (Instagram Style) -->
             <div id="trending-explore-view" class="w-full">
@@ -81,7 +81,7 @@
     <!-- SINGLE POST MODAL -->
     <div id="single-post-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
         <div class="flex items-center gap-2 p-4 border-b bg-white shadow-sm z-10 sticky top-0 pt-safe">
-            <button onclick="document.getElementById('single-post-modal').classList.add('hidden-custom')" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+            <button type="button" onclick="document.getElementById('single-post-modal').classList.add('hidden-custom')" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
             <h3 class="font-bold text-gray-800 text-lg">পোস্ট</h3>
         </div>
         <div id="single-post-content" class="flex-1 overflow-y-auto p-4 bg-gray-100 pb-20">
@@ -94,7 +94,7 @@
         <div class="bg-white w-full h-full flex flex-col relative">
             <!-- Header -->
             <div class="flex items-center gap-3 px-4 py-3 border-b bg-white sticky top-0 z-30 pt-safe shadow-sm">
-                <button onclick="window.togglePostModal(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
+                <button type="button" onclick="window.togglePostModal(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition">
                     <i class="fa-solid fa-arrow-left text-xl"></i>
                 </button>
                 <h3 class="font-bold text-lg text-gray-800 flex-1">পোস্ট তৈরি করুন</h3>
@@ -131,13 +131,13 @@
                         <div onclick="window.selectPostColor('', this)" class="post-color-dot bg-gray-100 border-2 border-gray-800 shadow-sm shrink-0 selected" title="Default">
                             <i class="fa-solid fa-ban text-gray-500 text-sm"></i>
                         </div>
-                        
+
                         <!-- Solid Colors (FB Style) -->
                         <div onclick="window.selectPostColor('#1877F2', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #1877F2;" title="Blue"></div>
                         <div onclick="window.selectPostColor('#E42C64', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #E42C64;" title="Pink"></div>
                         <div onclick="window.selectPostColor('#00A400', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #00A400;" title="Green"></div>
                         <div onclick="window.selectPostColor('#FF8C00', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #FF8C00;" title="Orange"></div>
-                        
+
                         <!-- 🌸 Romantic & Emotional (Love, Sad, Deep) -->
                         <div onclick="window.selectPostColor('linear-gradient(to top, #ff0844 0%, #ffb199 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to top, #ff0844 0%, #ffb199 100%);" title="Warm Love"></div>
                         <div onclick="window.selectPostColor('linear-gradient(to right, #ff758c 0%, #ff7eb3 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #ff758c 0%, #ff7eb3 100%);" title="Sweet Pink"></div>
@@ -156,7 +156,7 @@
                         <div onclick="window.selectPostColor('linear-gradient(135deg, #667eea 0%, #764ba2 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" title="Galaxy / Magic"></div>
                         <div onclick="window.selectPostColor('radial-gradient(circle at top right, #89f7fe 0%, #66a6ff 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at top right, #89f7fe 0%, #66a6ff 100%);" title="Soft Morning"></div>
                         <div onclick="window.selectPostColor('radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: radial-gradient(circle at bottom left, #a18cd1 0%, #fbc2eb 100%);" title="Dreamy Vibes"></div>
-                        
+
                         <!-- 🖤 Dark / Minimalist -->
                         <div onclick="window.selectPostColor('linear-gradient(to right, #434343 0%, #000000 100%)', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: linear-gradient(to right, #434343 0%, #000000 100%);" title="Dark Minimal"></div>
                         <div onclick="window.selectPostColor('#242526', this)" class="post-color-dot shrink-0 w-9 h-9 rounded-lg cursor-pointer hover:scale-110 transition-transform shadow-sm border-2 border-transparent" style="background: #242526;" title="Solid Dark"></div>
@@ -169,33 +169,20 @@
                     <div class="relative rounded-xl overflow-hidden border border-gray-200" id="preview-container-inner">
                         <!-- Image or Video will be injected here -->
                         <div id="preview-grid" class="w-full"></div>
-                        <button onclick="window.removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
+                        <button type="button" onclick="window.removePostImage()" class="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md text-gray-700 hover:text-red-500 z-10">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Premium Voice Recording UI -->
-                <div id="voice-record-area" class="px-4 mb-4 hidden">
-                    <style>
-                        @keyframes soundWave { 0% { height: 4px; } 50% { height: 28px; } 100% { height: 4px; } }
-                        .recording-active .wave-bar { animation: soundWave 1.2s infinite ease-in-out; }
-                        .recording-active .wave-bar:nth-child(1) { animation-delay: 0.0s; }
-                        .recording-active .wave-bar:nth-child(2) { animation-delay: 0.2s; }
-                        .recording-active .wave-bar:nth-child(3) { animation-delay: 0.4s; }
-                        .recording-active .wave-bar:nth-child(4) { animation-delay: 0.1s; }
-                        .recording-active .wave-bar:nth-child(5) { animation-delay: 0.3s; }
-                        .recording-active .wave-bar:nth-child(6) { animation-delay: 0.5s; }
-                        .recording-active .wave-bar:nth-child(7) { animation-delay: 0.2s; }
-                        .audio-dark-filter { filter: invert(100%) hue-rotate(180deg) grayscale(100%) contrast(150%); opacity: 0.9; }
-                    </style>
-                    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl p-6 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden border border-gray-700">
+                <div id="voice-record-area" class="px-4 mb-4 hidden"><div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl p-6 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden border border-gray-700">
                         <!-- Pulsing Background Indicator -->
                         <div id="recording-pulse-bg" class="absolute inset-0 bg-red-600/10 opacity-0 transition-opacity duration-300 pointer-events-none"></div>
 
                         <div class="z-10 text-center w-full">
                             <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex justify-center items-center gap-2"><i class="fa-solid fa-satellite-dish"></i> Voice Studio</p>
-                            
+
                             <!-- Timer & Status -->
                             <div class="flex items-center justify-center gap-2 mb-2">
                                 <div id="record-status-dot" class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse hidden shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
@@ -215,16 +202,16 @@
 
                             <!-- Controls -->
                             <div class="flex items-center justify-center">
-                                <button onclick="window.startRecording()" id="btn-record-start" class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-microphone text-2xl"></i></button>
-                                
-                                <button onclick="window.stopRecording()" id="btn-record-stop" class="hidden w-16 h-16 bg-white text-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-stop text-2xl"></i></button>
+                                <button type="button" onclick="window.startRecording()" id="btn-record-start" class="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-microphone text-2xl"></i></button>
+
+                                <button type="button" onclick="window.stopRecording()" id="btn-record-stop" class="hidden w-16 h-16 bg-white text-red-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform active:scale-95"><i class="fa-solid fa-stop text-2xl"></i></button>
                             </div>
 
                             <!-- Preview Player -->
                             <div id="audio-preview-container" class="w-full hidden mt-5 bg-gray-800/80 p-2.5 rounded-xl backdrop-blur-md border border-gray-600 flex items-center gap-2 shadow-inner">
-                                <!-- controlsList="nodownload" stops download -->
-                                <audio id="audio-preview" controls controlsList="nodownload noplaybackrate" class="w-full h-9 audio-dark-filter bg-transparent outline-none"></audio>
-                                <button onclick="window.cancelRecording()" class="text-gray-400 hover:text-red-400 hover:bg-gray-700 p-2 rounded-full transition" title="Delete"><i class="fa-solid fa-trash text-lg"></i></button>
+                                <!-- controlslist="nodownload" stops download -->
+                                <audio id="audio-preview" controls controlslist="nodownload noplaybackrate" class="w-full h-9 audio-dark-filter bg-transparent outline-none"></audio>
+                                <button type="button" onclick="window.cancelRecording()" class="text-gray-400 hover:text-red-400 hover:bg-gray-700 p-2 rounded-full transition" title="Delete"><i class="fa-solid fa-trash text-lg"></i></button>
                             </div>
                         </div>
                     </div>
@@ -234,19 +221,19 @@
                 <div class="px-4 py-3">
                     <p class="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wide">পোস্টে যুক্ত করুন</p>
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="document.getElementById('post-image-file').click()" class="flex justify-start items-center gap-3 bg-green-50 text-green-700 p-3 rounded-xl font-bold text-sm border border-green-200 hover:bg-green-100 shadow-sm transition">
+                        <button type="button" onclick="document.getElementById('post-image-file').click()" class="flex justify-start items-center gap-3 bg-green-50 text-green-700 p-3 rounded-xl font-bold text-sm border border-green-200 hover:bg-green-100 shadow-sm transition">
                             <i class="fa-solid fa-images text-xl"></i> ছবি / ভিডিও
                         </button>
-                        <button onclick="window.openLocationModal()" class="flex justify-start items-center gap-3 bg-red-50 text-red-700 p-3 rounded-xl font-bold text-sm border border-red-200 hover:bg-red-100 shadow-sm transition">
+                        <button type="button" onclick="window.openLocationModal()" class="flex justify-start items-center gap-3 bg-red-50 text-red-700 p-3 rounded-xl font-bold text-sm border border-red-200 hover:bg-red-100 shadow-sm transition">
                             <i class="fa-solid fa-location-dot text-xl"></i> চেক-ইন / স্থান
                         </button>
-                        <button onclick="window.openFeelingModal()" class="flex justify-start items-center gap-3 bg-yellow-50 text-yellow-700 p-3 rounded-xl font-bold text-sm border border-yellow-200 hover:bg-yellow-100 shadow-sm transition">
+                        <button type="button" onclick="window.openFeelingModal()" class="flex justify-start items-center gap-3 bg-yellow-50 text-yellow-700 p-3 rounded-xl font-bold text-sm border border-yellow-200 hover:bg-yellow-100 shadow-sm transition">
                             <i class="fa-regular fa-face-smile text-xl"></i> অনুভূতি
                         </button>
-                        <button onclick="window.openTagModal()" class="flex justify-start items-center gap-3 bg-blue-50 text-blue-700 p-3 rounded-xl font-bold text-sm border border-blue-200 hover:bg-blue-100 shadow-sm transition">
+                        <button type="button" onclick="window.openTagModal()" class="flex justify-start items-center gap-3 bg-blue-50 text-blue-700 p-3 rounded-xl font-bold text-sm border border-blue-200 hover:bg-blue-100 shadow-sm transition">
                             <i class="fa-solid fa-user-tag text-xl"></i> বন্ধু ট্যাগ করুন
                         </button>
-                        <button onclick="window.toggleVoiceRecorder()" class="flex justify-center items-center gap-3 bg-purple-50 text-purple-700 p-3 rounded-xl font-bold text-sm border border-purple-200 hover:bg-purple-100 shadow-sm transition col-span-2">
+                        <button type="button" onclick="window.toggleVoiceRecorder()" class="flex justify-center items-center gap-3 bg-purple-50 text-purple-700 p-3 rounded-xl font-bold text-sm border border-purple-200 hover:bg-purple-100 shadow-sm transition col-span-2">
                             <i class="fa-solid fa-microphone text-xl"></i> ভয়েস রেকর্ড করুন
                         </button>
                     </div>
@@ -255,15 +242,15 @@
                 <!-- 24 Hour Ephemeral Post Checkbox (Story System) -->
                 <div class="px-4 pb-3 mt-1">
                     <label class="flex items-center justify-between cursor-pointer bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 p-3.5 rounded-xl text-sm font-bold text-orange-700 hover:shadow-md transition w-full shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shadow-sm">
+                        <span class="flex items-center gap-3">
+                            <span class="w-9 h-9 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shadow-sm">
                                 <i class="fa-solid fa-stopwatch animate-pulse text-lg"></i>
-                            </div>
-                            <div class="flex flex-col">
+                            </span>
+                            <span class="flex flex-col">
                                 <span class="text-base">স্টোরি স্টাইল পোস্ট</span>
                                 <span class="text-[11px] text-orange-500 font-normal">২৪ ঘণ্টা পর স্বয়ংক্রিয়ভাবে মুছে যাবে</span>
-                            </div>
-                        </div>
+                            </span>
+                        </span>
                         <input type="checkbox" id="post-ephemeral" class="w-6 h-6 text-orange-600 rounded-md focus:ring-orange-500 border-orange-300">
                     </label>
                 </div>
@@ -279,7 +266,7 @@
 
                 <!-- Submit Button -->
                 <div class="p-4">
-                    <button onclick="window.submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
+                    <button type="button" onclick="window.submitPost()" id="btn-post-submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg hover:bg-green-700 transition active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed text-lg">
                         পোস্ট করুন
                     </button>
                 </div>
@@ -292,14 +279,14 @@
             <h3 class="font-bold text-lg text-gray-700 mb-4">পোস্ট এডিট করুন</h3>
             <input type="hidden" id="edit-post-id">
             <textarea id="edit-post-text" class="w-full h-32 p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white resize-none text-base"></textarea>
-            <div class="flex gap-2 mt-4"><button onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button onclick="window.submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
+            <div class="flex gap-2 mt-4"><button type="button" onclick="document.getElementById('edit-post-modal').classList.add('hidden-custom')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg">বাতিল</button><button type="button" onclick="window.submitEditPost()" class="flex-1 bg-green-600 text-white font-bold py-2.5 rounded-lg">সেভ করুন</button></div>
         </div>
     </div>
 
     <div id="poll-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl transform transition-all scale-100">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button onclick="window.togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
+                <h3 class="font-bold text-lg text-gray-700">পোল তৈরি করুন</h3><button type="button" onclick="window.togglePollModal(false)" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-red-100 hover:text-red-500 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="space-y-3">
                 <input type="text" id="poll-question" placeholder="প্রশ্ন লিখুন (যেমন: সেরা খেলা কোনটি?)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm font-bold">
@@ -308,6 +295,6 @@
                 <input type="text" id="poll-opt-3" placeholder="অপশন ৩ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
                 <input type="text" id="poll-opt-4" placeholder="অপশন ৪ (ঐচ্ছিক)" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm">
             </div>
-            <button onclick="window.submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
+            <button type="button" onclick="window.submitPoll()" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg shadow hover:bg-blue-700 transition flex justify-center items-center gap-2"><i class="fa-solid fa-square-poll-vertical"></i> পোল পোস্ট করুন</button>
         </div>
     </div>

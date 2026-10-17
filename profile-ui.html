@@ -1,7 +1,7 @@
 <!-- ১. প্রোফাইল এডিট মডাল -->
 <div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[160] flex items-center justify-center hidden-custom p-4">
     <div class="bg-white w-full max-w-sm rounded-xl p-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
-        <button onclick="window.toggleEditProfile(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <button type="button" onclick="window.toggleEditProfile(false)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
         <h3 class="text-lg font-bold text-gray-800 mb-5 border-b pb-2">তথ্য পরিবর্তন করুন</h3>
         <div class="space-y-4">
             <div><label class="text-xs font-bold text-gray-500 block mb-1">প্রোফাইল ছবি পরিবর্তন করুন</label><input type="file" id="edit-profile-img" accept="image/*" class="w-full bg-gray-50 border p-2 rounded-lg text-sm file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"></div>
@@ -12,7 +12,7 @@
             <div><label class="text-xs font-bold text-gray-500 block mb-1">পেশা</label><input type="text" id="edit-profession" placeholder="যেমন: শিক্ষক, ব্যবসায়ী" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বর্তমান ঠিকানা</label><input type="text" id="edit-location" placeholder="বিস্তারিত ঠিকানা" class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></div>
             <div><label class="text-xs font-bold text-gray-500 block mb-1">বায়ো (সর্বোচ্চ ৫০ অক্ষর)</label><textarea id="edit-bio" maxlength="50" rows="2" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full bg-gray-50 border p-2.5 rounded-lg text-sm"></textarea></div>
-            
+
             <div class="border-t pt-3 mt-3">
                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">সামাজিক যোগাযোগের লিংক</h4>
                 <div class="space-y-2">
@@ -36,14 +36,14 @@
                 </div>
             </div>
         </div>
-        <button onclick="window.saveProfileChanges()" id="btn-save-profile" class="w-full bg-green-600 text-white font-bold py-3 mt-6 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">সংরক্ষণ করুন</button>
+        <button type="button" onclick="window.saveProfileChanges()" id="btn-save-profile" class="w-full bg-green-600 text-white font-bold py-3 mt-6 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center gap-2">সংরক্ষণ করুন</button>
     </div>
 </div>
 
 <!-- স্মার্ট প্রোফাইল কার্ড মডাল -->
 <div id="profile-card-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[200] flex items-center justify-center hidden-custom p-4 backdrop-blur-sm">
     <div class="w-full max-w-[380px] relative transform transition-all duration-300 scale-100">
-        <button onclick="window.closeProfileCard()" class="absolute -top-12 right-0 bg-white bg-opacity-20 hover:bg-opacity-40 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md z-50">
+        <button type="button" onclick="window.closeProfileCard()" class="absolute -top-12 right-0 bg-white bg-opacity-20 hover:bg-opacity-40 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md z-50">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
 
@@ -74,7 +74,7 @@
                         </div>
                     </div>
                     <div class="bg-white p-1 rounded-md shadow-sm">
-                        <img id="card-qr-code" src="" alt="QR Code" class="w-12 h-12">
+                        <img id="card-qr-code" src="data:," alt="QR Code" class="w-12 h-12">
                     </div>
                 </div>
 
@@ -94,8 +94,8 @@
                 </div>
             </div>
         </div>
-        
-        <button onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
+
+        <button type="button" onclick="window.showToast('স্ক্রিনশট নিয়ে কার্ডটি সেভ করুন', 'success')" class="w-full mt-4 bg-white text-gray-800 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95">
             <i class="fa-solid fa-download"></i> কার্ড সেভ করুন
         </button>
     </div>
@@ -107,11 +107,11 @@
     <!-- ব্যানার কনটেইনার: গ্রেডিয়েন্ট মাস্ক বাড়িয়ে বর্ডার সুন্দরভাবে বিলীন করা হয়েছে -->
     <div class="relative w-full h-[220px] bg-gray-100">
         <div id="profile-cover" class="w-full h-full relative overflow-hidden">
-            <img id="profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);">
+            <img src="data:," alt="" id="profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);">
         </div>
 
         <!-- ক্যামেরা বাটন (ব্যানারের উপর একদম টপ-রাইটে) -->
-        <button onclick="document.getElementById('cover-upload').click()" class="absolute top-4 right-4 w-9 h-9 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/60 transition active:scale-95 z-30 shadow-md">
+        <button type="button" onclick="document.getElementById('cover-upload').click()" class="absolute top-4 right-4 w-9 h-9 bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-black/60 transition active:scale-95 z-30 shadow-md">
             <i class="fa-solid fa-camera text-sm"></i>
         </button>
         <input type="file" id="cover-upload" class="hidden" accept="image/*" onchange="window.handleCoverPhotoUpload(this)">
@@ -131,7 +131,7 @@
                 </div>
                 <span id="profile-presence-status" class="absolute bottom-1 right-1 w-4 h-4 bg-gray-400 border-2 border-white rounded-full transition-colors duration-300"></span>
             </div>
-            <button onclick="document.getElementById('edit-profile-img').click()" class="absolute bottom-1 right-1 bg-cyan-500 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md text-xs hover:bg-cyan-600 transition">
+            <button type="button" onclick="document.getElementById('edit-profile-img').click()" class="absolute bottom-1 right-1 bg-cyan-500 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md text-xs hover:bg-cyan-600 transition">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
@@ -139,7 +139,7 @@
 
     <!-- টেক্সট ও কন্টেন্ট সেকশন -->
     <div class="px-4 relative z-20 -mt-[60px]">
-        
+
         <div class="mb-3 pr-28">
             <div class="flex items-center gap-1.5 flex-wrap">
                 <h2 id="profile-name" class="text-2xl font-bold text-gray-900 tracking-tight">...</h2>
@@ -157,10 +157,10 @@
 
         <!-- অ্যাকশন বাটনসমূহ -->
         <div class="flex items-center gap-2 mb-4">
-            <button onclick="window.openProfileCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
+            <button type="button" onclick="window.openProfileCard()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
                 <i class="fa-solid fa-id-card text-sm"></i> আমার কার্ড
             </button>
-            <button onclick="window.toggleEditProfile(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
+            <button type="button" onclick="window.toggleEditProfile(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition shadow-sm active:scale-95">
                 <i class="fa-solid fa-pen text-sm"></i> এডিট
             </button>
         </div>
@@ -180,9 +180,9 @@
 
             <!-- সোশ্যাল লিংক আইকনসমূহ -->
             <div class="flex gap-1.5" id="profile-social-container">
-                <a id="link-fb" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
-                <a id="link-wa" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
-                <a id="link-web" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
+                <a id="link-fb" aria-label="Facebook" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
+                <a id="link-wa" aria-label="WhatsApp" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="link-web" aria-label="Website" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
             </div>
 
             <div class="flex items-baseline gap-1">
@@ -232,7 +232,7 @@
                 <h3 class="font-bold text-base text-gray-900">বন্ধুবান্ধব</h3>
                 <p class="text-xs text-gray-500" id="friends-count-me">0 জন বন্ধু</p>
             </div>
-            <button onclick="window.showAllFriends('me')" class="text-emerald-600 text-xs font-bold hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition">সব দেখুন</button>
+            <button type="button" onclick="window.showAllFriends('me')" class="text-emerald-600 text-xs font-bold hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition">সব দেখুন</button>
         </div>
         <div id="profile-friends-preview-me" class="grid grid-cols-3 gap-2">
             <p class="col-span-3 text-center text-xs text-gray-400 py-4">লোড হচ্ছে...</p>
@@ -242,14 +242,14 @@
     <!-- Profile Posts & Bookmarks Tabs -->
     <div class="bg-white shadow-sm">
         <div class="flex border-b border-gray-100">
-            <button onclick="window.switchProfileTab('posts')" id="tab-profile-posts" class="flex-1 text-center py-3.5 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition-all">আমার পোস্টসমূহ</button>
-            <button onclick="window.switchProfileTab('saved')" id="tab-profile-saved" class="flex-1 text-center py-3.5 text-sm font-bold text-gray-400 transition-all">সংরক্ষিত তথ্য</button>
+            <button type="button" onclick="window.switchProfileTab('posts')" id="tab-profile-posts" class="flex-1 text-center py-3.5 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition-all">আমার পোস্টসমূহ</button>
+            <button type="button" onclick="window.switchProfileTab('saved')" id="tab-profile-saved" class="flex-1 text-center py-3.5 text-sm font-bold text-gray-400 transition-all">সংরক্ষিত তথ্য</button>
         </div>
-        
+
         <div id="my-posts-feed" class="space-y-3 pb-10 p-3 bg-gray-50">
             <p class="text-center text-gray-400 text-xs py-6">লোড হচ্ছে...</p>
         </div>
-        
+
         <div id="my-saved-feed" class="hidden-custom space-y-3 pb-10 p-3 bg-gray-50">
             <p class="text-center text-gray-400 text-xs py-6">কোনো তথ্য সংরক্ষিত নেই</p>
         </div>
@@ -259,13 +259,13 @@
 <!-- ৩. অন্যের প্রোফাইল দেখার পেজ -->
 <div id="page-view-profile" class="hidden bg-white min-h-screen pb-20 z-50 absolute top-0 left-0 w-full animate-fade">
     <div class="bg-white p-2 sticky top-0 z-30 shadow-sm flex items-center gap-2 pt-safe border-b border-gray-100">
-        <button onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <button type="button" onclick="window.switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
         <h2 class="font-bold text-lg text-gray-800" id="view-profile-header-name">প্রোফাইল</h2>
     </div>
 
     <div class="relative w-full h-[220px] bg-gray-100">
         <div class="w-full h-full relative overflow-hidden">
-            <img id="view-profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);">
+            <img src="data:," alt="" id="view-profile-cover-img" class="w-full h-full object-cover hidden" style="-webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);">
         </div>
     </div>
 
@@ -315,9 +315,9 @@
 
             <!-- সোশ্যাল লিংক আইকনসমূহ -->
             <div class="flex gap-1.5" id="view-profile-social-container">
-                <a id="view-link-fb" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
-                <a id="view-link-wa" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
-                <a id="view-link-web" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
+                <a id="view-link-fb" aria-label="Facebook" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-blue-50 text-blue-600 items-center justify-center hover:bg-blue-100 transition text-xs shadow-sm"><i class="fa-brands fa-facebook"></i></a>
+                <a id="view-link-wa" aria-label="WhatsApp" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center hover:bg-emerald-100 transition text-xs shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                <a id="view-link-web" aria-label="Website" href="#" target="_blank" class="hidden w-7 h-7 rounded-full bg-purple-50 text-purple-600 items-center justify-center hover:bg-purple-100 transition text-xs shadow-sm"><i class="fa-solid fa-globe"></i></a>
             </div>
 
             <div class="flex items-baseline gap-1">
@@ -355,7 +355,7 @@
                     <h3 class="font-bold text-base text-gray-900">বন্ধুবান্ধব</h3>
                     <p class="text-xs text-gray-500" id="friends-count-other">0 জন বন্ধু</p>
                 </div>
-                <button id="btn-view-friends-other" class="text-blue-600 text-xs font-bold hover:bg-blue-50 px-3 py-1.5 rounded-lg transition">সব দেখুন</button>
+                <button type="button" id="btn-view-friends-other" class="text-blue-600 text-xs font-bold hover:bg-blue-50 px-3 py-1.5 rounded-lg transition">সব দেখুন</button>
             </div>
             <div id="profile-friends-preview-other" class="grid grid-cols-3 gap-2">
                 <p class="col-span-3 text-center text-xs text-gray-400 py-4">লোড হচ্ছে...</p>

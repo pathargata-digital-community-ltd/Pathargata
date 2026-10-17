@@ -1,4 +1,4 @@
-<button onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
+<button type="button" onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
 <h2 class="text-xl font-bold mb-5 border-l-4 border-red-500 pl-3 text-gray-700">স্মার্ট অভিযোগ বক্স</h2>
 <div class="bg-white p-4 rounded-xl shadow-sm mb-6">
     <h3 class="font-bold text-gray-800 mb-3 text-base">নতুন অভিযোগ করুন</h3>
@@ -24,7 +24,7 @@
             </select>
         </div>
         <textarea id="complaint-text" rows="3" placeholder="বিস্তারিত লিখুন..." class="w-full bg-gray-50 border p-3 rounded-lg text-sm"></textarea>
-        
+
         <!-- সংযুক্তি ও জিপিএস সেকশন -->
         <div class="grid grid-cols-2 gap-2">
             <div>
@@ -45,7 +45,7 @@
             <input type="checkbox" id="complaint-anon" class="w-5 h-5 text-green-600 rounded">
             <label for="complaint-anon" class="text-sm text-gray-600 font-medium">নাম গোপন রাখুন (Anonymous)</label>
         </div>
-        <button onclick="submitComplaint()" id="btn-complaint-submit" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow hover:bg-red-700 text-base mt-2">জমা দিন</button>
+        <button type="button" onclick="submitComplaint()" id="btn-complaint-submit" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg shadow hover:bg-red-700 text-base mt-2">জমা দিন</button>
     </div>
 </div>
 <div>

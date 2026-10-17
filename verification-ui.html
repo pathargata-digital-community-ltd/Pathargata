@@ -1,7 +1,7 @@
 <!-- NEW FULL SCREEN VERIFICATION PAGE -->
 <div id="page-verification" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
     <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
-        <button onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+        <button type="button" onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
         <h2 class="text-xl font-bold text-gray-800">ভেরিফিকেশন</h2>
     </div>
 
@@ -10,23 +10,13 @@
         <div id="verify-status-banner" class="hidden mb-6"></div>
 
         <!-- Main Form (Hidden if Pending/Verified) -->
-        <div id="verify-form-container">
-            
-            <style>
-                .hide-scrollbar::-webkit-scrollbar { display: none; }
-                .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                .category-card { transition: all 0.3s ease; border: 2px solid transparent; }
-                .category-card.selected { border-color: #3b82f6; background-color: #eff6ff; transform: scale(0.98); }
-                .category-card.selected .check-icon { display: flex; }
-            </style>
-
-            <div class="mb-6">
+        <div id="verify-form-container"><div class="mb-6">
                 <h3 class="font-extrabold text-2xl text-gray-800 mb-1">ভেরিফাইড ব্যাজ নিন</h3>
                 <p class="text-sm text-gray-500 mb-4">আপনার পেশা অনুযায়ী সঠিক ব্যাজটি নির্বাচন করুন।</p>
-                
+
                 <!-- Category Cards (Horizontal Scroll) -->
                 <div class="flex overflow-x-auto gap-4 pb-4 hide-scrollbar snap-x snap-mandatory">
-                    
+
                     <!-- Public Figure -->
                     <div onclick="selectCategory('public_figure')" id="cat-public_figure" class="category-card min-w-[240px] bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer snap-center relative">
                         <div class="check-icon hidden absolute top-4 right-4 bg-blue-600 text-white w-6 h-6 rounded-full items-center justify-center shadow-md z-10"><i class="fa-solid fa-check text-xs"></i></div>
@@ -127,7 +117,7 @@
                         <input type="text" id="verify-trx-id" placeholder="TrxID (Example: 9H7D...)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm uppercase">
                     </div>
                 </div>
-            </div>            
+            </div>
 
             <!-- Documents Section -->
             <div id="verification-docs-section" class="hidden bg-white p-4 rounded-xl shadow-sm mb-6">
@@ -148,7 +138,7 @@
                 </div>
             </div>
 
-            <button onclick="submitVerification()" id="btn-verify-submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex justify-center items-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed hidden">সাবমিট করুন</button>
+            <button type="button" onclick="submitVerification()" id="btn-verify-submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex justify-center items-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed hidden">সাবমিট করুন</button>
         </div>
     </div>
 </div>

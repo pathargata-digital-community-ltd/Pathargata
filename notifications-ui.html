@@ -15,7 +15,7 @@
     <!-- Header with 'Mark all as read' button -->
     <div class="flex justify-between items-center mb-4 border-l-4 border-yellow-500 pl-3">
         <h2 class="text-xl font-bold text-gray-800">নোটিফিকেশন</h2>
-        <button onclick="markAllAsRead()" id="btn-mark-all-read" class="hidden text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-gray-100 transition">
+        <button type="button" onclick="markAllAsRead()" id="btn-mark-all-read" class="hidden text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-full font-bold shadow-sm hover:bg-gray-100 transition">
             <i class="fa-solid fa-check-double text-blue-500 mr-1"></i> সব মার্ক করুন
         </button>
     </div>
@@ -30,7 +30,7 @@
 
     <!-- Load More Button -->
     <div class="text-center mt-6">
-        <button id="btn-load-more-notif" onclick="loadNotifications(false)" class="hidden bg-white border px-5 py-2 rounded-full text-sm font-bold text-gray-600 shadow-sm hover:bg-gray-100 transition">
+        <button type="button" id="btn-load-more-notif" onclick="loadNotifications(false)" class="hidden bg-white border px-5 py-2 rounded-full text-sm font-bold text-gray-600 shadow-sm hover:bg-gray-100 transition">
             <i class="fa-solid fa-caret-down mr-1"></i> আরো দেখুন
         </button>
     </div>
