@@ -1,0 +1,237 @@
+    <!-- ৫. মেইন অ্যাপ কন্টেইনার -->
+    <div class="app-container hidden-custom" id="main-app">
+        <header id="main-header" class="bg-white text-gray-800 p-4 sticky top-0 z-40 flex justify-between items-center shadow-sm border-b pt-safe transition-transform duration-300">
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="toggleSidebar(true)" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-200 transition"><i class="fa-solid fa-bars text-xl"></i></button>
+                <h1 id="app-header-title" class="text-xl font-bold text-green-600">পাথরঘাটা ডিজিটাল</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="toggleGlobalSearch(true)" class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-200"><i class="fa-solid fa-magnifying-glass text-xl"></i></button>
+                <div onclick="switchPage('notifications')" class="cursor-pointer relative">
+                    <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 border border-gray-200 hover:bg-gray-200"><i class="fa-regular fa-bell text-xl"></i></div>
+                    <span id="header-badge-notice" class="badge">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main id="content-pages">
+
+            <!-- হোম পেজ শুরু -->
+            <div id="page-home" class="p-0 animate-fade">
+                <div id="live-notices"></div>
+
+                <!-- 1. Tabs Section -->
+                <div id="home-tabs" class="bg-white border-b sticky top-[68px] z-30 transition-all duration-300">
+                    <div class="flex overflow-x-auto hide-scrollbar">
+                        <div onclick="filterFeed('all')" id="tab-feed-all" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab active uppercase">উপজেলা</div>
+                        <div onclick="filterFeed('union')" id="tab-feed-union" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase">ইউনিয়ন</div>
+                        <div onclick="filterFeed('village')" id="tab-feed-village" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-gray-500 cursor-pointer feed-tab uppercase" style="display: none;">গ্রাম</div>
+                        <div onclick="handleFeedFilterClick('contest')" id="tab-feed-contest" class="min-w-[90px] flex-1 text-center py-3.5 text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 cursor-pointer feed-tab uppercase">প্রতিযোগিতা</div>
+                        <!-- নতুন ফিফা ট্যাব -->
+                        <div onclick="handleFeedFilterClick('fifa')" id="tab-feed-fifa" class="min-w-[80px] flex-1 text-center py-3.5 text-xs font-bold text-green-600 cursor-pointer feed-tab uppercase flex items-center justify-center gap-1"><i class="fa-solid fa-futbol"></i> ফিফা</div>
+                    </div>
+                </div>
+
+                <!-- New Post Alert Button -->
+                <div id="new-post-alert" onclick="refreshFeed()" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1.5 rounded-full shadow-lg z-40 text-sm font-bold cursor-pointer transition-transform duration-300 hover:bg-blue-700 animate-bounce">
+                    <i class="fa-solid fa-arrow-up mr-1"></i> নতুন পোস্ট এসেছে
+                </div>
+
+                <!-- 2. Regular Feed Section (নোটস এবং সাধারণ পোস্ট) -->
+                <div id="regular-feed-section" class="bg-gray-100 pb-20">
+                    <div id="notes-ui-container"></div>
+
+                    <div id="news-feed" class="px-0 space-y-3 min-h-[300px] mt-2">
+                        <!-- Initial Loader Skeleton -->
+                        <div class="flex flex-col gap-3 p-4" id="initial-feed-skeleton">
+                            <div class="h-40 w-full skeleton"></div>
+                            <div class="h-40 w-full skeleton"></div>
+                        </div>
+                    </div>
+
+                    <!-- Pagination / Load More Controls -->
+                    <div id="feed-loader-area" class="pb-10 pt-2 text-center hidden">
+                        <button type="button" id="btn-load-more" onclick="loadMorePosts()" class="btn-load-more hidden"><i class="fa-solid fa-arrow-down"></i> আরো দেখুন</button>
+                        <div id="loader-spinner" class="py-4"><i class="fa-solid fa-circle-notch fa-spin text-green-600 text-2xl"></i></div>
+                        <div id="scroll-sentinel" style="height: 10px; width: 100%;"></div>
+                    </div>
+                </div>
+
+                <div id="contest-ui-container" class="hidden-custom"></div>
+                <!-- নতুন ফিফা কন্টেইনার -->
+                <div id="fifa-ui-container" class="hidden-custom bg-gray-100 min-h-screen pb-20"></div>
+              </div>
+            <div id="page-services" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
+                <div class="bg-white p-3 sticky top-0 pt-safe z-30 shadow-sm flex items-center gap-2 mb-4 rounded-xl">
+                    <button type="button" onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                    <h2 class="font-bold text-lg text-gray-800">সকল সেবা</h2>
+                </div>
+                <div id="services-grid" class="grid grid-cols-2 gap-4 p-4 bg-white mb-2 shadow-sm rounded-xl">
+                    <p class="col-span-2 text-center text-gray-400 py-4">সেবা লোড হচ্ছে...</p>
+                </div>
+            </div>
+
+            <!-- NEW INVITE & UPDATE PAGE -->
+            <div id="page-invite" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
+                <div class="bg-white p-4 sticky top-0 z-30 shadow-sm border-b pt-safe flex items-center gap-2">
+                    <button type="button" onclick="switchPage('home')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
+                    <h2 class="text-xl font-bold text-gray-800">অ্যাপ শেয়ার ও আপডেট</h2>
+                </div>
+
+                <div class="p-6 flex flex-col items-center justify-center mt-6 space-y-6">
+                    <div class="w-28 h-28 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-5xl shadow-md logo-animate border-4 border-white">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold text-gray-800">পাথরঘাটা ডিজিটাল</h3>
+                        <p class="text-gray-500 mt-2 text-sm">অ্যাপটি বন্ধুদের সাথে শেয়ার করুন অথবা নতুন ভার্সন আপডেট করতে ওয়েবসাইটে যান।</p>
+                    </div>
+
+                    <div class="w-full space-y-4 max-w-sm mt-8">
+                        <!-- Option 1: Copy/Share Link -->
+                        <button type="button" onclick="actionShareInvite()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex items-center justify-center gap-3 text-base active:scale-95">
+                            <i class="fa-solid fa-copy text-xl"></i> লিংক কপি ও শেয়ার করুন
+                        </button>
+
+                        <!-- Option 2: Go to Website / Update App -->
+                        <button type="button" onclick="actionUpdateApp()" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-green-700 transition flex items-center justify-center gap-3 text-base active:scale-95">
+                            <i class="fa-solid fa-globe text-xl"></i> ওয়েবসাইটে যান / আপডেট করুন
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="monetization-ui-container"></div>
+
+            <div id="page-dynamic-content" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
+                <button type="button" onclick="switchPage('services')" class="mb-4 text-gray-500 text-sm font-bold"><i class="fa-solid fa-arrow-left"></i> সকল সেবা</button>
+                <h2 id="dynamic-content-title" class="text-xl font-bold mb-5 border-l-4 border-blue-500 pl-3 text-gray-700">...</h2>
+                <div id="dynamic-items-container" class="space-y-3">
+                    <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
+                </div>
+            </div>
+
+            <div id="notifications-ui-container"></div>
+
+            <div id="page-people" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
+                <div class="bg-white p-4 sticky top-0 pt-safe z-30 shadow-sm border-b">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-bold text-gray-800">মানুষ খুজুন</h2>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-400 text-lg"></i>
+                        <div class="flex gap-2">
+                            <input type="text" id="search-people" onkeyup="debouncedPeopleSearch(this.value)" placeholder="নাম দিয়ে খুজুন..." class="w-full bg-gray-100 p-3 pl-12 rounded-full text-base focus:bg-white border border-transparent focus:border-green-200">
+                        </div>
+                    </div>
+                </div>
+                <div id="pull-to-refresh-indicator" class="w-full flex justify-center items-center h-0 overflow-hidden transition-all duration-300 bg-gray-50 z-20">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+
+                <div class="p-4 space-y-6">
+                    <div id="friend-requests-section" class="hidden">
+                        <h3 class="font-bold text-gray-700 mb-2 border-l-4 border-yellow-500 pl-2 text-sm">ফ্রেন্ড রিকোয়েস্ট</h3>
+                        <div id="friend-requests-list" class="space-y-2"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-bold text-gray-700 border-l-4 border-green-500 pl-2 text-sm">আমার বন্ধু</h3><button type="button" onclick="switchPage('friends-list')" class="text-xs text-green-600 font-bold hover:underline">সব দেখুন</button>
+                        </div>
+                        <div id="my-friends-preview-list" class="grid grid-cols-2 gap-2">
+                            <p class="col-span-2 text-center text-gray-400 text-xs py-2">লোড হচ্ছে...</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-700 mb-2 border-l-4 border-blue-500 pl-2 text-sm">সাজেশন / রেজাল্ট</h3>
+                        <div id="users-list" class="space-y-4">
+                            <p class="text-center text-gray-400 text-sm">অপেক্ষা করুন...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-messages" class="hidden p-0 min-h-screen bg-white pb-20">
+    <!-- সাদা স্ক্রিন প্রতিরোধ করতে ডিফল্ট লোডার -->
+    <div class="flex flex-col items-center justify-center min-h-[60vh] py-10">
+        <div class="animate-spin rounded-full h-10 w-10 border-4 border-green-200 border-t-green-600 mb-3 shadow-lg"></div>
+        <p class="text-sm font-bold text-gray-500">মেসেজ লোড হচ্ছে...</p>
+    </div>
+</div>
+
+            <div id="market-ui-container"></div>
+
+            <!-- Profile UI Container (Fetched dynamically) -->
+<div id="profile-ui-container"></div>
+
+            <div id="page-friends-list" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
+                <button type="button" onclick="switchPage('people')" class="mb-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
+                <h2 class="text-xl font-bold mb-5 border-l-4 border-green-500 pl-3 text-gray-700">সকল বন্ধু</h2>
+                <div id="all-friends-container" class="grid grid-cols-1 gap-3">
+                    <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
+                </div>
+            </div>
+
+            <div id="blood-ui-container"></div>
+
+            <div id="tourism-ui-container"></div>
+
+            <div id="transport-ui-container"></div>
+
+            <!-- Education UI Container -->
+            <div id="education-ui-container"></div>
+
+            <!-- NEW EMERGENCY ALERT PAGE -->
+            <div id="page-emergency" class="hidden p-4 bg-gray-50 min-h-screen pb-20">
+                <button type="button" onclick="switchPage('services')" class="mb-4 text-gray-500 font-bold text-sm"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="text-xl font-bold text-red-600 border-l-4 border-red-500 pl-3">জরুরী এলার্ট</h2>
+                    <button type="button" onclick="document.getElementById('emergency-modal').classList.remove('hidden-custom')" class="bg-red-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow hover:bg-red-700 animate-pulse">
+                        <i class="fa-solid fa-bullhorn mr-1"></i> এলার্ট দিন
+                    </button>
+                </div>
+                <div id="emergency-list" class="space-y-3">
+                    <p class="text-center text-gray-400 py-10">লোড হচ্ছে...</p>
+                </div>
+            </div>
+
+            <div id="directory-ui-container"></div>
+
+            <div id="page-complaints" class="hidden p-4 bg-gray-50 min-h-screen pb-20"></div>
+
+            <div id="settings-ui-container"></div>
+
+            <div id="verification-ui-container"></div>
+
+
+
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-50 text-gray-500 max-w-[480px] mx-auto shadow-[0_-5px_15px_rgba(0,0,0,0.05)] pb-safe">
+            <div onclick="handleHomeClick()" class="nav-btn w-1/5 text-center cursor-pointer nav-active py-1" id="btn-home"><i class="fa-solid fa-house mb-1"></i>
+                <p>হোম</p>
+            </div>
+            <div onclick="switchPage('services')" class="nav-btn w-1/5 text-center cursor-pointer py-1" id="btn-services"><i class="fa-solid fa-layer-group mb-1"></i>
+                <p>সেবা</p>
+            </div>
+            <div onclick="switchPage('messages')" class="nav-btn w-1/5 text-center cursor-pointer py-1 relative" id="btn-messages">
+                <i class="fa-solid fa-comments mb-1"></i>
+                <p>মেসেজ</p>
+                <span id="nav-badge-messages" class="nav-badge">0</span>
+            </div>
+            <div onclick="switchPage('people')" class="nav-btn w-1/5 text-center cursor-pointer py-1" id="btn-people"><i class="fa-solid fa-users mb-1"></i>
+                <p>মানুষ</p><span id="nav-badge-people" class="nav-badge">0</span>
+            </div>
+            <div onclick="switchPage('profile')" class="nav-btn w-1/5 text-center cursor-pointer py-1" id="btn-profile"><i class="fa-solid fa-user mb-1"></i>
+                <p>প্রোফাইল</p>
+            </div>
+        </nav>
+
+        <div class="fixed bottom-24 right-5 z-40 flex flex-col items-center gap-4 pb-safe transition-all duration-300" id="fab-container">
+            <div id="fab-options" class="fab-options flex flex-col gap-3">
+                <button type="button" onclick="togglePostModal(true); toggleFab()" class="bg-white text-gray-700 w-14 h-14 rounded-full shadow-lg flex items-center justify-center border border-gray-100 hover:bg-gray-50"><i class="fa-solid fa-pen text-xl"></i></button>
+                <button type="button" onclick="togglePollModal(true); toggleFab()" class="bg-white text-blue-600 w-14 h-14 rounded-full shadow-lg flex items-center justify-center border border-gray-100 hover:bg-blue-50"><i class="fa-solid fa-square-poll-vertical text-xl"></i></button>
+            </div>
+            <div onclick="toggleFab()" id="main-fab" class="fab-btn bg-green-600 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-2xl cursor-pointer hover:bg-green-700 border-2 border-white"><i class="fa-solid fa-plus"></i></div>
+        </div>
+    </div>
