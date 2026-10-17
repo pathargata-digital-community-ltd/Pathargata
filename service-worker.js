@@ -5,7 +5,7 @@
  * handles: Static Caching, Offline Support
  */
 
-const CACHE_NAME = 'patharghata-pwa-v4.12';
+const CACHE_NAME = 'patharghata-pwa-v4.13';
 const DYNAMIC_CACHE_NAME = 'patharghata-dynamic-v4';
 
 // অফলাইনে যে ফাইলগুলো কাজ করবে
@@ -15,6 +15,8 @@ const STATIC_ASSETS = [
     '/Pathargata/manifest.json',
     '/Pathargata/auth.js',
     '/Pathargata/auth-ui.html',
+    '/Pathargata/service-dashboard.js',
+    '/Pathargata/service-dashboard.html',
     '/Pathargata/components-loader.js',
     '/Pathargata/components/runtime-shell.html',
     '/Pathargata/components/app-shell.html',

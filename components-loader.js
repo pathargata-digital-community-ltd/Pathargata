@@ -4,13 +4,6 @@
  * auth, app pages, and modal containers to be maintained independently.
  */
 (function loadUIComponents() {
-    const fragments = [
-        'auth-ui.html',
-        'components/runtime-shell.html',
-        'components/app-shell.html',
-        'components/modal-containers.html'
-    ];
-
     function loadFragment(path) {
         const request = new XMLHttpRequest();
         request.open('GET', path, false);
@@ -20,7 +13,12 @@
     }
 
     try {
-        document.write(fragments.map(loadFragment).join('\n'));
+        const authUI = loadFragment('auth-ui.html');
+        const runtimeShell = loadFragment('components/runtime-shell.html');
+        const appShell = loadFragment('components/app-shell.html')
+            .replace('<!-- SERVICE_DASHBOARD_SLOT -->', loadFragment('service-dashboard.html'));
+        const modalContainers = loadFragment('components/modal-containers.html');
+        document.write([authUI, runtimeShell, appShell, modalContainers].join('\n'));
     } catch (error) {
         console.error(error);
         document.write('<div style="padding:1rem;color:#b91c1c;font-family:sans-serif">অ্যাপের UI লোড করা যায়নি। পেজটি আবার লোড করুন।</div>');
