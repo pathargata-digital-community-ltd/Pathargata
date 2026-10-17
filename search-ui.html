@@ -1,0 +1,22 @@
+    <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
+            <button type="button" onclick="window.toggleGlobalSearch(false)" aria-label="Search বন্ধ করুন" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+            <div class="flex-1 relative">
+                <input type="search" id="global-search-input" autocomplete="off" oninput="window.debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট, পণ্য বা সেবা খুঁজুন..." aria-label="সবকিছু খুঁজুন" class="w-full bg-gray-100 py-3 pl-4 pr-12 rounded-full text-base focus:bg-white focus:ring-2 focus:ring-green-500 border-0 outline-none">
+                <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg pointer-events-none"></i>
+                <button type="button" id="global-search-clear" onclick="window.clearGlobalSearch()" aria-label="Search মুছুন" class="hidden-custom absolute right-10 top-2.5 w-8 h-8 rounded-full text-gray-400 hover:bg-gray-200"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto bg-gray-50 pb-20 relative">
+            <div id="search-empty-state" class="p-5">
+                <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-5 mb-5 border border-green-100">
+                    <div class="flex items-center gap-3 mb-2"><div class="w-10 h-10 rounded-xl bg-green-600 text-white flex items-center justify-center"><i class="fa-solid fa-magnifying-glass"></i></div><div><h3 class="font-bold text-gray-800">সবকিছু একসাথে খুঁজুন</h3><p class="text-xs text-gray-500">মানুষ, পোস্ট, হাট, ডিরেক্টরি ও সেবা</p></div></div>
+                    <p class="text-sm text-gray-600">নাম, বিষয় বা যেকোনো keyword লিখলেই instant result দেখাবে।</p>
+                </div>
+                <div class="flex items-center justify-between mb-3"><h4 class="text-xs font-bold text-gray-500 uppercase">ট্রেন্ডিং / এক্সপ্লোর</h4><span id="search-trending-status" class="text-[10px] text-gray-400">লোড হচ্ছে...</span></div>
+                <div id="trending-explore-grid" class="grid grid-cols-3 gap-1 bg-white rounded-xl overflow-hidden shadow-sm"><div class="col-span-3 text-center py-10"><i class="fa-solid fa-spinner fa-spin text-gray-400"></i></div></div>
+            </div>
+            <div id="search-loading-state" class="hidden-custom p-8 text-center"><div class="w-12 h-12 mx-auto mb-3 rounded-full bg-green-50 text-green-600 flex items-center justify-center"><i class="fa-solid fa-spinner fa-spin text-xl"></i></div><p class="text-sm font-bold text-gray-600">খোঁজা হচ্ছে...</p><p class="text-xs text-gray-400 mt-1">একাধিক source থেকে result আনা হচ্ছে</p></div>
+            <div id="search-results-list" class="hidden-custom p-4 space-y-5"></div>
+        </div>
+    </div>

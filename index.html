@@ -894,6 +894,7 @@
     <script type="module" src="auth.js"></script>
     <script type="module" src="service-dashboard.js"></script>
     <script type="module" src="people.js"></script>
+    <script type="module" src="search.js"></script>
     <script type="module">
         import {
             initializeApp
@@ -2057,113 +2058,6 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
                 }).join('');
             });
         }
-
-        window.toggleGlobalSearch = (open) => {
-            const m = document.getElementById('search-modal');
-            if (open) {
-                m.classList.remove('hidden-custom');
-                setTimeout(() => m.classList.add('open'), 10);
-
-                // সার্চ ইনপুট খালি করে ট্রেন্ডিং পেজ দেখানো
-                document.getElementById('global-search-input').value = '';
-                document.getElementById('trending-explore-view').classList.remove('hidden-custom');
-                document.getElementById('search-results-list').classList.add('hidden-custom');
-
-                // ট্রেন্ডিং ছবি লোড করা
-                loadTrendingPhotos();
-
-                document.getElementById('global-search-input').focus();
-            } else {
-                m.classList.remove('open');
-                setTimeout(() => m.classList.add('hidden-custom'), 300);
-            }
-        }
-
-        window.loadTrendingPhotos = () => {
-            const grid = document.getElementById('trending-explore-grid');
-
-            get(ref(db, 'posts')).then(snap => {
-                if (!snap.exists()) {
-                    grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-10">কোনো ট্রেন্ডিং ছবি নেই</p>';
-                    return;
-                }
-
-                let trendingPosts = [];
-                snap.forEach(child => {
-                    const p = child.val();
-                    // শুধুমাত্র ছবি বা ভিডিও থাকা পোস্টগুলো ফিল্টার করা
-                    if (p.image || (p.images && p.images.length > 0)) {
-                        const likes = p.likeCount || (p.likes ? Object.keys(p.likes).length : 0);
-                        const comments = p.comments ? Object.keys(p.comments).length : 0;
-                        const score = likes + comments; // ট্রেন্ডিং স্কোর (লাইক + কমেন্ট)
-
-                        trendingPosts.push({ id: child.key, score: score, ...p });
-                    }
-                });
-
-                // সবচেয়ে বেশি স্কোর পাওয়া পোস্টগুলো আগে আসবে
-                trendingPosts.sort((a, b) => b.score - a.score);
-
-                // শুধুমাত্র সেরা ১৮ টি পোস্ট নেওয়া
-                trendingPosts = trendingPosts.slice(0, 18);
-
-                if (trendingPosts.length === 0) {
-                    grid.innerHTML = '<p class="col-span-3 text-center text-gray-400 py-10">কোনো ছবি নেই</p>';
-                    return;
-                }
-
-                // গ্রিড এইচটিএমএল তৈরি করা
-                grid.innerHTML = trendingPosts.map(p => {
-                    const imgUrl = p.images && p.images.length > 0 ? p.images[0] : p.image;
-                    const isVideo = p.mediaType === 'video' || imgUrl.includes('.mp4');
-                    const videoIcon = isVideo ? '<i class="fa-solid fa-play absolute top-2 right-2 text-white drop-shadow-md text-lg"></i>' : '';
-                    const multiIcon = p.images && p.images.length > 1 ? '<i class="fa-solid fa-images absolute top-2 right-2 text-white drop-shadow-md text-sm"></i>' : '';
-
-                    return `
-                    <div onclick="openSinglePostModal('${p.id}'); toggleGlobalSearch(false)" class="relative aspect-square cursor-pointer group bg-gray-100 overflow-hidden">
-                        <img alt="" src="${imgUrl}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        ${videoIcon || multiIcon}
-                    </div>`;
-                }).join('');
-            });
-        };
-
-        window.debouncedGlobalSearch = debounce((q) => {
-            q = q.toLowerCase().trim();
-            const trendingView = document.getElementById('trending-explore-view');
-            const searchResultsView = document.getElementById('search-results-list');
-
-            // যদি ইনপুট খালি থাকে, তবে আবার ট্রেন্ডিং দেখাবে
-            if (q.length < 1) {
-                trendingView.classList.remove('hidden-custom');
-                searchResultsView.classList.add('hidden-custom');
-                return;
-            }
-
-            // টাইপ করা শুরু করলে ট্রেন্ডিং লুকিয়ে সার্চ রেজাল্ট দেখাবে
-            trendingView.classList.add('hidden-custom');
-            searchResultsView.classList.remove('hidden-custom');
-            searchResultsView.innerHTML = '<div class="text-center mt-10 text-gray-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p>খোঁজা হচ্ছে...</p></div>';
-
-            let html = '';
-
-            // মানুষ খোঁজা
-            const matchedUsers = allUsers.filter(u => u.name.toLowerCase().includes(q));
-            if (matchedUsers.length > 0) html += `<h4 class="font-bold text-xs text-gray-500 mb-2 mt-2">মানুষ</h4>` + matchedUsers.slice(0, 3).map(u => `<div onclick="openUserProfile('${u.uid}'); toggleGlobalSearch(false)" class="bg-white p-3 rounded-lg shadow-sm flex items-center gap-3 cursor-pointer"><div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">${u.name.charAt(0)}</div><span class="text-sm font-bold text-gray-800">${u.name}${checkUserBadge(u)}</span></div>`).join('');
-
-            // মার্কেট খোঁজা
-            const matchedMarket = globalMarketItems.filter(i => i.title.toLowerCase().includes(q));
-            if (matchedMarket.length > 0) html += `<h4 class="font-bold text-xs text-gray-500 mb-2 mt-4">হাট / বাজার</h4>` + matchedMarket.slice(0, 3).map(i => `<div onclick="switchPage('market'); toggleGlobalSearch(false)" class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center cursor-pointer"><span class="text-sm font-bold text-gray-800">${i.title}</span><span class="text-xs text-orange-600 font-bold">৳ ${i.price}</span></div>`).join('');
-
-            // ডিরেক্টরি খোঁজা
-            let dirMatches = [];
-            Object.values(globalDirectory || {}).forEach(catItems => Object.values(catItems).forEach(item => {
-                if (item.name.toLowerCase().includes(q)) dirMatches.push(item);
-            }));
-            if (dirMatches.length > 0) html += `<h4 class="font-bold text-xs text-gray-500 mb-2 mt-4">ডিরেক্টরি</h4>` + dirMatches.slice(0, 3).map(i => `<div class="bg-white p-3 rounded-lg shadow-sm flex justify-between items-center"><span class="text-sm font-bold text-gray-800">${i.name}</span><a href="tel:${i.phone}" class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs"><i class="fa-solid fa-phone"></i></a></div>`).join('');
-
-            searchResultsView.innerHTML = html || '<div class="text-center mt-10 text-gray-400"><p>কিছু পাওয়া যায়নি</p></div>';
-        }, 500);
 
         // --- INVITE & UPDATE LOGIC ---
         let globalShareLink = "";
@@ -3357,13 +3251,15 @@ window.addEventListener('uploadNIDEvent', async (e) => {
         // Post UI Fetcher
         async function loadPostUI() {
             try {
-                const response = await fetch('post-ui.html');
-                if (!response.ok) throw new Error('Failed to load Post UI');
-
-                const htmlText = await response.text();
+                const [postResponse, searchResponse] = await Promise.all([
+                    fetch('post-ui.html'),
+                    fetch('search-ui.html')
+                ]);
+                if (!postResponse.ok || !searchResponse.ok) throw new Error('Failed to load Post/Search UI');
+                const [htmlText, searchHtml] = await Promise.all([postResponse.text(), searchResponse.text()]);
                 const container = document.getElementById('post-ui-container');
                 if (container) {
-                    container.innerHTML = htmlText;
+                    container.innerHTML = htmlText + searchHtml;
                     console.log("Post Design Loaded Successfully!");
                 }
             } catch (error) {
