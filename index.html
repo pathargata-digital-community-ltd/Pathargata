@@ -4452,6 +4452,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                 if (id !== 'messages' && id !== 'chat-conversation') {
                     document.getElementById('chat-list-view')?.classList.remove('hidden', 'hidden-custom');
                     document.getElementById('chat-conversation-view')?.classList.add('hidden', 'hidden-custom');
+                    document.getElementById('bot-conversation-view')?.classList.add('hidden', 'hidden-custom');
                     window.currentChatUser = null;
                 }
 
@@ -4765,7 +4766,9 @@ window.addEventListener('uploadNIDEvent', async (e) => {
                         window.closeFullCommentModal(true);
                     }
                 } else if (event.state.page === 'chat-conversation') {
-                    if (event.state.uid && window.startChat) {
+                    if (event.state.bot && window.startBotChat) {
+                        window.startBotChat();
+                    } else if (event.state.uid && window.startChat) {
                         const cachedUser = window.userCache ? window.userCache[event.state.uid] : null;
                         window.startChat(event.state.uid, cachedUser ? cachedUser.name : 'User');
                     }
@@ -5128,6 +5131,7 @@ window.addEventListener('uploadNIDEvent', async (e) => {
     <script type="module" src="notifications.js"></script>
     <script type="module" src="notes.js"></script>
     <script type="module" src="messages.js"></script>
+    <script src="bot.js" defer></script>
     <!-- আমাদের নতুন ট্র্যাকিং মডিউল লিংক করা হলো -->
     <script type="module" src="tracker.js"></script>
 <!-- সাউন্ড ইফেক্টস -->

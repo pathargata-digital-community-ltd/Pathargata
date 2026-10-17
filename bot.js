@@ -4,65 +4,51 @@
 // ==========================================
 
 const BOT_UID = "smart_bot_ira";
-
 // --------------------------------------------------------
 // ১. চ্যাট স্টার্ট এবং ইনিশিয়ালাইজেশন
 // --------------------------------------------------------
+window.initAndStartBot = async () => {
+    try {
+        if (typeof window.loadMessagesUI === 'function') await window.loadMessagesUI();
+        window.startBotChat();
+    } catch (error) {
+        console.error('Bot UI load failed:', error);
+        if (typeof window.showToast === 'function') window.showToast('বট চালু করা যাচ্ছে না। আবার চেষ্টা করুন।', 'error');
+    }
+};
 window.startBotChat = () => {
-    window.currentChatUser = { uid: BOT_UID, name: "ইরা" };
-    
-    // চ্যাট লিস্ট ও কনভারসেশন ভিউ এর ইন্টারফেস হ্যান্ডলিং
+    window.currentChatUser = { uid: BOT_UID, name: 'ইরা' };
     const chatListView = document.getElementById('chat-list-view');
     const chatConvView = document.getElementById('chat-conversation-view');
-    if(chatListView) chatListView.classList.add('hidden', 'hidden-custom');
-    if(chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
-    
-    // এআই হেডার ইন্টারফেস সেটআপ
+    const botConvView = document.getElementById('bot-conversation-view');
+    if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
+    if (chatConvView) chatConvView.classList.add('hidden', 'hidden-custom');
+    if (botConvView) botConvView.classList.remove('hidden', 'hidden-custom');
     const isMuted = localStorage.getItem('maya_voice_muted') === 'true';
-    const speakerIcon = isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
-    
-    const headerName = document.getElementById('chat-header-name');
-    if (headerName) {
-        headerName.innerHTML = `ইরা <span class="bg-green-100 text-green-600 text-[9px] px-2 py-0.5 rounded-full ml-1 font-extrabold uppercase border border-green-200">AI</span> <button onclick="window.toggleMayaVoice()" class="ml-2 focus:outline-none" title="ভয়েস মিউট/আনমিউট করুন"><i id="maya-mute-icon" class="fa-solid ${speakerIcon}"></i></button>`;
-    }
-    const headerImg = document.getElementById('chat-header-img');
-    if (headerImg) {
-        headerImg.innerHTML = `<div class="w-full h-full bg-green-600 text-white flex items-center justify-center text-xl"><i class="fa-solid fa-user-astronaut"></i></div>`;
-    }
-    
-    try {
-        history.pushState({ page: 'chat-conversation', uid: BOT_UID }, "", "#bot-chat");
-    } catch(e) {}
-    
-    // ফায়ারবেসের মূল চ্যাট ফাংশনটি ব্যাকআপ নেওয়া হচ্ছে
-    if (!window.originalSendMsgBackup && window.sendMsg && window.sendMsg !== handleBotInteraction) {
-        window.originalSendMsgBackup = window.sendMsg; 
-    }
-
-    // বটের জন্য কাস্টম সেন্ড রাউটিং
-    window.sendMsg = (imageUrl = null, voiceUrl = null) => {
-        if (window.currentChatUser && window.currentChatUser.uid === BOT_UID) {
-            handleBotInteraction(imageUrl, voiceUrl);
-        } else {
-            if (typeof window.originalSendMsgBackup === 'function') {
-                window.originalSendMsgBackup(imageUrl, voiceUrl);
-            }
-        }
-    };
-
-    // ফায়ারবেস চ্যাট লিসেনার বন্ধ করে লোকাল হিস্ট্রি লোড করা হচ্ছে
-    if (window.currentChatListenerRef) {
-        import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js").then((module) => {
-            module.off(window.currentChatListenerRef);
-            window.currentChatListenerRef = null;
-        }).catch(err => console.error("Error turning off listener:", err));
-    }
-
+    const icon = document.getElementById('bot-mute-icon');
+    if (icon) icon.className = `fa-solid ${isMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600'}`;
+    try { history.pushState({ page: 'chat-conversation', uid: BOT_UID, bot: true }, '', '#bot-chat'); } catch (e) {}
     localStorage.removeItem('maya_context');
     localStorage.setItem('maya_fail_count', '0');
     loadBotMessages();
 };
-
+window.closeBotChat = () => {
+    document.getElementById('bot-conversation-view')?.classList.add('hidden', 'hidden-custom');
+    document.getElementById('chat-list-view')?.classList.remove('hidden', 'hidden-custom');
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    window.currentChatUser = null;
+};
+window.handleBotEnter = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.sendBotMsg(); }
+};
+window.sendBotMsg = () => handleBotInteraction();
+window.toggleMayaVoice = () => {
+    const nextMuted = localStorage.getItem('maya_voice_muted') !== 'true';
+    localStorage.setItem('maya_voice_muted', String(nextMuted));
+    const cls = nextMuted ? 'fa-volume-xmark text-red-500' : 'fa-volume-high text-green-600';
+    ['bot-mute-icon', 'maya-mute-icon'].forEach(id => { const el = document.getElementById(id); if (el) el.className = `fa-solid ${cls}`; });
+    if (nextMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+};
 // --------------------------------------------------------
 // ২. ওয়েলকাম মেসেজ এবং বাটন লোড
 // --------------------------------------------------------
@@ -89,52 +75,37 @@ function loadBotMessages() {
 // --------------------------------------------------------
 // ৩. মেসেজ এবং বাটন রেন্ডারিং (UI)
 // --------------------------------------------------------
+function escapeBotHtml(value) {
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 function renderBotMessages(msgs) {
-    const div = document.getElementById('messages-container');
-    let html = "";
-    
+    const div = document.getElementById('bot-messages-container');
+    if (!div) return;
+    let html = '';
     msgs.forEach((m) => {
         const isMe = m.sender === 'me';
-        const avatarHtml = isMe ? '' : `<div class="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-[12px] mr-2 shrink-0 mt-auto shadow-sm"><i class="fa-solid fa-user-astronaut"></i></div>`;
-        const bubbleColor = isMe ? 'bg-green-600 text-white rounded-[18px_18px_0_18px]' : 'bg-white border border-gray-200 text-gray-800 rounded-[18px_18px_18px_0] shadow-sm';
-        
-        html += `
-        <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-fade">
-            ${avatarHtml}
-            <div class="flex flex-col max-w-[80%]">
-                <div class="px-4 py-2.5 text-[15px] leading-relaxed ${bubbleColor}">
-                    ${m.text.replace(/\n/g, '<br>')}
-                    <div class="text-[9px] mt-1 ${isMe ? 'text-green-200 text-right' : 'text-gray-400'}">${formatBotTime(m.timestamp)}</div>
-                </div>
-                
-                <!-- Interactive Buttons (যদি থাকে) -->
-                ${m.buttons ? `
-                <div class="flex flex-wrap gap-2 mt-2">
-                    ${m.buttons.map(btn => `<button onclick="window.handleBotBtnClick('${btn}')" class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-[13px] px-3 py-1.5 rounded-full transition-all shadow-sm font-medium">${btn}</button>`).join('')}
-                </div>
-                ` : ''}
-            </div>
-        </div>`;
+        const avatar = isMe ? '' : '<div class="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-[12px] mr-2 shrink-0 mt-auto shadow-sm"><i class="fa-solid fa-user-astronaut"></i></div>';
+        const color = isMe ? 'bg-green-600 text-white rounded-[18px_18px_0_18px]' : 'bg-white border border-gray-200 text-gray-800 rounded-[18px_18px_18px_0] shadow-sm';
+        const text = escapeBotHtml(m.text).replace(/\n/g, '<br>');
+        const buttons = Array.isArray(m.buttons) ? m.buttons.map(btn => `<button type="button" data-text="${escapeBotHtml(btn)}" onclick="window.handleBotBtnClick(this.dataset.text)" class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 text-[13px] px-3 py-1.5 rounded-full transition-all shadow-sm font-medium">${escapeBotHtml(btn)}</button>`).join('') : '';
+        html += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-4 animate-fade">${avatar}<div class="flex flex-col max-w-[80%]"><div class="px-4 py-2.5 text-[15px] leading-relaxed ${color}">${text}<div class="text-[9px] mt-1 ${isMe ? 'text-green-200 text-right' : 'text-gray-400'}">${formatBotTime(m.timestamp)}</div></div>${buttons ? `<div class="flex flex-wrap gap-2 mt-2">${buttons}</div>` : ''}</div></div>`;
     });
-    
     div.innerHTML = html;
-    setTimeout(() => div.scrollTop = div.scrollHeight, 100);
+    setTimeout(() => { div.scrollTop = div.scrollHeight; }, 100);
 }
-
-// বাটন ক্লিকের হ্যান্ডলার
 window.handleBotBtnClick = (text) => {
-    // ইমোজি রিমুভ করে শুধু টেক্সট ইনপুটে দেওয়া
-    const cleanText = text.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim();
-    const input = document.getElementById('msg-input');
+    const cleanText = String(text).replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2011-\u26FF]|[\uD83E][\uDD10-\uDDFF]/g, '').trim();
+    const input = document.getElementById('bot-msg-input');
+    if (!input) return;
     input.value = cleanText;
-    window.sendMsg(); // মেসেজ সেন্ড ট্রিগার
+    window.sendBotMsg();
 };
-
-// --------------------------------------------------------
 // ৪. ইউজার ইন্টারঅ্যাকশন এবং টাইপিং ইফেক্ট
+
 // --------------------------------------------------------
 function handleBotInteraction(imageUrl, voiceUrl) {
-    const input = document.getElementById('msg-input');
+    const input = document.getElementById('bot-msg-input');
+    if (!input) return;
     const text = input.value.trim();
     
     if (!text && !imageUrl && !voiceUrl) return;
@@ -150,7 +121,7 @@ function handleBotInteraction(imageUrl, voiceUrl) {
     renderBotMessages(botHistory);
     input.value = "";
     
-    const typingStatus = document.getElementById('chat-typing-status');
+    const typingStatus = document.getElementById('bot-typing-status');
     if(typingStatus) {
         typingStatus.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-pen"></i> Ira is typing...</span>';
         typingStatus.classList.remove('hidden');

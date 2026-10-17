@@ -34,6 +34,8 @@ window.startChat = (uid, name) => {
         
         const chatListView = document.getElementById('chat-list-view');
         const chatConvView = document.getElementById('chat-conversation-view');
+        const botConvView = document.getElementById('bot-conversation-view');
+        if (botConvView) botConvView.classList.add('hidden', 'hidden-custom');
         
         if (chatListView) chatListView.classList.add('hidden', 'hidden-custom');
         if (chatConvView) chatConvView.classList.remove('hidden', 'hidden-custom');
@@ -80,6 +82,8 @@ window.startChat = (uid, name) => {
 window.closeChat = () => {
     const chatListView = document.getElementById('chat-list-view');
     const chatConvView = document.getElementById('chat-conversation-view');
+    const botConvView = document.getElementById('bot-conversation-view');
+    if (botConvView) botConvView.classList.add('hidden', 'hidden-custom');
     
     if (chatListView) chatListView.classList.remove('hidden', 'hidden-custom');
     if (chatConvView) chatConvView.classList.add('hidden', 'hidden-custom');
