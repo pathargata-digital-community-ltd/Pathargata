@@ -6,6 +6,18 @@ import {
 
 window.allUsers = window.allUsers || [];
 
+// Keep this module independent from the core runtime. The core debounce helper
+// is declared later in index.html, so relying on window.debounce can stop the
+// entire module before its friend-request listeners are registered.
+const debounce = (callback, delay = 300) => {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => callback(...args), delay);
+    };
+};
+
+
         function renderPeopleList(users, isSearch) {
             const div = document.getElementById('users-list');
             let html = isSearch ? `<p class="text-xs font-bold text-green-600 mb-2">Search Results (${users.length})</p>` : '';
@@ -22,12 +34,12 @@ window.allUsers = window.allUsers || [];
                 return `<div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-row items-center justify-between gap-3"><div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onclick="window.openUserProfile('${u.uid}')">${avatar}<div class="min-w-0"><h4 class="font-bold text-gray-900 text-base truncate">${window.escapeHTML(u.name)}${badge}</h4><p class="text-xs text-gray-500 truncate">${window.escapeHTML(u.profession) || 'সদস্য'}</p></div></div><div class="shrink-0"><button type="button" id="btn-req-${u.uid}" onclick="toggleFriendRequest('${u.uid}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg font-bold text-xs hover:bg-blue-700 transition shadow-sm active:scale-95 flex items-center gap-1"><i class="fa-solid fa-user-plus"></i> Add</button></div></div>`;
             }).join('');
             div.innerHTML = html;
-            users.forEach(u => checkRequestStatus(u.uid));
+            users.forEach(u => window.checkRequestStatus(u.uid));
         }
 
 
                        // --- ULTRA OPTIMIZED SUGGESTIONS (LOW DATA READ, ALWAYS 20 USERS) ---
-        window.suggestionPool = [];
+        let suggestionPool = [];
         let displayedUsersCount = 0;
         let lastFetchedKeyForPool = null;
         let isFetchingPool = false;
@@ -224,7 +236,7 @@ window.allUsers = window.allUsers || [];
         }
 
         // Debounced Search Handler for People
-        window.debouncedPeopleSearch = window.debounce((q) => {
+        window.debouncedPeopleSearch = debounce((q) => {
             q = q.trim();
             const div = document.getElementById('users-list');
             if (!q) {
@@ -465,4 +477,3 @@ peoplePage.addEventListener('touchend', (e) => {
         ptrIndicator.style.height = '0px';
     }
 });
-
