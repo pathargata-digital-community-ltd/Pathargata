@@ -5,6 +5,7 @@
  */
 (function loadUIComponents() {
     const fragments = [
+        'auth-ui.html',
         'components/runtime-shell.html',
         'components/app-shell.html',
         'components/modal-containers.html'
