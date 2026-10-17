@@ -988,9 +988,9 @@
                 <div class="flex flex-col items-center mb-2">
                     <label class="relative cursor-pointer w-24 h-24 rounded-full bg-gray-50 border-2 border-dashed border-blue-300 flex items-center justify-center hover:bg-gray-100 overflow-hidden transition-all">
                         <img id="reg-img-preview" class="w-full h-full object-cover hidden">
-                        <div id="reg-img-placeholder" class="text-center text-blue-500 text-xs font-bold">
+                        <span id="reg-img-placeholder" class="text-center text-blue-500 text-xs font-bold">
                             <i class="fa-solid fa-camera text-2xl mb-1"></i><br>ছবি দিন
-                        </div>
+                        </span>
                         <input type="file" id="reg-profile-pic" accept="image/*" class="hidden" onchange="previewRegImage(this)">
                     </label>
                     <p class="text-[10px] text-gray-500 mt-2">প্রোফাইল ছবি (ঐচ্ছিক)</p>
@@ -1118,7 +1118,7 @@
                     <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg"><i class="fa-solid fa-users-gear"></i></div> <span class="font-bold text-base">একাউন্ট পরিবর্তন</span>
                 </li>
 
-                <div class="border-t mx-6 my-2 border-gray-100"></div>
+                <li role="separator" class="border-t mx-6 my-2 border-gray-100"></li>
                 <li id="sidebar-help" onclick="toggleSidebar(false); setTimeout(()=>alert('যোগাযোগ: help@patharghata.com'), 50)" class="sidebar-item px-6 py-3 cursor-pointer flex items-center gap-4 text-gray-500 hover:bg-gray-50 transition-all"><i class="fa-solid fa-circle-question w-6 text-center"></i> <span class="text-sm font-medium">Help & Support</span></li>
             </ul>
         </div>
@@ -1137,78 +1137,8 @@
         <img id="full-image-view" class="max-w-full max-h-screen object-contain p-2 transition-transform duration-300">
     </div>
 
-    <!-- Tag Friends Modal -->
-    <div id="tag-friends-modal" class="fixed inset-0 bg-white z-[350] flex flex-col hidden-custom">
-        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="closeTagModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
-            <h3 class="font-bold text-gray-800 text-lg">বন্ধুদের ট্যাগ করুন</h3>
-            <button onclick="saveTags()" class="ml-auto bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>
-        </div>
-        <div id="tag-friends-list" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50 pb-20">
-            <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
-        </div>
-    </div>
-
-    <!-- Feeling Modal -->
-    <div id="feeling-modal" class="fixed inset-0 bg-white z-[350] flex flex-col hidden-custom">
-        <div class="flex items-center gap-3 p-3 border-b bg-white shadow-sm z-10 pt-safe sticky top-0">
-            <button onclick="closeFeelingModal()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
-            <h3 class="font-bold text-gray-800 text-base">কি অনুভব করছেন?</h3>
-        </div>
-        <div class="flex-1 overflow-y-auto p-3 grid grid-cols-2 gap-2 bg-gray-50 pb-20">
-            <div onclick="selectFeeling('Happy', '😊')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😊</span> <span class="font-semibold text-sm text-gray-700">Happy</span></div>
-            <div onclick="selectFeeling('Loved', '🥰')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🥰</span> <span class="font-semibold text-sm text-gray-700">Loved</span></div>
-            <div onclick="selectFeeling('Sad', '😔')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😔</span> <span class="font-semibold text-sm text-gray-700">Sad</span></div>
-            <div onclick="selectFeeling('Excited', '🤩')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤩</span> <span class="font-semibold text-sm text-gray-700">Excited</span></div>
-            <div onclick="selectFeeling('Angry', '😠')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😠</span> <span class="font-semibold text-sm text-gray-700">Angry</span></div>
-            <div onclick="selectFeeling('Blessed', '😇')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😇</span> <span class="font-semibold text-sm text-gray-700">Blessed</span></div>
-            <div onclick="selectFeeling('Tired', '😫')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😫</span> <span class="font-semibold text-sm text-gray-700">Tired</span></div>
-            <div onclick="selectFeeling('Sleepy', '😴')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😴</span> <span class="font-semibold text-sm text-gray-700">Sleepy</span></div>
-            <div onclick="selectFeeling('Cool', '😎')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">😎</span> <span class="font-semibold text-sm text-gray-700">Cool</span></div>
-            <div onclick="selectFeeling('Crazy', '🤪')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤪</span> <span class="font-semibold text-sm text-gray-700">Crazy</span></div>
-            <div onclick="selectFeeling('Sick', '🤒')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🤒</span> <span class="font-semibold text-sm text-gray-700">Sick</span></div>
-            <div onclick="selectFeeling('Celebrating', '🎉')" class="bg-white p-2.5 rounded-lg border border-gray-100 flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition"><span class="text-xl">🎉</span> <span class="font-semibold text-sm text-gray-700">Celebrating</span></div>
-        </div>
-    </div>
-
-    <div id="search-modal" class="fixed inset-0 bg-white z-[190] flex flex-col transition-opacity duration-300 opacity-0 pointer-events-none">
-        <div class="flex items-center gap-3 p-4 border-b bg-white shadow-sm z-20 pt-safe sticky top-0">
-            <button onclick="toggleGlobalSearch(false)" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-xl"></i></button>
-            <div class="flex-1 relative">
-                <input type="text" id="global-search-input" onkeyup="debouncedGlobalSearch(this.value)" placeholder="মানুষ, পোস্ট বা পণ্য খুঁজুন..." class="w-full bg-gray-100 py-3 pl-4 pr-10 rounded-full text-base focus:bg-white focus:ring-1 focus:ring-green-500 border-0">
-                <i class="fa-solid fa-search absolute right-4 top-3.5 text-gray-400 text-lg"></i>
-            </div>
-        </div>
-        
-        <div class="flex-1 overflow-y-auto bg-gray-50 pb-20 relative">
-            <!-- 1. Trending Explore View (Instagram Style) -->
-            <div id="trending-explore-view" class="w-full">
-                <!-- Grid Container -->
-                <div id="trending-explore-grid" class="grid grid-cols-3 gap-0.5 bg-white">
-                    <div class="col-span-3 text-center py-10"><i class="fa-solid fa-spinner fa-spin text-gray-400"></i></div>
-                </div>
-            </div>
-
-            <!-- 2. Search Results View (Hidden by default) -->
-            <div id="search-results-list" class="p-4 space-y-4 hidden-custom">
-                <!-- Search results will load here -->
-            </div>
-        </div>
-    </div>
-
     <!-- COMMENTS UI CONTAINER -->
     <div id="comments-ui-container"></div>
-
-    <!-- SINGLE POST MODAL -->
-    <div id="single-post-modal" class="fixed inset-0 bg-white z-[180] flex flex-col hidden-custom">
-        <div class="flex items-center gap-2 p-4 border-b bg-white shadow-sm z-10 sticky top-0 pt-safe">
-            <button onclick="document.getElementById('single-post-modal').classList.add('hidden-custom')" class="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600"><i class="fa-solid fa-arrow-left text-lg"></i></button>
-            <h3 class="font-bold text-gray-800 text-lg">পোস্ট</h3>
-        </div>
-        <div id="single-post-content" class="flex-1 overflow-y-auto p-4 bg-gray-100 pb-20">
-            <!-- Post content injected here -->
-        </div>
-    </div>
 
     <!-- IN-APP WEBVIEW / BROWSER MODAL -->
     <div id="webview-modal" class="fixed inset-0 bg-white z-[300] hidden-custom flex flex-col transition-transform duration-300 transform translate-y-full">
@@ -1590,65 +1520,8 @@
             <div id="settings-ui-container"></div>
 
             <div id="verification-ui-container"></div>
-            
-                        <!-- Payment Section -->
-                        <div id="verification-payment-section" class="hidden bg-white p-4 rounded-xl shadow-sm mb-6">
-                            <h4 class="font-bold text-sm text-gray-700 mb-3">পেমেন্ট মেথড:</h4>
-                            <div class="grid grid-cols-3 gap-2 mb-4">
-                                <div onclick="selectPaymentMethod('Bkash')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-bkash">
-                                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7-3pW0rX1C7s7s7s7s7s7s7s7s7s7s7s7s7s&s" alt="Bkash" loading="lazy" class="h-8 object-contain">
-                                    <span class="text-xs font-bold mt-1">Bkash</span>
-                                </div>
-                                <div onclick="selectPaymentMethod('Nagad')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-nagad">
-                                    <img src="https://downloadr2.apkmirror.com/wp-content/uploads/2019/07/5d26305f8c679.png" alt="Nagad" class="h-8 object-contain">
-                                    <span class="text-xs font-bold mt-1">Nagad</span>
-                                </div>
-                                <div onclick="selectPaymentMethod('Rocket')" class="payment-method border p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition" id="pay-rocket">
-                                    <img src="https://seeklogo.com/images/D/dutch-bangla-rocket-logo-B4D1CC458D-seeklogo.com.png" alt="Rocket" class="h-8 object-contain">
-                                    <span class="text-xs font-bold mt-1">Rocket</span>
-                                </div>
-                            </div>
-                            <input type="hidden" id="selected-payment-method">
 
-                            <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mb-4">
-                                <p class="text-xs text-gray-600">দয়া করে <span id="admin-number" class="font-bold text-gray-900 text-sm">...</span> নম্বরে Send Money করুন।</p>
-                            </div>
 
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">সেন্ডার নম্বর</label>
-                                    <input type="tel" id="verify-payment-number" placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন" class="w-full bg-gray-50 border p-3 rounded-lg text-sm">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">Transaction ID</label>
-                                    <input type="text" id="verify-trx-id" placeholder="TrxID (Example: 9H7D...)" class="w-full bg-gray-50 border p-3 rounded-lg text-sm uppercase">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Documents Section -->
-                        <div id="verification-docs-section" class="hidden bg-white p-4 rounded-xl shadow-sm mb-6">
-                            <h4 class="font-bold text-sm text-gray-700 mb-3">প্রয়োজনীয় কাগজপত্র:</h4>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">NID / জন্ম নিবন্ধন নম্বর</label>
-                                    <input type="text" id="verify-nid" placeholder="নম্বর দিন" class="w-full bg-gray-50 border p-3 rounded-lg text-sm">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">কার্ডের ছবি (NID/Birth Certificate)</label>
-                                    <input type="file" id="verify-doc-img" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm">
-                                </div>
-                                <div>
-                                    <label class="text-xs font-bold text-gray-500 block mb-1">আপনার সদ্য তোলা ছবি</label>
-                                    <input type="file" id="verify-user-img" accept="image/*" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm">
-                                </div>
-                            </div>
-                        </div>
-
-                        <button onclick="submitVerification()" id="btn-verify-submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition flex justify-center items-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed hidden">সাবমিট করুন</button>
-                    </div>
-                </div>
-            </div>
 
         </main>
 
