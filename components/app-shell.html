@@ -96,44 +96,7 @@
 
             <div id="notifications-ui-container"></div>
 
-            <div id="page-people" class="hidden p-0 min-h-screen bg-gray-50 pb-20">
-                <div class="bg-white p-4 sticky top-0 pt-safe z-30 shadow-sm border-b">
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xl font-bold text-gray-800">মানুষ খুজুন</h2>
-                    </div>
-                    <div class="relative">
-                        <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-400 text-lg"></i>
-                        <div class="flex gap-2">
-                            <input type="text" id="search-people" onkeyup="debouncedPeopleSearch(this.value)" placeholder="নাম দিয়ে খুজুন..." class="w-full bg-gray-100 p-3 pl-12 rounded-full text-base focus:bg-white border border-transparent focus:border-green-200">
-                        </div>
-                    </div>
-                </div>
-                <div id="pull-to-refresh-indicator" class="w-full flex justify-center items-center h-0 overflow-hidden transition-all duration-300 bg-gray-50 z-20">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    </div>
-
-                <div class="p-4 space-y-6">
-                    <div id="friend-requests-section" class="hidden">
-                        <h3 class="font-bold text-gray-700 mb-2 border-l-4 border-yellow-500 pl-2 text-sm">ফ্রেন্ড রিকোয়েস্ট</h3>
-                        <div id="friend-requests-list" class="space-y-2"></div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-bold text-gray-700 border-l-4 border-green-500 pl-2 text-sm">আমার বন্ধু</h3><button type="button" onclick="switchPage('friends-list')" class="text-xs text-green-600 font-bold hover:underline">সব দেখুন</button>
-                        </div>
-                        <div id="my-friends-preview-list" class="grid grid-cols-2 gap-2">
-                            <p class="col-span-2 text-center text-gray-400 text-xs py-2">লোড হচ্ছে...</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-700 mb-2 border-l-4 border-blue-500 pl-2 text-sm">সাজেশন / রেজাল্ট</h3>
-                        <div id="users-list" class="space-y-4">
-                            <p class="text-center text-gray-400 text-sm">অপেক্ষা করুন...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            <!-- PEOPLE_UI_SLOT -->
             <div id="page-messages" class="hidden p-0 min-h-screen bg-white pb-20">
     <!-- সাদা স্ক্রিন প্রতিরোধ করতে ডিফল্ট লোডার -->
     <div class="flex flex-col items-center justify-center min-h-[60vh] py-10">
@@ -146,14 +109,6 @@
 
             <!-- Profile UI Container (Fetched dynamically) -->
 <div id="profile-ui-container"></div>
-
-            <div id="page-friends-list" class="hidden p-4 min-h-screen bg-gray-50 pb-20">
-                <button type="button" onclick="switchPage('people')" class="mb-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition"><i class="fa-solid fa-arrow-left"></i> ফিরে যান</button>
-                <h2 class="text-xl font-bold mb-5 border-l-4 border-green-500 pl-3 text-gray-700">সকল বন্ধু</h2>
-                <div id="all-friends-container" class="grid grid-cols-1 gap-3">
-                    <p class="text-center text-gray-400 mt-10">লোড হচ্ছে...</p>
-                </div>
-            </div>
 
             <div id="blood-ui-container"></div>
 

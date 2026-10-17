@@ -16,7 +16,8 @@
         const authUI = loadFragment('auth-ui.html');
         const runtimeShell = loadFragment('components/runtime-shell.html');
         const appShell = loadFragment('components/app-shell.html')
-            .replace('<!-- SERVICE_DASHBOARD_SLOT -->', loadFragment('service-dashboard.html'));
+            .replace('<!-- SERVICE_DASHBOARD_SLOT -->', loadFragment('service-dashboard.html'))
+            .replace('<!-- PEOPLE_UI_SLOT -->', loadFragment('people-ui.html'));
         const modalContainers = loadFragment('components/modal-containers.html');
         document.write([authUI, runtimeShell, appShell, modalContainers].join('\n'));
     } catch (error) {
