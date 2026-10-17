@@ -1,8 +1,8 @@
 {
   "id": "/Pathargata/",
-  "name": "Patharghata Digital Community Ltd",
-  "short_name": "Patharghata Digital",
-  "description": "Patharghata Digital Community Ltd",
+  "name": "পাথরঘাটা ডিজিটাল কমিউনিটি",
+  "short_name": "পাথরঘাটা ডিজিটাল",
+  "description": "পাথরঘাটা উপজেলার স্থানীয় তথ্য, স্মার্ট সেবা, জরুরি তথ্য ও নাগরিক কমিউনিটি প্ল্যাটফর্ম।",
   "start_url": "/Pathargata/index.html",
   "display": "standalone",
   "orientation": "portrait",
