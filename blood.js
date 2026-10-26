@@ -135,17 +135,19 @@ window.sendEmergencyBloodRequest = async () => {
         
         if (donorsSnap.exists()) {
             const matchedDonors = Object.values(donorsSnap.val()).filter(d => d.bloodGroup === group && d.uid !== window.currentUser.uid);
-            const deliveryResults = await Promise.all(matchedDonors.map(d => window.sendAppNotification?.(d.uid, {
+            matchedDonors.forEach(d => {
+                push(ref(db, `notifications/${d.uid}`), {
                     type: 'blood_req',
                     group, location, contact,
                     fromName: window.userDetails.name,
                     timestamp: Date.now(),
                     read: false
-                })));
-            notificationCount = deliveryResults.filter(Boolean).length;
+                });
+            });
+            notificationCount = matchedDonors.length;
         }
         
-        window.showToast(`রক্তদানের অনুরোধ প্রকাশিত হয়েছে। ${notificationCount} জন ডোনার নোটিফিকেশন পাবেন।`, "success");
+        window.showToast(`রিকোয়েস্ট লাইভ হয়েছে এবং ${notificationCount} জনকে নোটিফিকেশন পাঠানো হয়েছে!`, "success");
         window.toggleBloodRequestModal(false);
         
         ['req-blood-group', 'req-location', 'req-contact', 'req-details'].forEach(id => document.getElementById(id).value = "");

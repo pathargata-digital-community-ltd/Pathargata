@@ -333,7 +333,7 @@ window.submitCommentLogic = (postId, inputElement) => {
 };
 
 function sendNotification(targetUid, postId, fromName, type) {
-    window.sendAppNotification?.(targetUid, {
+    push(ref(window.db, `notifications/${targetUid}`), {
         type: type,
         fromUid: window.currentUser.uid,
         fromName: fromName,
@@ -426,7 +426,7 @@ window.autoPostSuggestion = (postId, text, btnElement) => {
         get(ref(window.db, `posts/${postId}`)).then(s => {
             const p = s.val();
             if (p && p.uid !== window.currentUser.uid) {
-                window.sendAppNotification?.(p.uid, {
+                push(ref(window.db, `notifications/${p.uid}`), {
                     type: 'comment',
                     fromUid: window.currentUser.uid,
                     fromName: myName,

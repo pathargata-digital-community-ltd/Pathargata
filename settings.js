@@ -3,59 +3,28 @@
 import { ref, update, set, get, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const showSettingsToast = (message, type = 'success') => {
-    if (typeof window.showToast === 'function') window.showToast(message, type);
-};
-
-const applyNotificationDependencies = () => {
-    const master = document.getElementById('toggle-master-push');
-    const isEnabled = !master || master.checked;
-    document.querySelectorAll('.notification-setting-row input[type="checkbox"]').forEach((input) => {
-        input.disabled = !isEnabled;
-        input.closest('.notification-setting-row')?.classList.toggle('opacity-50', !isEnabled);
-    });
-};
-
 // ১. প্রাইভেসি টগল (Hide Contact)
-window.togglePrivacy = async (checked) => {
-    if (!window.currentUser) return showSettingsToast("সেটিংস সংরক্ষণ করতে লগইন করুন", "error");
-    const previousValue = window.userDetails?.privacy_hide_contact === true;
-    try {
-        await update(ref(window.db, `users/${window.currentUser.uid}`), { privacy_hide_contact: checked });
-        if (window.userDetails) window.userDetails.privacy_hide_contact = checked;
-        showSettingsToast("প্রাইভেসি সেটিংস সংরক্ষণ হয়েছে");
-    } catch (error) {
-        const toggle = document.getElementById('setting-privacy-toggle');
-        if (toggle) toggle.checked = previousValue;
-        showSettingsToast("সেটিংস সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।", "error");
-        console.error("Privacy setting update failed:", error);
-    }
+window.togglePrivacy = (checked) => {
+    if (!window.currentUser) return;
+    update(ref(window.db, 'users/' + window.currentUser.uid), {
+        privacy_hide_contact: checked
+    }).then(() => window.showToast("সেটিংস আপডেট হয়েছে"));
 };
 
 // ২. ফন্ট সাইজ পরিবর্তন
 window.changeFontSize = (size) => {
-    if (!['small', 'normal', 'large'].includes(size)) size = 'normal';
     const body = document.getElementById('body-main');
     if(body) {
         body.classList.remove('text-small', 'text-large');
         if (size !== 'normal') body.classList.add('text-' + size);
     }
     localStorage.setItem('fontSize', size);
-    document.querySelectorAll('[data-font-size]').forEach((button) => {
-        const isActive = button.dataset.fontSize === size;
-        button.setAttribute('aria-pressed', String(isActive));
-        button.classList.toggle('bg-green-50', isActive);
-        button.classList.toggle('text-green-700', isActive);
-        button.classList.toggle('border-green-200', isActive);
-        button.classList.toggle('font-bold', isActive);
-        button.classList.toggle('bg-gray-100', !isActive);
-    });
 };
 
 // ৩. ডাটা সেভার মোড
 window.toggleDataSaver = (checked) => {
     localStorage.setItem('dataSaver', checked);
-    showSettingsToast(checked ? "ডেটা সেভার চালু হয়েছে" : "ডেটা সেভার বন্ধ হয়েছে");
+    window.showToast(checked ? "ডাটা সেভার চালু হয়েছে (অটো-প্লে বন্ধ)" : "ডাটা সেভার বন্ধ হয়েছে");
 };
 
 // ৪. ক্যাশ ক্লিয়ার করা
@@ -177,55 +146,38 @@ window.checkForUpdates = () => {
 
 // ৬. একাউন্ট ডিলিট করা
 window.handleDeleteAccount = async () => {
-    if (!window.currentUser) return showSettingsToast("এই কাজের জন্য লগইন করুন", "error");
-    const confirmed = confirm("অ্যাকাউন্ট মুছে ফেলার অনুরোধ পাঠাবেন? অনুরোধটি অ্যাডমিন পর্যালোচনা করবেন। এগোতে পরের ধাপে DELETE লিখুন।");
-    if (!confirmed || prompt("নিশ্চিত করতে DELETE লিখুন:") !== 'DELETE') return;
+    if (prompt("একাউন্ট ডিলিট করতে 'DELETE' লিখুন:") === 'DELETE') {
+        const uid = window.currentUser.uid;
+        
+        try {
+            await set(ref(window.db, `account_deletion_requests/${uid}`), {
+                uid: uid,
+                name: window.userDetails.name,
+                email: window.userDetails.email,
+                phone: window.userDetails.phone || 'N/A',
+                profile_pic: window.userDetails.profile_pic || '',
+                timestamp: Date.now()
+            });
 
-    const uid = window.currentUser.uid;
-    try {
-        await set(ref(window.db, `account_deletion_requests/${uid}`), {
-            uid,
-            name: window.userDetails?.name || window.currentUser.displayName || '',
-            email: window.userDetails?.email || window.currentUser.email || '',
-            phone: window.userDetails?.phone || 'N/A',
-            profile_pic: window.userDetails?.profile_pic || '',
-            timestamp: Date.now(),
-            status: 'pending'
-        });
-        await update(ref(window.db, `users/${uid}`), { status: 'deletion_requested', deletion_requested_at: Date.now() });
-        alert("আপনার অ্যাকাউন্ট মুছে ফেলার অনুরোধ জমা হয়েছে। এটি এখনো সম্পূর্ণভাবে মুছে যায়নি; অ্যাডমিন পর্যালোচনার পর ব্যবস্থা নেবেন।");
-        await signOut(window.auth);
-        window.location.reload();
-    } catch (error) {
-        showSettingsToast("অনুরোধ জমা হয়নি। আবার চেষ্টা করুন।", "error");
-        console.error("Account deletion request failed:", error);
+            await update(ref(window.db, `users/${uid}`), {
+                status: 'deleted',
+                deleted_at: Date.now()
+            });
+
+            alert("আপনার একাউন্ট সফলভাবে ডিলিট করা হয়েছে।");
+            await signOut(window.auth);
+            window.location.reload();
+            
+        } catch (error) {
+            alert("সমস্যা হয়েছে: " + error.message);
+        }
     }
 };
 
 // ৭. ট্যাগিং ও অন্যান্য সেটিংস লোড করা
 window.initSettingsPage = () => {
-    const user = window.userDetails || {};
-    const s = user.settings || {};
-
-    const name = document.getElementById('settings-profile-name');
-    if (name) name.textContent = user.name || window.currentUser?.displayName || 'প্রোফাইল';
-    const contact = document.getElementById('settings-profile-contact');
-    if (contact) contact.textContent = user.email || user.phone || window.currentUser?.email || 'অ্যাকাউন্টের তথ্য';
-    const avatar = document.getElementById('settings-profile-avatar');
-    if (avatar) {
-        avatar.innerHTML = '<i class="fa-solid fa-user"></i>';
-        if (user.profile_pic) {
-            const image = document.createElement('img');
-            image.src = user.profile_pic;
-            image.alt = '';
-            image.className = 'w-full h-full object-cover';
-            avatar.innerHTML = '';
-            avatar.appendChild(image);
-        }
-    }
-
-    const privacyToggle = document.getElementById('setting-privacy-toggle');
-    if (privacyToggle) privacyToggle.checked = user.privacy_hide_contact === true;
+    if (!window.userDetails || !window.userDetails.settings) return;
+    const s = window.userDetails.settings;
     
     // Tagging permission
     const tagSelect = document.getElementById('setting-tag-permission');
@@ -235,26 +187,9 @@ window.initSettingsPage = () => {
     const onlineToggle = document.getElementById('setting-online-toggle');
     if (onlineToggle) onlineToggle.checked = s.showOnline !== false; // default true
     
-    // সব নোটিফিকেশন পছন্দ সংরক্ষিত মান থেকে লোড করা
-    const notificationDefaults = {
-        masterPush: true,
-        bloodAlert: true,
-        marketAlert: true,
-        messageAlert: true,
-        postAlert: true
-    };
-    Object.entries(notificationDefaults).forEach(([key, defaultValue]) => {
-        const input = document.getElementById(`toggle-${key === 'masterPush' ? 'master-push' : key.replace(/([A-Z])/g, '-$1').toLowerCase()}`);
-        if (input) input.checked = s[key] === undefined ? defaultValue : s[key] !== false;
-    });
-    applyNotificationDependencies();
-
-    const themeToggle = document.getElementById('setting-dark-mode-toggle');
-    if (themeToggle) themeToggle.checked = localStorage.getItem('theme') === 'dark' || document.body.classList.contains('dark-mode');
-    const savedFontSize = localStorage.getItem('fontSize') || 'normal';
-    window.changeFontSize(savedFontSize);
-    const dataSaverToggle = document.getElementById('setting-data-saver-toggle');
-    if (dataSaverToggle) dataSaverToggle.checked = localStorage.getItem('dataSaver') === 'true';
+    // Push notifications
+    const masterPush = document.getElementById('toggle-master-push');
+    if (masterPush) masterPush.checked = s.masterPush !== false;
 };
 
 // ৮. ব্লকড ইউজার লিস্ট মডাল ওপেন ও ডেটা লোড
