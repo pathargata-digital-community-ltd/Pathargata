@@ -1400,6 +1400,10 @@ if (refUid) {
         // সাউন্ড প্লে করার মাস্টার ফাংশন
         window.playSound = (type) => {
             try {
+                if (type === 'message') {
+                    const preferences = window.userDetails?.settings || {};
+                    if (preferences.masterPush === false || preferences.messageAlert === false) return;
+                }
                 let sound = document.getElementById(type + '-sound');
                 if (sound) {
                     sound.currentTime = 0;
@@ -1958,10 +1962,74 @@ if (window.AndroidBridge && window.AndroidBridge.startBackgroundListener) {
 
         function loadSettingsData() {
             const s = userDetails.settings || {};
-            document.getElementById('toggle-blood-alert').checked = s.bloodAlert !== false;
-            document.getElementById('toggle-market-alert').checked = s.marketAlert !== false;
+            const defaults = { masterPush: true, bloodAlert: true, marketAlert: true, messageAlert: true, postAlert: true };
+            Object.entries(defaults).forEach(([key, defaultValue]) => {
+                const inputId = `toggle-${key === 'masterPush' ? 'master-push' : key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+                const input = document.getElementById(inputId);
+                if (input) input.checked = s[key] === undefined ? defaultValue : s[key] !== false;
+            });
+            const masterEnabled = document.getElementById('toggle-master-push')?.checked !== false;
+            document.querySelectorAll('.notification-setting-row input[type="checkbox"]').forEach((input) => {
+                input.disabled = !masterEnabled;
+                input.closest('.notification-setting-row')?.classList.toggle('opacity-50', !masterEnabled);
+            });
         }
-        window.updateSettings = (key, value) => update(ref(db, `users/${window.currentUser.uid}/settings/${key}`), value).then(() => showToast("সেটিংস আপডেট হয়েছে"));
+        window.updateSettings = async (key, value, control = null) => {
+            if (!window.currentUser) {
+                if (control && typeof control.checked === 'boolean') control.checked = !value;
+                return showToast("সেটিংস সংরক্ষণ করতে লগইন করুন", "error");
+            }
+            const defaults = { masterPush: true, bloodAlert: true, marketAlert: true, messageAlert: true, postAlert: true, showOnline: true, tagPermission: 'everyone' };
+            const settings = window.userDetails?.settings || userDetails.settings || {};
+            const previousValue = settings[key] === undefined ? (defaults[key] ?? value) : settings[key];
+            try {
+                await update(ref(db, `users/${window.currentUser.uid}/settings`), { [key]: value });
+                settings[key] = value;
+                if (window.userDetails) window.userDetails.settings = settings;
+                userDetails.settings = settings;
+                if (key === 'masterPush') {
+                    const enabled = value !== false;
+                    document.querySelectorAll('.notification-setting-row input[type="checkbox"]').forEach((input) => {
+                        input.disabled = !enabled;
+                        input.closest('.notification-setting-row')?.classList.toggle('opacity-50', !enabled);
+                    });
+                }
+                showToast("সেটিংস সংরক্ষণ হয়েছে", "success");
+            } catch (error) {
+                if (control && typeof control.checked === 'boolean') control.checked = previousValue !== false;
+                if (control && control.tagName === 'SELECT') control.value = previousValue;
+                showToast("সেটিংস সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।", "error");
+                console.error("Settings update failed:", error);
+            }
+        };
+
+        window.sendAppNotification = async (recipientUid, notification) => {
+            if (!recipientUid || !notification || !window.db) return false;
+            try {
+                let preferences = {};
+                if (window.currentUser?.uid === recipientUid) {
+                    preferences = window.userDetails?.settings || {};
+                } else {
+                    const snapshot = await get(ref(db, `users/${recipientUid}/settings`));
+                    preferences = snapshot.val() || {};
+                }
+                if (preferences.masterPush === false) return false;
+                const categoryByType = {
+                    blood_req: 'bloodAlert',
+                    market_update: 'marketAlert',
+                    like: 'postAlert',
+                    comment: 'postAlert',
+                    reply: 'postAlert'
+                };
+                const category = categoryByType[notification.type];
+                if (category && preferences[category] === false) return false;
+                await push(ref(db, `notifications/${recipientUid}`), notification);
+                return true;
+            } catch (error) {
+                console.error("Notification preference check failed:", error);
+                return false;
+            }
+        };
 
         function updateUIWithUserData() {
             const finalName = userDetails.name || (window.currentUser?.displayName) || "অজ্ঞাত";

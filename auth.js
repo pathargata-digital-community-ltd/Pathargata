@@ -186,7 +186,7 @@ await runTransaction(ref(getDb(), `users/${inviterUid}/referral_count`), (curren
 });
 
     // রেফারারকে নোটিফিকেশন পাঠানো
-    await push(ref(getDb(), `notifications/${inviterUid}`), {
+    await window.sendAppNotification?.(inviterUid, {
         type: 'referral_bonus',
         fromName: name,
         text: `আপনার রেফারেন্সে ${name} যুক্ত হয়েছে! আপনি ${window.dynamicPoints.refer} পয়েন্ট পেয়েছেন।`,
@@ -526,4 +526,3 @@ await runTransaction(ref(getDb(), `users/${inviterUid}/referral_count`), (curren
                 btn.disabled = false;
             });
         };
-

@@ -292,7 +292,7 @@ window.toggleLike = (postId) => {
             if(window.awardPoints) window.awardPoints('like');
             get(ref(getDb(), `posts/${postId}`)).then(postSnap => {
                 const post = postSnap.val();
-                if (post && post.uid !== window.currentUser.uid) push(ref(getDb(), `notifications/${post.uid}`), {
+                if (post && post.uid !== window.currentUser.uid) window.sendAppNotification?.(post.uid, {
                     type: 'like',
                     fromUid: window.currentUser.uid,
                     fromName: window.userDetails.name,
