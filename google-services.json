@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "991014085926",
+    "firebase_url": "https://pathargata-digital-comnity-ltd-default-rtdb.firebaseio.com",
+    "project_id": "pathargata-digital-comnity-ltd",
+    "storage_bucket": "pathargata-digital-comnity-ltd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991014085926:android:d5d9155300f0675ded4de7",
+        "android_client_info": {
+          "package_name": "com.pathargata.digital.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "991014085926-9a0ur378e3misc8o2s4k71lpmk1ov4mf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfI-THOXOvhyL7LumZVKixtTVwF94CjsI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "991014085926-9a0ur378e3misc8o2s4k71lpmk1ov4mf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991014085926:android:b249e489d8424433ed4de7",
+        "android_client_info": {
+          "package_name": "com.pathargata.digital.ltd"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "991014085926-9a0ur378e3misc8o2s4k71lpmk1ov4mf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBfI-THOXOvhyL7LumZVKixtTVwF94CjsI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "991014085926-9a0ur378e3misc8o2s4k71lpmk1ov4mf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

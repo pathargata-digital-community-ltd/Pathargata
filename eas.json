@@ -1,0 +1,21 @@
+{
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "APP_CHECK_PROVIDER": "debug"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "env": {
+        "APP_CHECK_PROVIDER": "playIntegrity"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  }
+}

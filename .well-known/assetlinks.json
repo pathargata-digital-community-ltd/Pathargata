@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.pathargata_digital_community_ltd.twa",
-        "sha256_cert_fingerprints": ["EA:46:E1:C2:C3:0F:2C:BC:85:F2:00:77:88:60:44:1A:D9:42:C9:DE:7B:79:D2:6B:2B:0B:4C:53:7A:21:E0:AD"]
-      }
-    }]
